@@ -9,4 +9,6 @@ afl-collect copies all crash sample files from an afl sync dir used by multiple
 fuzzers when fuzzing in parallel into a single location providing easy access
 for further crash analysis.
 
-Usage: ´afl-collect.py <afl-sync-dir> <collection-dir>´
+Usage:  
+
+    $ afl-collect.py <afl-sync-dir> <collection-dir>
