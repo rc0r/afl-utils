@@ -35,17 +35,23 @@ def verify_samples(crash_samples, target_cmd):
         cmd = cmd_string.replace("@@", cs)
         try:
             v = subprocess.call(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, shell=True, timeout=60)
-            if not os.WIFSIGNALED(v):
+            # check if process was terminated/stopped by signal
+            if not os.WIFSIGNALED(v) and not os.WIFSTOPPED(v):
                 num_invalid += 1
                 crashes_invalid.append(cs)
             else:
+                # need extension (add uninteresting signals):
                 # following signals don't indicate hard crashes: 1
-                if os.WTERMSIG(v) in [1]:
+                # os.WTERMSIG(v) ?= v & 0x7f ???
+                if (os.WTERMSIG(v) or os.WSTOPSIG(v)) in [1]:
                     num_invalid += 1
                     crashes_invalid.append(cs)
                 # debug
                 #else:
-                #    print("%s: sig: %d" % (cs, os.WTERMSIG(v)))
+                #    if os.WIFSIGNALED(v):
+                #        print("%s: sig: %d (%d)" % (cs, os.WTERMSIG(v), v))
+                #    elif os.WIFSTOPPED(v):
+                #        print("%s: sig: %d (%d)" % (cs, os.WSTOPSIG(v), v))
         except Exception:
             pass
 

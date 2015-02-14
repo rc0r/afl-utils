@@ -1,7 +1,7 @@
 # afl-utils
 
-Some utilities to automate crash analysis processing for crashes found with
-american-fuzzy-lop (afl).
+Some utilities to automate crash sample processing and analysis for crashes
+found with [american-fuzzy-lop (afl)](http://lcamtuf.coredump.cx/afl/).
 
 #### Dependencies
 
@@ -10,9 +10,9 @@ american-fuzzy-lop (afl).
 #### afl-collect
 
 afl-collect is a Python3 utility that copies all crash sample files from an afl
-synchronisation directory used by multiple fuzzer instances when fuzzing in
-parallel into a single location providing easy access for further crash
-analysis.
+synchronisation directory into a single location providing easy access for
+further crash analysis. The afl synchronisation directory is created when using
+multiple fuzzer instances in parallel.  
 
 Usage:  
 
