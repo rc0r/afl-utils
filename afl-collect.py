@@ -19,7 +19,7 @@ global_exlude_files = [
 
 def show_info():
     print("afl-collect %s by %s" % (version, author))
-    print("crash sample collection utility for afl-fuzz.")
+    print("Crash sample collection utility for afl-fuzz.")
     print("")
 
 
