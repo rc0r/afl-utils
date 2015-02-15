@@ -10,9 +10,9 @@ found with [american-fuzzy-lop (afl)](http://lcamtuf.coredump.cx/afl/).
 
 #### Problems / Bugs
 
-* `avl\_vcrash` might miss *some* invalid crash samples. Identification of real crashes is
+* `avl_vcrash` might miss *some* invalid crash samples. Identification of real crashes is
   hard and needs improvements!
-* `avl\_vcrash` identifies *some* crash samples as invalid that are considered valid by
+* `avl_vcrash` identifies *some* crash samples as invalid that are considered valid by
   `afl-fuzz` when run with option `-C`.
 * Tool outputs might get cluttered if core dumps/kernel crash messages are displayed on
   your terminal.
