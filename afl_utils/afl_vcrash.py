@@ -1,17 +1,11 @@
 #!/usr/bin/env python
 
-"""
-Changelog:
- 0.10a     Initial release
- 0.11a     Minor bug fixes, code cleanup
-"""
-
 import argparse
 import os
 import subprocess
 import sys
 
-import afl_collect
+import afl_utils
 
 # afl-vcrash info
 version = "0.11a"
@@ -19,7 +13,7 @@ author = "rc0r (@_rc0r)"
 
 
 def show_info():
-    print("afl-vcrash %s by %s" % (version, author))
+    print("afl-vcrash %s by %s" % (afl_utils.__version__, afl_utils.__author__))
     print("Crash verifier for crash samples collected from afl-fuzz.")
     print("")
 
@@ -104,4 +98,5 @@ particularly useful when combined with '-r' or '-f'.")
 
 
 if __name__ == "__main__":
+    from afl_utils import afl_collect
     main(sys.argv)

@@ -1,1 +1,2 @@
-__author__ = 'rc0r'
+__author__ = 'rc0r (@_rc0r)'
+__version__ = "0.15a"

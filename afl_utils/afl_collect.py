@@ -1,21 +1,13 @@
 #!/usr/bin/env python
 
-"""
-Changelog:
- 0.10a     Initial release, just collect crash sample files
- 0.11a     Crash sample file list creation added
- 0.12a     gdb+exploitable script generation added
- 0.13a     Auto-cleanup of invalid crash samples added
- 0.14a     gdb+exploitable script execution and output parsing added for easy crash classification
-"""
-
 import argparse
 import os
 import shutil
 import subprocess
 import sys
 
-import afl_vcrash
+import afl_utils
+from afl_utils import afl_vcrash
 
 
 # afl-collect info
@@ -24,7 +16,7 @@ author = "rc0r (@_rc0r)"
 
 # afl-collect global settings
 global_crash_subdir = "crashes/"
-global_exlude_files = [
+global_exclude_files = [
     "README.txt",
 ]
 
@@ -43,7 +35,7 @@ gdb_exit_handler_path = "../gdb/afl_util_exit_handler.py"
 
 
 def show_info():
-    print("afl-collect %s by %s" % (version, author))
+    print("afl-collect %s by %s" % (afl_utils.__version__, afl_utils.__author__))
     print("Crash sample collection and processing utility for afl-fuzz.")
     print("")
 
@@ -60,7 +52,7 @@ def get_crash_samples(fuzzer_subdir, abs_path=False):
     crashes = []
     num_crashes = 0
     for f in os.listdir(fuzzer_subdir):
-        if os.path.isfile(os.path.join(fuzzer_subdir, f)) and f not in global_exlude_files:
+        if os.path.isfile(os.path.join(fuzzer_subdir, f)) and f not in global_exclude_files:
             if abs_path:
                 crashes.append(os.path.join(fuzzer_subdir, f))
             else:
