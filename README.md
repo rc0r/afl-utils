@@ -6,36 +6,39 @@ found with [american-fuzzy-lop (afl)](http://lcamtuf.coredump.cx/afl/).
 #### Dependencies
 
 * Python3
+* [Exploitable](https://github.com/jfoote/exploitable) (for script execution support)
 
-#### afl-collect
+#### Problems / Bugs
 
-afl-collect is a Python3 utility that copies all crash sample files from an afl
+* `avl\_vcrash` might miss *some* invalid crash samples. Identification of real crashes is
+  hard and needs improvements!
+* `avl\_vcrash` identifies *some* crash samples as invalid that are considered valid by
+  `afl-fuzz` when run with option `-C`.
+* Tool outputs might get cluttered if core dumps/kernel crash messages are displayed on
+  your terminal.
+
+
+#### afl\_collect
+
+afl\_collect is a Python3 utility that copies all crash sample files from an afl
 synchronisation directory into a single location providing easy access for
 further crash analysis. The afl synchronisation directory is created when using
 multiple fuzzer instances in parallel.  
 
 Usage:  
 
-    $ afl-collect.py [-h] [-f LIST_FILENAME] sync_dir collection_dir
+![afl_collect_usage](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_collect_usage.png)
 
-Run `afl-collect.py -h` for more detailed usage information.
+Sample output:
 
-#### afl-vcrash
+![afl_collect_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_collect_sample.png)
 
-afl-vcrash verifies that afl-fuzz crash samples lead to crashes in the target
+#### afl\_vcrash
+
+afl\_vcrash verifies that afl-fuzz crash samples lead to crashes in the target
 binary.
 
 Usage:
 
-    $ afl-vcrash.py [-h] [-f LIST_FILENAME] [-q] [-r] collection_dir -- target_command
-
-Run `afl-vcrash.py -h` for more detailed usage information.  
+![afl_vcrash_usage](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_vcrash_usage.png)
   
-Caveats:  
-
-* Might miss *some* invalid crash samples. Identification of real crashes is
-  hard and needs improvements!
-* Identifies *some* crash samples as invalid that are considered valid by
-  `afl-fuzz` when run with option `-C`.
-* Tool output might get cluttered if kernel crash messages are displayed on
-  your terminal.

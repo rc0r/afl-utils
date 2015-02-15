@@ -1,13 +1,20 @@
 #!/usr/bin/env python
 
+"""
+Changelog:
+ 0.10a     Initial release
+ 0.11a     Minor bug fixes, code cleanup
+"""
 
 import argparse
 import os
 import subprocess
 import sys
 
-# afl-collect info
-version = "0.10b"
+import afl_collect
+
+# afl-vcrash info
+version = "0.11a"
 author = "rc0r (@_rc0r)"
 
 
@@ -15,16 +22,6 @@ def show_info():
     print("afl-vcrash %s by %s" % (version, author))
     print("Crash verifier for crash samples collected from afl-fuzz.")
     print("")
-
-
-def get_crash_samples(fuzzer_subdir):
-    crashes = []
-    num_crashes = 0
-    for f in os.listdir(fuzzer_subdir):
-        if os.path.isfile(os.path.join(fuzzer_subdir, f)):
-            crashes.append(os.path.join(fuzzer_subdir, f))
-            num_crashes += 1
-    return num_crashes, crashes
 
 
 def verify_samples(crash_samples, target_cmd):
@@ -58,25 +55,12 @@ def verify_samples(crash_samples, target_cmd):
     return num_invalid, crashes_invalid
 
 
-def generate_crash_sample_list(list_filename, files_collected):
-    print("Generating invalid crash sample list file %s" % list_filename)
-    fd = open(list_filename, "w")
-
-    if not fd:
-        print("Error: Could not create filelist %s!" % list_filename)
-        return
-
-    for f in files_collected:
-        fd.writelines("%s\n" % f)
-
-    fd.close()
-
-
 def main(argv):
     show_info()
 
     parser = argparse.ArgumentParser(description="afl-vcrash verifies that afl-fuzz crash samples lead to crashes in \
-the target binary.", usage="afl-vcrash.py [-h] [-f LIST_FILENAME] [-q] [-r] collection_dir -- target_command")
+the target binary.", usage="afl_vcrash.py [-h] [-f LIST_FILENAME] [-q] [-r] collection_dir target_command \
+[target_command_args]")
 
     parser.add_argument("collection_dir",
                         help="Directory holding all crash samples that will be verified.")
@@ -98,7 +82,7 @@ particularly useful when combined with '-r' or '-f'.")
         print("No valid directory provided for <colleciton_dir>!")
         return
 
-    num_crashes, crash_samples = get_crash_samples(input_dir)
+    num_crashes, crash_samples = afl_collect.get_crash_samples(input_dir, True)
 
     print("Verifying %d crash samples..." % num_crashes)
 
@@ -115,7 +99,9 @@ particularly useful when combined with '-r' or '-f'.")
 
     # generate filelist of collected crash samples
     if args.list_filename:
-        generate_crash_sample_list(args.list_filename, invalid_samples)
+        print("Generating invalid crash sample list file %s" % args.list_filename)
+        afl_collect.generate_crash_sample_list(args.list_filename, invalid_samples)
 
 
-main(sys.argv)
+if __name__ == "__main__":
+    main(sys.argv)
