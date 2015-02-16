@@ -41,10 +41,10 @@ Release | Description
 - [ ] "`stdin`-support" (see Problems/Bugs); We do get crash samples for "`stdin`"-mode, right?!
 - [ ] submit classification data into some sort of database
 - [ ] auto clean-up of uninteresting crashes
--   [ ] by exploitable classification
--   [ ] through some means of deduplicating crash samples (might be clever to incorporate this into
-        the crash collection step;
-        [some ideas](https://groups.google.com/forum/#!topic/afl-users/b5v3mY_hy30))
+    - [ ] by exploitable classification
+    - [ ] through some means of deduplicating crash samples (might be clever to incorporate this into
+          the crash collection step;
+          [some ideas](https://groups.google.com/forum/#!topic/afl-users/b5v3mY_hy30))
 
 ### The Tools
 
