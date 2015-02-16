@@ -10,10 +10,6 @@ import afl_utils
 from afl_utils import afl_vcrash
 
 
-# afl-collect info
-version = "0.14a"
-author = "rc0r (@_rc0r)"
-
 # afl-collect global settings
 global_crash_subdir = "crashes/"
 global_exclude_files = [

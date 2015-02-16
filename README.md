@@ -3,7 +3,7 @@
 Some utilities to automate crash sample processing and analysis for crashes
 found with [american-fuzzy-lop (afl)](http://lcamtuf.coredump.cx/afl/).
 
-#### Changelog
+### Changelog
 
 Release | Description
 :-------:|----
@@ -14,25 +14,39 @@ Release | Description
 0.14a | gdb+exploitable script execution and output parsing added for easy crash classification
 0.15a | Code refactoring, minor bug fixes
 
-#### Dependencies
+### Dependencies
 
 * Python3
 * [Exploitable](https://github.com/jfoote/exploitable) (for script execution support)
 
-#### Problems / Bugs / TODO
+### Problems / Bugs
 
+* These tools are slow!
 * `avl_vcrash` might miss *some* invalid crash samples. Identification of real crashes is
   hard and needs improvements!
 * `avl_vcrash` identifies *some* crash samples as invalid that are considered valid by
   `afl-fuzz` when run with option `-C`.
 * Tool outputs might get cluttered if core dumps/kernel crash messages are displayed on
-  your terminal.
+  your terminal (see `man core(5)`; workaround anybody?).
 * gdb+exploitable script execution will be interrupted when using samples that do not lead
   to actual crashes. `afl_collect` will print the files name causing the trouble (for manual
   removal).
 * The more advanced features like gdb+exploitable script generation and execution as well as
   crash sample verification *probably will* fail for targets that don't read their input from
-  files (`afl-fuzz` invoked without `-f <filename>`) but from `stdin`. I didn't try this yet.
+  files (`afl-fuzz` invoked without `-f <filename>`) but from `stdin`. I didn't look into this
+  yet.
+
+### Feature Ideas / ToDo
+
+- [ ] "`stdin`-support" (see Problems/Bugs); We do get crash samples for "`stdin`"-mode, right?!
+- [ ] submit classification data into some sort of database
+- [ ] auto clean-up of uninteresting crashes
+-   [ ] by exploitable classification
+-   [ ] through some means of deduplicating crash samples (might be clever to incorporate this into
+        the crash collection step;
+        [some ideas](https://groups.google.com/forum/#!topic/afl-users/b5v3mY_hy30))
+
+### The Tools
 
 #### afl\_collect
 
@@ -42,7 +56,7 @@ further crash analysis. The afl synchronisation directory is created when using
 multiple fuzzer instances in parallel. Furthermore `afl_collect` has some more advanced
 features like generating and executing `gdb` scripts that make use of
 [Exploitable](https://github.com/jfoote/exploitable). The purpose of these scripts is to
-automate crash sample classification.  
+automate crash sample classification (see screenshot below).  
 
 Usage:  
 

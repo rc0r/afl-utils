@@ -7,10 +7,6 @@ import sys
 
 import afl_utils
 
-# afl-vcrash info
-version = "0.11a"
-author = "rc0r (@_rc0r)"
-
 
 def show_info():
     print("afl-vcrash %s by %s" % (afl_utils.__version__, afl_utils.__author__))
