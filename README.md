@@ -50,13 +50,12 @@ Release | Description
 
 #### afl\_collect
 
-`afl_collect` is a Python3 utility that copies all crash sample files from an afl
-synchronisation directory into a single location providing easy access for
-further crash analysis. The afl synchronisation directory is created when using
-multiple fuzzer instances in parallel. Furthermore `afl_collect` has some more advanced
-features like generating and executing `gdb` scripts that make use of
-[Exploitable](https://github.com/jfoote/exploitable). The purpose of these scripts is to
-automate crash sample classification (see screenshot below).  
+`afl_collect` basically copies all crash sample files from an afl synchronisation directory
+(used by multiple afl instances when run in parallel) into a single location providing
+easy access for further crash analysis. Beyond that `afl_collect` has some more advanced
+features like invalid crash sample removing as well as generating and executing `gdb` scripts
+that make use of [Exploitable](https://github.com/jfoote/exploitable). The purpose of these
+scripts is to automate crash sample classification (see screenshot below).  
 
 Usage:  
 
@@ -68,8 +67,8 @@ Sample output:
 
 #### afl\_vcrash
 
-afl\_vcrash verifies that afl-fuzz crash samples lead to crashes in the target
-binary.
+afl\_vcrash verifies that afl-fuzz crash samples lead to crashes in the target binary and
+optionally removes these samples automatically.
 
 Usage:
 
