@@ -8,6 +8,7 @@ import sys
 
 import afl_utils
 from afl_utils import afl_vcrash
+from db_connectors import con_sqlite
 
 
 # afl-collect global settings
@@ -158,7 +159,7 @@ def execute_gdb_script(out_dir, script_filename, num_samples):
     print("*** GDB+EXPLOITABLE SCRIPT OUTPUT ***")
     for g in range(0, len(grepped_output)-2, 3):
         print("[%05d] %s: %s [%s]" % (i, grepped_output[g].ljust(64, '.'), grepped_output[g+2], grepped_output[g+1]))
-        classification_data.append([grepped_output[g], grepped_output[g+2]])
+        classification_data.append([grepped_output[g], grepped_output[g+2], grepped_output[g+1]])
         i += 1
 
     if i < num_samples:
@@ -175,13 +176,15 @@ def main(argv):
 
     parser = argparse.ArgumentParser(description="afl_collect copies all crash sample files from an afl sync dir used \
 by multiple fuzzers when fuzzing in parallel into a single location providing easy access for further crash analysis.",
-                                     usage="afl_collect.py [-e GDB_EXPL_SCRIPT_FILE] [-f LIST_FILENAME]\n \
+                                     usage="afl_collect.py [-d DATABASE] [-e GDB_EXPL_SCRIPT_FILE] [-f LIST_FILENAME]\n \
 [-g GDB_SCRIPT_FILE] [-h] [-r] sync_dir collection_dir target_cmd")
 
     parser.add_argument("sync_dir", help="afl synchronisation directory crash samples  will be collected from.")
     parser.add_argument("collection_dir",
                         help="Output directory that will hold a copy of all crash samples and other generated files. \
 Existing files in the collection directory will be overwritten!")
+    parser.add_argument("-d", "--database", dest="database_file", help="Submit classification data into a sqlite3 \
+database.", default=None)
     parser.add_argument("-e", "--execute-gdb-script", dest="gdb_expl_script_file",
                         help="Execute a gdb+exploitable script after crash sample collection for crash classification.",
                         default=None)
@@ -249,6 +252,16 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         """
         TODO: Make use of classification data (database submission, crash sample reduction, ...)
         """
+
+        if args.database_file:
+            lite_db = con_sqlite.sqliteConnector(args.database_file)
+
+            lite_db.init_database()
+
+            for dataset in classification_data:
+                if not lite_db.dataset_exists(dataset):
+                    lite_db.insert_dataset(dataset)
+
 
 if __name__ == "__main__":
     main(sys.argv)

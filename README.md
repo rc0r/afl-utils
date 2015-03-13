@@ -39,7 +39,8 @@ Release | Description
 ### Feature Ideas / ToDo
 
 - [ ] "`stdin`-support" (see Problems/Bugs); We do get crash samples for "`stdin`"-mode, right?!
-- [ ] submit classification data into some sort of database
+- [x] submit classification data into some sort of database
+    - [x] basic sqlite3 database support added
 - [ ] auto clean-up of uninteresting crashes
     - [ ] by exploitable classification
     - [ ] through some means of deduplicating crash samples (might be clever to incorporate this into
