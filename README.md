@@ -13,10 +13,12 @@ Release | Description
 0.13a | Auto-cleanup of invalid crash samples added
 0.14a | gdb+exploitable script execution and output parsing added for easy crash classification
 0.15a | Code refactoring, minor bug fixes
+0.16a | Minor bug fix for gdb+exploitable script generation
+0.17a | Basic SQLite3 database support added
 
 ### Dependencies
 
-* Python3
+* Python3 (with sqlite3)
 * [Exploitable](https://github.com/jfoote/exploitable) (for script execution support)
 
 ### Problems / Bugs
