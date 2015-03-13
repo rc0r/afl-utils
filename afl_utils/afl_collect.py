@@ -27,7 +27,7 @@ gdb_exploitable_path = None
 
 # Path to 'afl_util_exit_handler.py'
 # Set to None if you already source afl_util_exit_handler.py in your .gdbinit file!
-gdb_exit_handler_path = "../gdb/afl_util_exit_handler.py"
+gdb_exit_handler_path = "gdb/afl_util_exit_handler.py"
 
 
 def show_info():
@@ -97,7 +97,7 @@ def generate_gdb_exploitable_script(script_filename, files_collected, target_cmd
 
     # source afl_utils_exit_handler.py if necessary
     if gdb_exit_handler_path:
-        fd.writelines("source %s\n" % gdb_exit_handler_path)
+        fd.writelines("source %s\n" % os.path.join(os.getcwd(), gdb_exit_handler_path))
 
     # load executable
     fd.writelines("file %s\n" % gdb_target_binary)
@@ -120,6 +120,7 @@ def generate_gdb_exploitable_script(script_filename, files_collected, target_cmd
 
 # ok, this needs improvement!!!
 def execute_gdb_script(out_dir, script_filename, num_samples):
+    classification_data = []
     print("Executing gdb+exploitable script %s" % script_filename)
 
     out_dir = os.path.expanduser(out_dir) + "/"
@@ -157,12 +158,16 @@ def execute_gdb_script(out_dir, script_filename, num_samples):
     print("*** GDB+EXPLOITABLE SCRIPT OUTPUT ***")
     for g in range(0, len(grepped_output)-2, 3):
         print("[%05d] %s: %s [%s]" % (i, grepped_output[g].ljust(64, '.'), grepped_output[g+2], grepped_output[g+1]))
+        classification_data.append([grepped_output[g], grepped_output[g+2]])
         i += 1
 
     if i < num_samples:
         #print("[%05d] %s: INVALID SAMPLE (please remove and run 'gdb -x %s' manually)" % (i, grepped_output[-1].ljust(64, '.'), script_filename))
         print("[%05d] %s: INVALID SAMPLE (Aborting!)" % (i, grepped_output[-1].ljust(64, '.')))
+        print("Returned data may be incomplete!")
     print("*** ***************************** ***")
+
+    return classification_data
 
 
 def main(argv):
@@ -239,7 +244,11 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
     # execute gdb+exploitable script
     if args.gdb_expl_script_file:
-        execute_gdb_script(out_dir, args.gdb_expl_script_file, overall_crash_sample_num)
+        classification_data = execute_gdb_script(out_dir, args.gdb_expl_script_file, overall_crash_sample_num)
+
+        """
+        TODO: Make use of classification data (database submission, crash sample reduction, ...)
+        """
 
 if __name__ == "__main__":
     main(sys.argv)
