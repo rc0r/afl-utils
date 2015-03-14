@@ -22,13 +22,9 @@ global_exclude_files = [
 # Path to gdb binary
 gdb_binary = "/usr/bin/gdb"
 
-# Path to 'exploitable.py' (https://github.com/jfoote/exploitable)
+# Path to 'exploitable.py' (https://github.com/rc0r/exploitable)
 # Set to None if you already source exploitable.py in your .gdbinit file!
 gdb_exploitable_path = None
-
-# Path to 'afl_util_exit_handler.py'
-# Set to None if you already source afl_util_exit_handler.py in your .gdbinit file!
-gdb_exit_handler_path = "gdb/afl_util_exit_handler.py"
 
 
 def show_info():
@@ -95,10 +91,6 @@ def generate_gdb_exploitable_script(script_filename, files_collected, target_cmd
     # source exploitable.py if necessary
     if gdb_exploitable_path:
         fd.writelines("source %s\n" % gdb_exploitable_path)
-
-    # source afl_utils_exit_handler.py if necessary
-    if gdb_exit_handler_path:
-        fd.writelines("source %s\n" % os.path.join(os.getcwd(), gdb_exit_handler_path))
 
     # load executable
     fd.writelines("file %s\n" % gdb_target_binary)

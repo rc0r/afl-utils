@@ -15,11 +15,12 @@ Release | Description
 0.15a | Code refactoring, minor bug fixes
 0.16a | Minor bug fix for gdb+exploitable script generation
 0.17a | Basic SQLite3 database support added
+0.18a | Fixed gdb+exploitable script interruptions that occur on graceful exits of the target binary
 
 ### Dependencies
 
 * Python3 (with sqlite3)
-* [Exploitable](https://github.com/jfoote/exploitable) (for script execution support)
+* [Exploitable](https://github.com/rc0r/exploitable) (for script execution support)
 
 ### Problems / Bugs
 
@@ -30,9 +31,11 @@ Release | Description
   `afl-fuzz` when run with option `-C`.
 * Tool outputs might get cluttered if core dumps/kernel crash messages are displayed on
   your terminal (see `man core(5)`; workaround anybody?).
-* gdb+exploitable script execution will be interrupted when using samples that do not lead
+* ~~gdb+exploitable script execution will be interrupted when using samples that do not lead
   to actual crashes. `afl_collect` will print the files name causing the trouble (for manual
-  removal).
+  removal).~~ Fixed by using a patched `exploitable.py` that handles `NoThreadRunningError`
+  (see [Exploitable](https://github.com/rc0r/exploitable)). **Be sure to use the patched
+  version of `exploitable.py`!**
 * The more advanced features like gdb+exploitable script generation and execution as well as
   crash sample verification *probably will* fail for targets that don't read their input from
   files (`afl-fuzz` invoked without `-f <filename>`) but from `stdin`. I didn't look into this
