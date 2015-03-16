@@ -45,6 +45,17 @@ def verify_samples(crash_samples, target_cmd):
     return num_invalid, crashes_invalid
 
 
+def remove_samples(crash_samples, quiet=True):
+    count = 0
+    for c in crash_samples:
+        if not quiet:
+            print(c)
+        os.remove(c)
+        count += 1
+
+    return count
+
+
 def main(argv):
     show_info()
 
@@ -80,12 +91,11 @@ particularly useful when combined with '-r' or '-f'.")
 
     print("Found %d invalid crash samples" % num_invalid)
 
-    for ci in invalid_samples:
-        if not args.quiet:
+    if args.remove:
+        remove_samples(invalid_samples, args.quiet)
+    elif not args.quiet:
+        for ci in invalid_samples:
             print(ci)
-
-        if args.remove:
-            os.remove(ci)
 
     # generate filelist of collected crash samples
     if args.list_filename:

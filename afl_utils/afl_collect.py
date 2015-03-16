@@ -168,17 +168,18 @@ def main(argv):
 
     parser = argparse.ArgumentParser(description="afl_collect copies all crash sample files from an afl sync dir used \
 by multiple fuzzers when fuzzing in parallel into a single location providing easy access for further crash analysis.",
-                                     usage="afl_collect.py [-d DATABASE] [-e GDB_EXPL_SCRIPT_FILE] [-f LIST_FILENAME]\n \
-[-g GDB_SCRIPT_FILE] [-h] [-r] sync_dir collection_dir target_cmd")
+                                     usage="afl_collect.py [-d DATABASE] [-e|-g GDB_EXPL_SCRIPT_FILE] [-f LIST_FILENAME]\n \
+[-h] [-r] [-rr] sync_dir collection_dir target_cmd")
 
     parser.add_argument("sync_dir", help="afl synchronisation directory crash samples  will be collected from.")
     parser.add_argument("collection_dir",
                         help="Output directory that will hold a copy of all crash samples and other generated files. \
 Existing files in the collection directory will be overwritten!")
     parser.add_argument("-d", "--database", dest="database_file", help="Submit classification data into a sqlite3 \
-database.", default=None)
+database. Has no effect without '-e'.", default=None)
     parser.add_argument("-e", "--execute-gdb-script", dest="gdb_expl_script_file",
-                        help="Execute a gdb+exploitable script after crash sample collection for crash classification.",
+                        help="Generate and execute a gdb+exploitable script after crash sample collection for crash \
+classification. (Like option '-g', plus script execution.)",
                         default=None)
     parser.add_argument("-f", "--filelist", dest="list_filename", default=None,
                         help="Writes all collected crash sample filenames into a file in the collection directory.")
@@ -189,6 +190,10 @@ script will be placed into collection directory.", default=None)
                         default=False, help="Verify collected crash samples and remove samples that do not lead to \
 crashes (runs 'afl_vcrash.py -r' on collection directory). This step is done prior to any script file \
 or file list generation/execution.")
+    parser.add_argument("-rr", "--remove-unexploitable", dest="remove_unexploitable", action="store_const", const=True,
+                        default=False, help="Remove crash samples that have an exploitable classification of \
+'NOT_EXPLOITABLE', 'PROBABLY_NOT_EXPLOITABLE' or 'UNKNOWN'. Sample file removal will take place after gdb+exploitable \
+script execution. Has no effect without '-e'.")
     parser.add_argument("target_cmd", nargs="+", help="Path to the target binary and its command line arguments. \
 Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
@@ -225,8 +230,8 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         print("Found %d invalid crash samples. Cleaning up..." % invalid_num)
         for ci in invalid_samples:
             files_collected.remove(ci)
-            os.remove(ci)
-            overall_crash_sample_num -= 1
+
+        overall_crash_sample_num -= afl_vcrash.remove_samples(invalid_samples)
 
     # generate filelist of collected crash samples
     if args.list_filename:
@@ -234,17 +239,14 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         generate_crash_sample_list(os.path.join(out_dir, args.list_filename), files_collected)
 
     # generate gdb+exploitable script
-    if args.gdb_script_file:
-        generate_gdb_exploitable_script(os.path.join(out_dir, args.gdb_script_file), files_collected, args.target_cmd)
-
-    # execute gdb+exploitable script
     if args.gdb_expl_script_file:
+        generate_gdb_exploitable_script(os.path.join(out_dir, args.gdb_expl_script_file), files_collected,
+                                        args.target_cmd)
+
+        # execute gdb+exploitable script
         classification_data = execute_gdb_script(out_dir, args.gdb_expl_script_file, overall_crash_sample_num)
 
-        """
-        TODO: Make use of classification data (database submission, crash sample reduction, ...)
-        """
-
+        # Submit crash classification data into database
         if args.database_file:
             lite_db = con_sqlite.sqliteConnector(args.database_file)
 
@@ -253,6 +255,27 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
             for dataset in classification_data:
                 if not lite_db.dataset_exists(dataset):
                     lite_db.insert_dataset(dataset)
+
+        # remove crash samples that are classified uninteresting/unknown
+        if args.remove_unexploitable:
+            classification_unexploitable = [
+                'NOT_EXPLOITABLE',
+                'PROBABLY_NOT_EXPLOITABLE',
+                'UNKNOWN'
+            ]
+
+            uninteresting_samples = []
+
+            for c in classification_data:
+                if c[1] in classification_unexploitable:
+                    uninteresting_samples.append(os.path.join(out_dir, c[0]))
+
+            remove_count = afl_vcrash.remove_samples(uninteresting_samples)
+            overall_crash_sample_num -= remove_count
+            print("%d uninteresting crash samples removed. Leaving %d samples in the output directory." %
+                  (remove_count, overall_crash_sample_num))
+    elif args.gdb_script_file:
+        generate_gdb_exploitable_script(os.path.join(out_dir, args.gdb_script_file), files_collected, args.target_cmd)
 
 
 if __name__ == "__main__":

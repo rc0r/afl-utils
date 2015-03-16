@@ -3,20 +3,6 @@
 Some utilities to automate crash sample processing and analysis for crashes
 found with [american-fuzzy-lop (afl)](http://lcamtuf.coredump.cx/afl/).
 
-### Changelog
-
-Release | Description
-:-------:|----
-0.10a | Initial release, just collect crash sample files
-0.11a | Crash sample file list creation added, afl_vcrash added
-0.12a | gdb+exploitable script generation added
-0.13a | Auto-cleanup of invalid crash samples added
-0.14a | gdb+exploitable script execution and output parsing added for easy crash classification
-0.15a | Code refactoring, minor bug fixes
-0.16a | Minor bug fix for gdb+exploitable script generation
-0.17a | Basic SQLite3 database support added
-0.18a | Fixed gdb+exploitable script interruptions that occur on graceful exits of the target binary
-
 ### Dependencies
 
 * Python3 (with sqlite3)
@@ -47,7 +33,7 @@ Release | Description
 - [x] submit classification data into some sort of database
     - [x] basic sqlite3 database support added
 - [ ] auto clean-up of uninteresting crashes
-    - [ ] by exploitable classification
+    - [x] by exploitable classification
     - [ ] through some means of deduplicating crash samples (might be clever to incorporate this into
           the crash collection step;
           [some ideas](https://groups.google.com/forum/#!topic/afl-users/b5v3mY_hy30))
@@ -80,3 +66,17 @@ Usage:
 
 ![afl_vcrash_usage](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_vcrash_usage.png)
   
+### Changelog
+
+Release | Description
+:-------:|----
+0.10a | Initial release, just collect crash sample files
+0.11a | Crash sample file list creation added, afl_vcrash added
+0.12a | gdb+exploitable script generation added
+0.13a | Auto-cleanup of invalid crash samples added
+0.14a | gdb+exploitable script execution and output parsing added for easy crash classification
+0.15a | Code refactoring, minor bug fixes
+0.16a | Minor bug fix for gdb+exploitable script generation
+0.17a | Basic SQLite3 database support added
+0.18a | Fixed gdb+exploitable script interruptions that occur on graceful exits of the target binary
+0.19a | Added auto-cleanup feature for samples leading to uninteresting crashes
