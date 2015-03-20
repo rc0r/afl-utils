@@ -29,9 +29,11 @@ found with [american-fuzzy-lop (afl)](http://lcamtuf.coredump.cx/afl/).
 
 ### Feature Ideas / ToDo
 
+- [ ] collect crash samples from *crashes.\** sub directories 
 - [ ] "`stdin`-support" (see Problems/Bugs); We do get crash samples for "`stdin`"-mode, right?!
 - [x] submit classification data into some sort of database
     - [x] basic sqlite3 database support added
+    - [ ] want more db connectors? Drop me a line!
 - [ ] auto clean-up of uninteresting crashes
     - [x] by exploitable classification
     - [ ] through some means of deduplicating crash samples (might be clever to incorporate this into
