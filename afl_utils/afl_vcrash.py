@@ -80,10 +80,10 @@ particularly useful when combined with '-r' or '-f'.")
     if args.collection_dir:
         input_dir = args.collection_dir
     else:
-        print("No valid directory provided for <colleciton_dir>!")
+        print("No valid directory provided for <collection_dir>!")
         return
 
-    num_crashes, crash_samples = afl_collect.get_crash_samples(input_dir, True)
+    num_crashes, crash_samples = afl_collect.get_crash_samples_from_dir(input_dir, True)
 
     print("Verifying %d crash samples..." % num_crashes)
 

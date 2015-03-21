@@ -29,7 +29,7 @@ found with [american-fuzzy-lop (afl)](http://lcamtuf.coredump.cx/afl/).
 
 ### Feature Ideas / ToDo
 
-- [ ] collect crash samples from *crashes.\** sub directories 
+- [x] collect crash samples from `crashes.*` sub directories 
 - [ ] "`stdin`-support" (see Problems/Bugs); We do get crash samples for "`stdin`"-mode, right?!
 - [x] submit classification data into some sort of database
     - [x] basic sqlite3 database support added
@@ -82,3 +82,4 @@ Release | Description
 0.17a | Basic SQLite3 database support added
 0.18a | Fixed gdb+exploitable script interruptions that occur on graceful exits of the target binary
 0.19a | Added auto-cleanup feature for samples leading to uninteresting crashes
+0.20a | Sample collection from all `crashes*` sub directories added, minor bug fix for sample cleanup

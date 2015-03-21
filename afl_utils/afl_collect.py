@@ -12,7 +12,7 @@ from db_connectors import con_sqlite
 
 
 # afl-collect global settings
-global_crash_subdir = "crashes/"
+global_crash_subdirs = "crashes"
 global_exclude_files = [
     "README.txt",
 ]
@@ -37,28 +37,62 @@ def get_fuzzer_instances(sync_dir):
     fuzzer_inst = []
     for fdir in os.listdir(sync_dir):
         if os.path.isdir(os.path.join(sync_dir, fdir)):
-            fuzzer_inst.append(fdir)
+            fuzzer_inst.append((fdir, []))
+
+    fuzzer_inst = get_crash_directories(sync_dir, fuzzer_inst)
+
     return fuzzer_inst
 
 
-def get_crash_samples(fuzzer_subdir, abs_path=False):
+def get_crash_directories(sync_dir, fuzzer_instances):
+    for fi in fuzzer_instances:
+        fuzz_dir = os.path.join(sync_dir, fi[0])
+        for cdir in os.listdir(fuzz_dir):
+            if os.path.isdir(os.path.join(fuzz_dir, cdir)) and global_crash_subdirs in cdir:
+                fi[1].append(cdir)
+
+    return fuzzer_instances
+
+
+def get_crash_samples_from_dir(crash_subdir, abs_path=False):
     crashes = []
     num_crashes = 0
-    for f in os.listdir(fuzzer_subdir):
-        if os.path.isfile(os.path.join(fuzzer_subdir, f)) and f not in global_exclude_files:
+    for f in os.listdir(crash_subdir):
+        if os.path.isfile(os.path.join(crash_subdir, f)) and f not in global_exclude_files:
             if abs_path:
-                crashes.append(os.path.join(fuzzer_subdir, f))
+                crashes.append(os.path.join(crash_subdir, f))
             else:
                 crashes.append(f)
             num_crashes += 1
     return num_crashes, crashes
 
 
-def copy_crash_samples(fuzzer_subdir, fuzzer, out_dir, files_collected):
-    crash_sample_num, samples = get_crash_samples(fuzzer_subdir)
-    for c in samples:
-        shutil.copyfile(os.path.join(fuzzer_subdir, c), os.path.join(out_dir, "%s:%s" % (fuzzer, c)))
-        files_collected.append(os.path.join(out_dir, "%s:%s" % (fuzzer, c)))
+def collect_crash_samples(sync_dir, fuzzer_instances):
+    crashes = []
+    num_crashes = 0
+    for fi in fuzzer_instances:
+        fuzz_dir = os.path.join(sync_dir, fi[0])
+        fuzz_crashes = []
+
+        for cd in fi[1]:
+            tmp_num_crashes, tmp_crashes = get_crash_samples_from_dir(os.path.join(fuzz_dir, cd))
+            fuzz_crashes.append((cd, tmp_crashes))
+            num_crashes += tmp_num_crashes
+
+        crashes.append((fi[0], fuzz_crashes))
+
+    return num_crashes, crashes
+
+
+def copy_crash_samples(sync_dir, fuzzer_instances, out_dir):
+    crash_sample_num, samples = collect_crash_samples(sync_dir, fuzzer_instances)
+    files_collected = []
+
+    for f in samples:
+        for cd in f[1]:
+            for c in cd[1]:
+                shutil.copyfile(os.path.join(sync_dir, f[0], cd[0], c), os.path.join(out_dir, "%s:%s" % (f[0], c)))
+                files_collected.append(os.path.join(out_dir, "%s:%s" % (f[0], c)))
 
     return crash_sample_num, files_collected
 
@@ -216,12 +250,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     fuzzers = get_fuzzer_instances(sync_dir)
     print("Found %d fuzzers, collecting crash samples." % len(fuzzers))
 
-    overall_crash_sample_num = 0
-    files_collected = []
-    for f in fuzzers:
-        (crash_sample_num, files_collected) = copy_crash_samples(os.path.join(sync_dir, f, global_crash_subdir), f,
-                                                                 out_dir, files_collected)
-        overall_crash_sample_num += crash_sample_num
+    (overall_crash_sample_num, files_collected) = copy_crash_samples(sync_dir, fuzzers, out_dir)
 
     print("Successfully copied %d crash samples to %s" % (overall_crash_sample_num, out_dir))
 
@@ -229,7 +258,8 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         invalid_num, invalid_samples = afl_vcrash.verify_samples(files_collected, args.target_cmd)
         print("Found %d invalid crash samples. Cleaning up..." % invalid_num)
         for ci in invalid_samples:
-            files_collected.remove(ci)
+            # remove all occurrences of invalid sample
+            files_collected = [s for s in files_collected if s != ci]
 
         overall_crash_sample_num -= afl_vcrash.remove_samples(invalid_samples)
 
