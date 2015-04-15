@@ -39,6 +39,8 @@ found with [american-fuzzy-lop (afl)](http://lcamtuf.coredump.cx/afl/).
     - [ ] through some means of deduplicating crash samples (might be clever to incorporate this into
           the crash collection step;
           [some ideas](https://groups.google.com/forum/#!topic/afl-users/b5v3mY_hy30))
+- [ ] afl_multicore: wrapper script that starts multiple afl-instances for parallel fuzzing on multiple cores
+- [ ] afl_resume: wrapper script that resumes multiple afl-instances at once
 
 ### The Tools
 
