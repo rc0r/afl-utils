@@ -40,7 +40,8 @@ found with [american-fuzzy-lop (afl)](http://lcamtuf.coredump.cx/afl/).
           the crash collection step;
           [some ideas](https://groups.google.com/forum/#!topic/afl-users/b5v3mY_hy30))
 - [x] afl_multicore: wrapper script that starts multiple afl-instances for parallel fuzzing on multiple cores
-    - [ ] tmux/screen mode
+    - [x] screen mode
+    - [ ] tmux mode (only, if anybody wants to have that)
     - [ ] afl_multicore_exit/kill for quitting/killing all jobs at once
     - [ ] afl_multicore_watch for checking fuzzer_stats?
 - [ ] afl_resume: wrapper script that resumes multiple afl-instances at once
@@ -71,10 +72,11 @@ Sample output:
 afl's fancy interface is gone. Fuzzer outputs (`stdout` and `stderr`) will be redirected to `/dev/null`.
 Use `--verbose` to see the outputs (`nohup.out` might also contain some useful info).
 If you want to check the fuzzers' progress see `fuzzer_stats` in the respective fuzzer directory in
-the synchronisation dir (`sync_dir/SESSION###/fuzzer_stats`)!
-I might be adding some `tmux` or `screen` mode allowing to run the fuzzer instances in `tmux`/`screen`
-with a separate window for each instance. This would bring back the nice interface and would be handy
-in debugging faulty invocations of `afl-fuzz`.
+the synchronisation dir (`sync_dir/SESSION###/fuzzer_stats`)! The master instance files are always located
+at `sync_dir/SESSION000/`.
+In version 0.22a screen mode was introduced that can be enabled using the `-i` switch. In order to
+use it, start `afl_multicore` from inside a `screen` session. For every instance it will start the fancy
+afl-fuzz UI in a newly created screen window.
 
 Usage:  
 
@@ -94,19 +96,3 @@ Usage:
 
 ![afl_vcrash_usage](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_vcrash_usage.png)
   
-### Changelog
-
-Release | Description
-:-------:|----
-0.10a | Initial release, just collect crash sample files
-0.11a | Crash sample file list creation added, afl_vcrash added
-0.12a | gdb+exploitable script generation added
-0.13a | Auto-cleanup of invalid crash samples added
-0.14a | gdb+exploitable script execution and output parsing added for easy crash classification
-0.15a | Code refactoring, minor bug fixes
-0.16a | Minor bug fix for gdb+exploitable script generation
-0.17a | Basic SQLite3 database support added
-0.18a | Fixed gdb+exploitable script interruptions that occur on graceful exits of the target binary
-0.19a | Added auto-cleanup feature for samples leading to uninteresting crashes
-0.20a | Sample collection from all `crashes*` sub directories added, minor bug fix for sample cleanup
-0.21a | Initial version of afl_multicore added
