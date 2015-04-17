@@ -39,7 +39,10 @@ found with [american-fuzzy-lop (afl)](http://lcamtuf.coredump.cx/afl/).
     - [ ] through some means of deduplicating crash samples (might be clever to incorporate this into
           the crash collection step;
           [some ideas](https://groups.google.com/forum/#!topic/afl-users/b5v3mY_hy30))
-- [ ] afl_multicore: wrapper script that starts multiple afl-instances for parallel fuzzing on multiple cores
+- [x] afl_multicore: wrapper script that starts multiple afl-instances for parallel fuzzing on multiple cores
+    - [ ] tmux/screen mode
+    - [ ] afl_multicore_exit/kill for quitting/killing all jobs at once
+    - [ ] afl_multicore_watch for checking fuzzer_stats?
 - [ ] afl_resume: wrapper script that resumes multiple afl-instances at once
 
 ### The Tools
@@ -60,6 +63,27 @@ Usage:
 Sample output:
 
 ![afl_collect_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_collect_sample.png)
+
+
+#### afl\_multicore
+
+`afl_multicore` starts several parallel fuzzing jobs, that are run in the background (using `nohup`), so
+afl's fancy interface is gone. Fuzzer outputs (`stdout` and `stderr`) will be redirected to `/dev/null`.
+Use `--verbose` to see the outputs (`nohup.out` might also contain some useful info).
+If you want to check the fuzzers' progress see `fuzzer_stats` in the respective fuzzer directory in
+the synchronisation dir (`sync_dir/SESSION###/fuzzer_stats`)!
+I might be adding some `tmux` or `screen` mode allowing to run the fuzzer instances in `tmux`/`screen`
+with a separate window for each instance. This would bring back the nice interface and would be handy
+in debugging faulty invocations of `afl-fuzz`.
+
+Usage:  
+
+![afl_multicore_usage](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_multicore_usage.png)
+
+Sample output:
+
+![afl_multicore_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_multicore_sample.png)
+
 
 #### afl\_vcrash
 
@@ -85,3 +109,4 @@ Release | Description
 0.18a | Fixed gdb+exploitable script interruptions that occur on graceful exits of the target binary
 0.19a | Added auto-cleanup feature for samples leading to uninteresting crashes
 0.20a | Sample collection from all `crashes*` sub directories added, minor bug fix for sample cleanup
+0.21a | Initial version of afl_multicore added

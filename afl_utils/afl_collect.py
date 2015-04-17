@@ -42,7 +42,7 @@ gdb_exploitable_path = None
 
 
 def show_info():
-    print("afl-collect %s by %s" % (afl_utils.__version__, afl_utils.__author__))
+    print("afl_collect %s by %s" % (afl_utils.__version__, afl_utils.__author__))
     print("Crash sample collection and processing utility for afl-fuzz.")
     print("")
 
@@ -216,7 +216,7 @@ def main(argv):
 
     parser = argparse.ArgumentParser(description="afl_collect copies all crash sample files from an afl sync dir used \
 by multiple fuzzers when fuzzing in parallel into a single location providing easy access for further crash analysis.",
-                                     usage="afl_collect.py [-d DATABASE] [-e|-g GDB_EXPL_SCRIPT_FILE] [-f LIST_FILENAME]\n \
+                                     usage="afl_collect [-d DATABASE] [-e|-g GDB_EXPL_SCRIPT_FILE] [-f LIST_FILENAME]\n \
 [-h] [-r] [-rr] sync_dir collection_dir target_cmd")
 
     parser.add_argument("sync_dir", help="afl synchronisation directory crash samples  will be collected from.")

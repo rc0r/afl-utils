@@ -23,7 +23,7 @@ import afl_utils
 
 
 def show_info():
-    print("afl-vcrash %s by %s" % (afl_utils.__version__, afl_utils.__author__))
+    print("afl_vcrash %s by %s" % (afl_utils.__version__, afl_utils.__author__))
     print("Crash verifier for crash samples collected from afl-fuzz.")
     print("")
 
@@ -74,7 +74,7 @@ def main(argv):
     show_info()
 
     parser = argparse.ArgumentParser(description="afl-vcrash verifies that afl-fuzz crash samples lead to crashes in \
-the target binary.", usage="afl_vcrash.py [-h] [-f LIST_FILENAME] [-q] [-r] collection_dir target_command \
+the target binary.", usage="afl_vcrash [-h] [-f LIST_FILENAME] [-q] [-r] collection_dir target_command \
 [target_command_args]")
 
     parser.add_argument("collection_dir",
