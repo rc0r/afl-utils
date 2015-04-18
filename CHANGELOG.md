@@ -2,6 +2,7 @@
 
 Release | Description
 :-------:|----
+0.23a | afl_multikill added
 0.22a | Screen mode added to afl_multicore
 0.21a | Initial version of afl_multicore added
 0.20a | Sample collection from all `crashes*` sub directories added, minor bug fix for sample cleanup

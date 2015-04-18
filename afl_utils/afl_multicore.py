@@ -15,9 +15,9 @@ limitations under the License.
 """
 
 import argparse
+import os
 import subprocess
 import sys
-import time
 
 import afl_utils
 
@@ -29,6 +29,22 @@ def show_info():
     print("afl_multicore %s by %s" % (afl_utils.__version__, afl_utils.__author__))
     print("Wrapper script to easily set up parallel fuzzing jobs.")
     print("")
+
+
+def check_session(session):
+    session_active = os.path.isfile("/tmp/afl_multicore.PID.%s" % session)
+
+    if session_active:
+        print("It seems you're already running an afl_multicore session with name '%s'." % session)
+        print("Please choose another session name using '-S <session>'!")
+        print("")
+        print("If you're sure there no active session with name '%s'," % session)
+        print("you may delete the PID file '/tmp/afl_multicore.PID.%s'." % session)
+        print("")
+        print("To avoid this message in the future please abort active afl_multicore")
+        print("sessions using 'afl_multikill -S <session>'!")
+
+    return not session_active
 
 
 def check_screen():
@@ -57,7 +73,6 @@ def setup_screen(slave_only, slave_num):
     # create number of windows
     for i in range(0, windows, 1):
         subprocess.Popen(["screen"])
-        time.sleep(.01)
 
     # go back to 1st window
     subprocess.Popen("screen -X select 1".split())
@@ -94,6 +109,9 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
     args = parser.parse_args(argv[1:])
 
+    if not check_session(args.session):
+        return
+
     if args.input_dir:
         input_dir = args.input_dir
     else:
@@ -112,6 +130,8 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
             return
 
         setup_screen(args.slave_only, args.slave_number)
+    else:
+        pid_list = []
 
     if not args.slave_only:
         # compile command-line for master
@@ -124,6 +144,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
                 master = subprocess.Popen(" ".join(['nohup', master_cmd]).split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             else:
                 master = subprocess.Popen(" ".join(['nohup', master_cmd]).split())
+            pid_list.append(master.pid)
             print("Master 000 started (PID: %d)" % master.pid)
         else:
             screen_cmd = ["screen", "-X", "eval", "exec %s" % master_cmd, "next"]
@@ -141,6 +162,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
                 slave = subprocess.Popen(" ".join(['nohup', slave_cmd]).split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             else:
                 slave = subprocess.Popen(" ".join(['nohup', slave_cmd]).split())
+            pid_list.append(slave.pid)
             print("Slave %03d started (PID: %d)" % (i, slave.pid))
         else:
             screen_cmd = ["screen", "-X", "eval", "exec %s" % slave_cmd, "next"]
@@ -149,6 +171,12 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
     print("")
     if not args.screen:
+        # write PID list to file /tmp/afl_multicore.<SESSION>
+        f = open("/tmp/afl_multicore.PID.%s" % args.session, "w")
+        if f.writable():
+            for pid in pid_list:
+                f.write("%d\n" % pid)
+        f.close()
         print("For progress info check: %s/%sxxx/fuzzer_stats!" % (args.sync_dir, args.session))
     else:
         print("Check the newly created screen windows!")

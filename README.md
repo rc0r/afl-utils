@@ -29,7 +29,6 @@ found with [american-fuzzy-lop (afl)](http://lcamtuf.coredump.cx/afl/).
 
 ### Feature Ideas / ToDo
 
-- [x] collect crash samples from `crashes.*` sub directories 
 - [ ] "`stdin`-support" (see Problems/Bugs); We do get crash samples for "`stdin`"-mode, right?!
 - [x] submit classification data into some sort of database
     - [x] basic sqlite3 database support added
@@ -42,9 +41,8 @@ found with [american-fuzzy-lop (afl)](http://lcamtuf.coredump.cx/afl/).
 - [x] afl_multicore: wrapper script that starts multiple afl-instances for parallel fuzzing on multiple cores
     - [x] screen mode
     - [ ] tmux mode (only, if anybody wants to have that)
-    - [ ] afl_multicore_exit/kill for quitting/killing all jobs at once
     - [ ] afl_multicore_watch for checking fuzzer_stats?
-- [ ] afl_resume: wrapper script that resumes multiple afl-instances at once
+- [ ] afl_resume: wrapper script that resumes multiple afl-instances at once (resume an afl_multicore job)
 
 ### The Tools
 
@@ -87,9 +85,20 @@ Sample output:
 ![afl_multicore_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_multicore_sample.png)
 
 
+#### afl\_multikill
+
+Aborts all `afl-fuzz` instances belonging to an active non-interactive `afl_multicore` session.
+Killing `afl_multicore` sessions that were started in `screen` mode is not supported.
+
+Usage:
+
+    $ afl_multikill [-S SESSION]
+        
+
+
 #### afl\_vcrash
 
-afl\_vcrash verifies that afl-fuzz crash samples lead to crashes in the target binary and
+`afl_vcrash` verifies that afl-fuzz crash samples lead to crashes in the target binary and
 optionally removes these samples automatically.
 
 Usage:

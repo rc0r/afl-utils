@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Copyright 2015 @_rc0r <hlt99@blinkenshell.org>
 
@@ -14,5 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-__author__ = 'rc0r (@_rc0r)'
-__version__ = "0.23a"
+import sys
+from afl_utils import afl_multikill
+
+afl_multikill.main(sys.argv)
