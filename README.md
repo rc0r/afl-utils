@@ -1,12 +1,18 @@
 # afl-utils
 
-Some utilities to automate crash sample processing and analysis for crashes
-found with [american-fuzzy-lop (afl)](http://lcamtuf.coredump.cx/afl/).
+afl-utils is a collection of utilities to assist fuzzing with
+[american-fuzzy-lop (afl)](http://lcamtuf.coredump.cx/afl/).
+afl-utils includes tools for:
+
+* automated crash sample processing and analysis for crashes (`afl_collect`, `afl_vcrash`)
+* easy management of parallel (multi-core) fuzzing jobs (`afl_multicore`, `afl_multikill`)
 
 ### Dependencies
 
-* Python3 (with sqlite3)
-* [Exploitable](https://github.com/rc0r/exploitable) (for script execution support)
+* Python3 (with sqlite3 for database support)
+* `nohup` for `afl_multicore` normal mode (I'm using: 8.23 (GNU coreutils))
+* `screen` for `afl_multicore` interactive/screen mode (I'm using: GNU Screen 4.02.01)
+* [Exploitable](https://github.com/rc0r/exploitable) (for gdb script execution support)
 
 ### Problems / Bugs
 
@@ -40,7 +46,7 @@ found with [american-fuzzy-lop (afl)](http://lcamtuf.coredump.cx/afl/).
           [some ideas](https://groups.google.com/forum/#!topic/afl-users/b5v3mY_hy30))
 - [x] afl_multicore: wrapper script that starts multiple afl-instances for parallel fuzzing on multiple cores
     - [x] screen mode
-    - [ ] tmux mode (only, if anybody wants to have that)
+    - [ ] tmux mode (only, if requested explicitly)
     - [ ] afl_multicore_watch for checking fuzzer_stats?
 - [ ] afl_resume: wrapper script that resumes multiple afl-instances at once (resume an afl_multicore job)
 
