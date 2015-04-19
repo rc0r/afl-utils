@@ -28,14 +28,9 @@ afl-utils includes tools for:
   removal).~~ Fixed by using a patched `exploitable.py` that handles `NoThreadRunningError`
   (see [Exploitable](https://github.com/rc0r/exploitable)). **Be sure to use the patched
   version of `exploitable.py`!**
-* The more advanced features like gdb+exploitable script generation and execution as well as
-  crash sample verification *probably will* fail for targets that don't read their input from
-  files (`afl-fuzz` invoked without `-f <filename>`) but from `stdin`. I didn't look into this
-  yet.
 
 ### Feature Ideas / ToDo
 
-- [ ] "`stdin`-support" (see Problems/Bugs); We do get crash samples for "`stdin`"-mode, right?!
 - [x] submit classification data into some sort of database
     - [x] basic sqlite3 database support added
     - [ ] want more db connectors? Drop me a line!

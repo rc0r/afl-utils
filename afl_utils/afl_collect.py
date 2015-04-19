@@ -124,6 +124,10 @@ def generate_crash_sample_list(list_filename, files_collected):
     fd.close()
 
 
+def stdin_mode(target_cmd):
+    return not ("@@" in target_cmd)
+
+
 def generate_gdb_exploitable_script(script_filename, files_collected, target_cmd):
     target_cmd = " ".join(target_cmd)
     target_cmd = target_cmd.split()
@@ -146,9 +150,14 @@ def generate_gdb_exploitable_script(script_filename, files_collected, target_cmd
 
     # fill script with content
     for f in files_collected:
-        run_cmd = "run " + gdb_run_cmd + "\n"
-        run_cmd = run_cmd.replace("@@", f)
         fd.writelines("echo Crash\ sample:\ '%s'\\n\n" % f)
+
+        if not stdin_mode(target_cmd):
+            run_cmd = "run " + gdb_run_cmd + "\n"
+        else:
+            run_cmd = "run " + gdb_run_cmd + "< @@" + "\n"
+
+        run_cmd = run_cmd.replace("@@", f)
         fd.writelines(run_cmd)
         fd.writelines("exploitable\n")
 

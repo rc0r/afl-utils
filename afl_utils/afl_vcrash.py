@@ -20,6 +20,7 @@ import subprocess
 import sys
 
 import afl_utils
+import afl_utils.afl_collect
 
 
 def show_info():
@@ -33,6 +34,8 @@ def verify_samples(crash_samples, target_cmd):
     num_invalid = 0
     cmd_string = " ".join(target_cmd)
     for cs in crash_samples:
+        if afl_utils.afl_collect.stdin_mode(cmd_string):
+            cmd_string += " < @@"
         cmd = cmd_string.replace("@@", cs)
         try:
             v = subprocess.call(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, shell=True, timeout=60)

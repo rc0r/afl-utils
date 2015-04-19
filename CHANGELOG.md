@@ -2,6 +2,7 @@
 
 Release | Description
 :-------:|----
+1.00a | stdin support added to afl_vcrash and afl_collect
 0.23a | afl_multikill added
 0.22a | Screen mode added to afl_multicore
 0.21a | Initial version of afl_multicore added
