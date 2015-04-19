@@ -48,7 +48,7 @@ class sqliteConnector:
             dbcon = lite.connect(self.database_path)
             dbcur = dbcon.cursor()
             dbcur.execute('CREATE TABLE Data (ID INTEGER PRIMARY KEY ASC, Sample text, Classification text, \
-Classification_Description text)')
+Classification_Description text, Hash text)')
 
     def dataset_exists(self, dataset):
         """
@@ -66,9 +66,9 @@ Classification_Description text)')
         cur = con.cursor()
 
         if not output:
-            # check sample
+            # check sample by its name (we could check by hash to avoid dupes in the db)
             qstring = "SELECT * FROM Data WHERE Sample IS ?"
-            cur.execute(qstring, (dataset[0],))
+            cur.execute(qstring, (dataset['sample'],))
             if cur.fetchone() is not None:  # We should only have to pull one.
                 output = True
 
@@ -84,7 +84,7 @@ Classification_Description text)')
         """
         # Just a simple function to write the results to the database.
         con = lite.connect(self.database_path)
-        qstring = "INSERT INTO Data VALUES(NULL, ?, ?, ?)"
+        qstring = "INSERT INTO Data VALUES(NULL, ?, ?, ?, ?)"
         with con:
             cur = con.cursor()
-            cur.execute(qstring, (dataset[0], dataset[1], dataset[2]))
+            cur.execute(qstring, (dataset['sample'], dataset['classification'], dataset['description'], dataset['hash']))

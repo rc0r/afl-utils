@@ -15,4 +15,4 @@ limitations under the License.
 """
 
 __author__ = 'rc0r (@_rc0r)'
-__version__ = "1.00a"
+__version__ = "1.01a"

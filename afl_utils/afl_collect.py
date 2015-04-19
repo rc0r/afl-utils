@@ -185,6 +185,7 @@ def execute_gdb_script(out_dir, script_filename, num_samples):
         "Crash sample: '",
         "Exploitability Classification: ",
         "Short description: ",
+        "Hash: ",
     ]
 
     try:
@@ -206,9 +207,10 @@ def execute_gdb_script(out_dir, script_filename, num_samples):
 
     i = 1
     print("*** GDB+EXPLOITABLE SCRIPT OUTPUT ***")
-    for g in range(0, len(grepped_output)-2, 3):
-        print("[%05d] %s: %s [%s]" % (i, grepped_output[g].ljust(64, '.'), grepped_output[g+2], grepped_output[g+1]))
-        classification_data.append([grepped_output[g], grepped_output[g+2], grepped_output[g+1]])
+    for g in range(0, len(grepped_output)-len(grep_for)+1, len(grep_for)):
+        print("[%05d] %s: %s [%s]" % (i, grepped_output[g].ljust(64, '.'), grepped_output[g+3], grepped_output[g+1]))
+        classification_data.append({'sample': grepped_output[g], 'classification': grepped_output[g+3],
+                                    'description': grepped_output[g+1], 'hash': grepped_output[g+2]})
         i += 1
 
     if i < num_samples:
@@ -280,16 +282,11 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     if args.remove_invalid:
         invalid_num, invalid_samples = afl_vcrash.verify_samples(files_collected, args.target_cmd)
         print("Found %d invalid crash samples. Cleaning up..." % invalid_num)
-        for ci in invalid_samples:
-            # remove all occurrences of invalid sample
-            files_collected = [s for s in files_collected if s != ci]
+
+        # remove all invalid samples from collected files' list
+        files_collected = [s for s in files_collected if s not in invalid_samples]
 
         overall_crash_sample_num -= afl_vcrash.remove_samples(invalid_samples)
-
-    # generate filelist of collected crash samples
-    if args.list_filename:
-        print("Generating crash sample list file %s" % args.list_filename)
-        generate_crash_sample_list(os.path.join(out_dir, args.list_filename), files_collected)
 
     # generate gdb+exploitable script
     if args.gdb_expl_script_file:
@@ -299,13 +296,29 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         # execute gdb+exploitable script
         classification_data = execute_gdb_script(out_dir, args.gdb_expl_script_file, overall_crash_sample_num)
 
+        # de-dupe by exploitable hash
+        seen = set()
+        seen_add = seen.add
+        classification_data_dedupe = [x for x in classification_data if x['hash'] not in seen and not seen_add(x['hash'])]
+
+        # remove dupe samples identified by exploitable hash
+        uninteresting_samples = [os.path.join(out_dir, x['sample']) for x in classification_data
+                                 if x not in classification_data_dedupe]
+        files_collected = [s for s in files_collected if s not in uninteresting_samples]
+
+        remove_count = afl_vcrash.remove_samples(uninteresting_samples)
+        overall_crash_sample_num -= remove_count
+
+        print("%d duplicate samples removed. Will continue with %d remaining samples." % (remove_count,
+                                                                                          overall_crash_sample_num))
+
         # Submit crash classification data into database
         if args.database_file:
             lite_db = con_sqlite.sqliteConnector(args.database_file)
 
             lite_db.init_database()
 
-            for dataset in classification_data:
+            for dataset in classification_data_dedupe:
                 if not lite_db.dataset_exists(dataset):
                     lite_db.insert_dataset(dataset)
 
@@ -319,9 +332,11 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
             uninteresting_samples = []
 
-            for c in classification_data:
-                if c[1] in classification_unexploitable:
-                    uninteresting_samples.append(os.path.join(out_dir, c[0]))
+            for c in classification_data_dedupe:
+                if c['classification'] in classification_unexploitable:
+                    uninteresting_samples.append(os.path.join(out_dir, c['sample']))
+
+            files_collected = [s for s in files_collected if s not in uninteresting_samples]
 
             remove_count = afl_vcrash.remove_samples(uninteresting_samples)
             overall_crash_sample_num -= remove_count
@@ -329,6 +344,11 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
                   (remove_count, overall_crash_sample_num))
     elif args.gdb_script_file:
         generate_gdb_exploitable_script(os.path.join(out_dir, args.gdb_script_file), files_collected, args.target_cmd)
+
+    # generate filelist of collected crash samples
+    if args.list_filename:
+        print("Generating crash sample list file %s" % args.list_filename)
+        generate_crash_sample_list(os.path.join(out_dir, args.list_filename), files_collected)
 
 
 if __name__ == "__main__":

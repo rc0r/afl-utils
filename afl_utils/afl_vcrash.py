@@ -67,6 +67,7 @@ def remove_samples(crash_samples, quiet=True):
     for c in crash_samples:
         if not quiet:
             print(c)
+        #if os.path.isfile(c):
         os.remove(c)
         count += 1
 
