@@ -100,13 +100,13 @@ def collect_crash_samples(sync_dir, fuzzer_instances):
 
 def copy_crash_samples(sync_dir, fuzzer_instances, out_dir):
     crash_sample_num, samples = collect_crash_samples(sync_dir, fuzzer_instances)
-    files_collected = []
+    files_collected = set()
 
     for f in samples:
         for cd in f[1]:
             for c in cd[1]:
                 shutil.copyfile(os.path.join(sync_dir, f[0], cd[0], c), os.path.join(out_dir, "%s:%s" % (f[0], c)))
-                files_collected.append(os.path.join(out_dir, "%s:%s" % (f[0], c)))
+                files_collected.add(os.path.join(out_dir, "%s:%s" % (f[0], c)))
 
     return crash_sample_num, files_collected
 
@@ -214,7 +214,6 @@ def execute_gdb_script(out_dir, script_filename, num_samples):
         i += 1
 
     if i < num_samples:
-        #print("[%05d] %s: INVALID SAMPLE (please remove and run 'gdb -x %s' manually)" % (i, grepped_output[-1].ljust(64, '.'), script_filename))
         print("[%05d] %s: INVALID SAMPLE (Aborting!)" % (i, grepped_output[-1].ljust(64, '.')))
         print("Returned data may be incomplete!")
     print("*** ***************************** ***")
@@ -284,7 +283,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         print("Found %d invalid crash samples. Cleaning up..." % invalid_num)
 
         # remove all invalid samples from collected files' list
-        files_collected = [s for s in files_collected if s not in invalid_samples]
+        files_collected.difference_update(invalid_samples)
 
         overall_crash_sample_num -= afl_vcrash.remove_samples(invalid_samples)
 
@@ -302,9 +301,10 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         classification_data_dedupe = [x for x in classification_data if x['hash'] not in seen and not seen_add(x['hash'])]
 
         # remove dupe samples identified by exploitable hash
-        uninteresting_samples = [os.path.join(out_dir, x['sample']) for x in classification_data
-                                 if x not in classification_data_dedupe]
-        files_collected = [s for s in files_collected if s not in uninteresting_samples]
+        uninteresting_samples = {os.path.join(out_dir, x['sample']) for x in classification_data
+                                 if x not in classification_data_dedupe}
+
+        files_collected.difference_update(uninteresting_samples)
 
         remove_count = afl_vcrash.remove_samples(uninteresting_samples)
         overall_crash_sample_num -= remove_count
@@ -330,13 +330,13 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
                 'UNKNOWN'
             ]
 
-            uninteresting_samples = []
+            uninteresting_samples = set()
 
             for c in classification_data_dedupe:
                 if c['classification'] in classification_unexploitable:
-                    uninteresting_samples.append(os.path.join(out_dir, c['sample']))
+                    uninteresting_samples.add(os.path.join(out_dir, c['sample']))
 
-            files_collected = [s for s in files_collected if s not in uninteresting_samples]
+            files_collected.difference_update(uninteresting_samples)
 
             remove_count = afl_vcrash.remove_samples(uninteresting_samples)
             overall_crash_sample_num -= remove_count
