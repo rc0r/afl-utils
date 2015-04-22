@@ -66,10 +66,13 @@ easy access for further crash analysis. Beyond that `afl_collect` has some more 
 features like invalid crash sample removing (see `afl_vcrash`) as well as generating and
 executing `gdb` scripts that make use of [Exploitable](https://github.com/jfoote/exploitable).
 The purpose of these scripts is to automate crash sample classification (see screenshot below)
-and reduction. Version 1.01a introduced crash sample de-duplication using backtrace hashes
-calculated by exploitable. To use this feature invoke `afl_collect` with `-e <gdb_script>`
-switch for automatic gdb+exploitable script generation and execution. For each backtrace hash
-only a single crash sample file will be kept.  
+and reduction.  
+Version 1.01a introduced crash sample de-duplication using backtrace hashes calculated by
+exploitable. To use this feature invoke `afl_collect` with `-e <gdb_script>` switch for
+automatic gdb+exploitable script generation and execution. For each backtrace hash only a
+single crash sample file will be kept.  
+`afl_collect` is quite slow when operating on large sample sets and using gdb+exploitable
+script execution, so be patient!  
 
 Usage:  
 
@@ -131,14 +134,14 @@ Usage:
   
 ### Problems
 
-* `afl_collect` is quite slow (especially when operating on large sample sets and using
-   gdb+exploitable script execution), so be patient!
 * `afl_vcrash` might miss *some* invalid crash samples. Identification of real crashes is
   hard and needs improvements!
 * `afl_vcrash` identifies *some* crash samples as invalid that are considered valid by
   `afl-fuzz` when run with option `-C`.
-* Tool outputs might get cluttered if core dumps/kernel crash messages are displayed on
+* Tool outputs might get cluttered if core dumps/kernel crash/libc messages are displayed on
   your terminal (see `man core(5)`; workaround anybody?).
+  **Hint:** Redirect `stdout` of `afl_collect`/`afl_vcrash` to some file to afterwards check
+  their outputs!
 * ~~gdb+exploitable script execution will be interrupted when using samples that do not lead
   to actual crashes. `afl_collect` will print the files name causing the trouble (for manual
   removal).~~ Fixed by using a patched `exploitable.py` that handles `NoThreadRunningError`
@@ -150,15 +153,10 @@ Usage:
 - [x] submit classification data into some sort of database
     - [x] basic sqlite3 database support added
     - [ ] want more db connectors? Drop me a line!
-- [ ] auto clean-up of uninteresting crashes
-    - [x] by exploitable classification
-    - [x] de-duping by exploitable backtrace hashes
-    - [ ] through other means of de-duplicating crash samples (might be clever to
-          incorporate this into the crash collection step;
-          [some ideas](https://groups.google.com/forum/#!topic/afl-users/b5v3mY_hy30))
 - [x] afl_multicore: wrapper script that starts multiple afl-instances for parallel fuzzing on multiple cores
     - [x] screen mode
     - [ ] tmux mode (only, if requested explicitly)
-    - [ ] afl_multicore_watch for checking fuzzer_stats (contribution by [@arisada](https://github.com/arisada))?
+    - [ ] afl_multicore_watch/afl_multiplot for checking fuzzer_stats (might get contributed by [@arisada](https://github.com/arisada)?)
 - [ ] afl_resume: wrapper script that resumes multiple afl-instances at once (resume an `afl_multicore` session)
 - [ ] speed improvements for `afl_collect`
+- [ ] We're growing larger, do we need unit tests?

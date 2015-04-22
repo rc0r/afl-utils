@@ -20,7 +20,6 @@ import subprocess
 import sys
 
 import afl_utils
-import afl_utils.afl_collect
 
 
 def show_info():
@@ -29,27 +28,27 @@ def show_info():
     print("")
 
 
-def verify_samples(crash_sample_index, target_cmd):
-    crashes_invalid = set()
+def verify_samples(samples, target_cmd):
+    crashes_invalid = []
 
     cmd_string = " ".join(target_cmd)
 
     if afl_utils.afl_collect.stdin_mode(cmd_string):
         cmd_string += " < @@"
 
-    for cs in crash_sample_index:
-        cmd = cmd_string.replace("@@", cs[0])
+    for cs in samples:
+        cmd = cmd_string.replace("@@", os.path.abspath(cs))
         try:
             v = subprocess.call(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, shell=True, timeout=60)
             # check if process was terminated/stopped by signal
             if not os.WIFSIGNALED(v) and not os.WIFSTOPPED(v):
-                crashes_invalid.add(cs)
+                crashes_invalid.append(cs)
             else:
                 # need extension (add uninteresting signals):
                 # following signals don't indicate hard crashes: 1
                 # os.WTERMSIG(v) ?= v & 0x7f ???
                 if (os.WTERMSIG(v) or os.WSTOPSIG(v)) in [1]:
-                    crashes_invalid.add(cs)
+                    crashes_invalid.append(cs)
                 # debug
                 #else:
                 #    if os.WIFSIGNALED(v):
@@ -72,6 +71,8 @@ def remove_samples(crash_samples, quiet=True):
         count += 1
 
     return count
+
+from afl_utils import afl_collect
 
 
 def main(argv):
@@ -101,18 +102,16 @@ particularly useful when combined with '-r' or '-f'.")
         print("No valid directory provided for <collection_dir>!")
         return
 
-    num_crashes, crash_sample_files = afl_collect.get_crash_samples_from_dir(input_dir, True)
+    num_crashes, crash_samples = afl_collect.get_crash_samples_from_dir(input_dir, True)
 
     print("Verifying %d crash samples..." % num_crashes)
 
-    # convert crash_samples to index format
-    crash_samples = {(f, None) for f in crash_sample_files}
-
     invalid_samples = verify_samples(crash_samples, args.target_command)
 
-    print("Found %d invalid crash samples" % len(invalid_samples))
+    print("Found %d invalid crash samples." % len(invalid_samples))
 
     if args.remove:
+        print("Removing invalid crash samples.")
         remove_samples(invalid_samples, args.quiet)
     elif not args.quiet:
         for ci in invalid_samples:
@@ -120,8 +119,8 @@ particularly useful when combined with '-r' or '-f'.")
 
     # generate filelist of collected crash samples
     if args.list_filename:
-        print("Generating invalid crash sample list file %s" % args.list_filename)
         afl_collect.generate_crash_sample_list(args.list_filename, invalid_samples)
+        print("Generated invalid crash sample list '%s'." % args.list_filename)
 
 
 if __name__ == "__main__":
