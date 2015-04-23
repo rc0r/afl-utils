@@ -21,6 +21,61 @@ import sys
 
 import afl_utils
 
+import threading
+import queue
+
+
+class VerifyThread(threading.Thread):
+    def __init__(self, thread_id, target_cmd, in_queue, out_queue, in_queue_lock, out_queue_lock):
+        threading.Thread.__init__(self)
+        self.id = thread_id
+        self.target_cmd = target_cmd
+        self.in_queue = in_queue
+        self.out_queue = out_queue
+        self.in_queue_lock = in_queue_lock
+        self.out_queue_lock = out_queue_lock
+        self.exit = False
+
+    def run(self):
+        cmd_string = " ".join(self.target_cmd)
+
+        if afl_utils.afl_collect.stdin_mode(cmd_string):
+            cmd_string += " < @@"
+
+        while not self.exit:
+            self.in_queue_lock.acquire()
+            if not self.in_queue.empty():
+                cs = self.in_queue.get()
+                self.in_queue_lock.release()
+
+                cmd = cmd_string.replace("@@", os.path.abspath(cs))
+                try:
+                    v = subprocess.call(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, shell=True, timeout=60)
+                    # check if process was terminated/stopped by signal
+                    if not os.WIFSIGNALED(v) and not os.WIFSTOPPED(v):
+                        self.out_queue_lock.acquire()
+                        self.out_queue.put(cs)
+                        self.out_queue_lock.release()
+                    else:
+                        # need extension (add uninteresting signals):
+                        # following signals don't indicate hard crashes: 1
+                        # os.WTERMSIG(v) ?= v & 0x7f ???
+                        if (os.WTERMSIG(v) or os.WSTOPSIG(v)) in [1]:
+                            self.out_queue_lock.acquire()
+                            self.out_queue.put(cs)
+                            self.out_queue_lock.release()
+                        # debug
+                        #else:
+                        #    if os.WIFSIGNALED(v):
+                        #        print("%s: sig: %d (%d)" % (cs, os.WTERMSIG(v), v))
+                        #    elif os.WIFSTOPPED(v):
+                        #        print("%s: sig: %d (%d)" % (cs, os.WSTOPSIG(v), v))
+                except Exception:
+                    pass
+            else:
+                self.in_queue_lock.release()
+                self.exit = True
+
 
 def show_info():
     print("afl_vcrash %s by %s" % (afl_utils.__version__, afl_utils.__author__))
@@ -28,35 +83,35 @@ def show_info():
     print("")
 
 
-def verify_samples(samples, target_cmd):
+def verify_samples(num_threads, samples, target_cmd):
+    in_queue_lock = threading.Lock()
+    out_queue_lock = threading.Lock()
+    in_queue = queue.Queue(len(samples))
+    out_queue = queue.Queue(len(samples))
+
+    # fill input queue with samples
+    in_queue_lock.acquire()
+    for s in samples:
+        in_queue.put(s)
+    in_queue_lock.release()
+
+    thread_list = []
+
+    for i in range(0, num_threads, 1):
+        t = VerifyThread(i, target_cmd, in_queue, out_queue, in_queue_lock, out_queue_lock)
+        thread_list.append(t)
+        t.start()
+
+    for t in thread_list:
+        t.join()
+
     crashes_invalid = []
 
-    cmd_string = " ".join(target_cmd)
-
-    if afl_utils.afl_collect.stdin_mode(cmd_string):
-        cmd_string += " < @@"
-
-    for cs in samples:
-        cmd = cmd_string.replace("@@", os.path.abspath(cs))
-        try:
-            v = subprocess.call(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, shell=True, timeout=60)
-            # check if process was terminated/stopped by signal
-            if not os.WIFSIGNALED(v) and not os.WIFSTOPPED(v):
-                crashes_invalid.append(cs)
-            else:
-                # need extension (add uninteresting signals):
-                # following signals don't indicate hard crashes: 1
-                # os.WTERMSIG(v) ?= v & 0x7f ???
-                if (os.WTERMSIG(v) or os.WSTOPSIG(v)) in [1]:
-                    crashes_invalid.append(cs)
-                # debug
-                #else:
-                #    if os.WIFSIGNALED(v):
-                #        print("%s: sig: %d (%d)" % (cs, os.WTERMSIG(v), v))
-                #    elif os.WIFSTOPPED(v):
-                #        print("%s: sig: %d (%d)" % (cs, os.WSTOPSIG(v), v))
-        except Exception:
-            pass
+    # read invalid samples from output queue
+    out_queue_lock.acquire()
+    while not out_queue.empty():
+        crashes_invalid.append(out_queue.get())
+    out_queue_lock.release()
 
     return crashes_invalid
 
@@ -79,7 +134,7 @@ def main(argv):
     show_info()
 
     parser = argparse.ArgumentParser(description="afl-vcrash verifies that afl-fuzz crash samples lead to crashes in \
-the target binary.", usage="afl_vcrash [-h] [-f LIST_FILENAME] [-q] [-r] collection_dir target_command \
+the target binary.", usage="afl_vcrash [-f LIST_FILENAME] [-h] [-j THREADS] [-q] [-r] collection_dir target_command \
 [target_command_args]")
 
     parser.add_argument("collection_dir",
@@ -88,6 +143,9 @@ the target binary.", usage="afl_vcrash [-h] [-f LIST_FILENAME] [-q] [-r] collect
 options. Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     parser.add_argument("-f", "--filelist", dest="list_filename", default=None,
                         help="Writes all crash sample file names that do not lead to crashes into a file.")
+    parser.add_argument("-j", "--threads", dest="num_threads", default=1,
+                        help="Enable parallel verification by specifying the number of threads afl_vcrash \
+will utilize.")
     parser.add_argument("-q", "--quiet", dest="quiet", action="store_const", const=True, default=False,
                         help="Suppress output of crash sample file names that do not lead to crashes. This is \
 particularly useful when combined with '-r' or '-f'.")
@@ -106,7 +164,10 @@ particularly useful when combined with '-r' or '-f'.")
 
     print("Verifying %d crash samples..." % num_crashes)
 
-    invalid_samples = verify_samples(crash_samples, args.target_command)
+    #print(crash_samples)
+    #return
+
+    invalid_samples = verify_samples(int(args.num_threads), crash_samples, args.target_command)
 
     print("Found %d invalid crash samples." % len(invalid_samples))
 

@@ -250,7 +250,7 @@ def main(argv):
     parser = argparse.ArgumentParser(description="afl_collect copies all crash sample files from an afl sync dir used \
 by multiple fuzzers when fuzzing in parallel into a single location providing easy access for further crash analysis.",
                                      usage="afl_collect [-d DATABASE] [-e|-g GDB_EXPL_SCRIPT_FILE] [-f LIST_FILENAME]\n \
-[-h] [-r] [-rr] sync_dir collection_dir target_cmd")
+[-h] [-j THREADS] [-r] [-rr] sync_dir collection_dir target_cmd")
 
     parser.add_argument("sync_dir", help="afl synchronisation directory crash samples  will be collected from.")
     parser.add_argument("collection_dir",
@@ -267,6 +267,8 @@ classification. (Like option '-g', plus script execution.)",
     parser.add_argument("-g", "--generate-gdb-script", dest="gdb_script_file",
                         help="Generate gdb script to run 'exploitable.py' on all collected crash samples. Generated \
 script will be placed into collection directory.", default=None)
+    parser.add_argument("-j", "--threads", dest="num_threads", default=1,
+                        help="Enable parallel analysis by specifying the number of threads afl_collect will utilize.")
     parser.add_argument("-r", "--remove-invalid", dest="remove_invalid", action="store_const", const=True,
                         default=False, help="Verify collected crash samples and remove samples that do not lead to \
 crashes (runs 'afl_vcrash.py -r' on collection directory). This step is done prior to any script file \
@@ -303,7 +305,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
     if args.remove_invalid:
         from afl_utils import afl_vcrash
-        invalid_samples = afl_vcrash.verify_samples(sample_index.inputs(), args.target_cmd)
+        invalid_samples = afl_vcrash.verify_samples(int(args.num_threads), sample_index.inputs(), args.target_cmd)
 
         # remove invalid samples from sample index
         sample_index.remove_inputs(invalid_samples)

@@ -2,6 +2,7 @@
 
 Release | Description
 :-------:|----
+1.03a | Parallel sample verification support added to afl_vcrash
 1.02a | Optimizations for afl_collect to reduce/eliminate file cp/rm operations
 1.01a | De-duplication via exploitable backtrace hashes added to afl_collect 
 1.00a | stdin support added to afl_vcrash and afl_collect
