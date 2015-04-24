@@ -16,65 +16,13 @@ limitations under the License.
 
 import argparse
 import os
-import subprocess
 import sys
 
 import afl_utils
+from afl_utils import AflThread
 
 import threading
 import queue
-
-
-class VerifyThread(threading.Thread):
-    def __init__(self, thread_id, target_cmd, in_queue, out_queue, in_queue_lock, out_queue_lock):
-        threading.Thread.__init__(self)
-        self.id = thread_id
-        self.target_cmd = target_cmd
-        self.in_queue = in_queue
-        self.out_queue = out_queue
-        self.in_queue_lock = in_queue_lock
-        self.out_queue_lock = out_queue_lock
-        self.exit = False
-
-    def run(self):
-        cmd_string = " ".join(self.target_cmd)
-
-        if afl_utils.afl_collect.stdin_mode(cmd_string):
-            cmd_string += " < @@"
-
-        while not self.exit:
-            self.in_queue_lock.acquire()
-            if not self.in_queue.empty():
-                cs = self.in_queue.get()
-                self.in_queue_lock.release()
-
-                cmd = cmd_string.replace("@@", os.path.abspath(cs))
-                try:
-                    v = subprocess.call(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, shell=True, timeout=60)
-                    # check if process was terminated/stopped by signal
-                    if not os.WIFSIGNALED(v) and not os.WIFSTOPPED(v):
-                        self.out_queue_lock.acquire()
-                        self.out_queue.put(cs)
-                        self.out_queue_lock.release()
-                    else:
-                        # need extension (add uninteresting signals):
-                        # following signals don't indicate hard crashes: 1
-                        # os.WTERMSIG(v) ?= v & 0x7f ???
-                        if (os.WTERMSIG(v) or os.WSTOPSIG(v)) in [1]:
-                            self.out_queue_lock.acquire()
-                            self.out_queue.put(cs)
-                            self.out_queue_lock.release()
-                        # debug
-                        #else:
-                        #    if os.WIFSIGNALED(v):
-                        #        print("%s: sig: %d (%d)" % (cs, os.WTERMSIG(v), v))
-                        #    elif os.WIFSTOPPED(v):
-                        #        print("%s: sig: %d (%d)" % (cs, os.WSTOPSIG(v), v))
-                except Exception:
-                    pass
-            else:
-                self.in_queue_lock.release()
-                self.exit = True
 
 
 def show_info():
@@ -98,7 +46,7 @@ def verify_samples(num_threads, samples, target_cmd):
     thread_list = []
 
     for i in range(0, num_threads, 1):
-        t = VerifyThread(i, target_cmd, in_queue, out_queue, in_queue_lock, out_queue_lock)
+        t = AflThread.VerifyThread(i, target_cmd, in_queue, out_queue, in_queue_lock, out_queue_lock)
         thread_list.append(t)
         t.start()
 
@@ -163,9 +111,6 @@ particularly useful when combined with '-r' or '-f'.")
     num_crashes, crash_samples = afl_collect.get_crash_samples_from_dir(input_dir, True)
 
     print("Verifying %d crash samples..." % num_crashes)
-
-    #print(crash_samples)
-    #return
 
     invalid_samples = verify_samples(int(args.num_threads), crash_samples, args.target_command)
 

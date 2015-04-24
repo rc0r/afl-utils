@@ -17,12 +17,14 @@ limitations under the License.
 import argparse
 import os
 import shutil
-import subprocess
 import sys
 
 import afl_utils
-from afl_utils import SampleIndex
+from afl_utils import SampleIndex, AflThread
 from db_connectors import con_sqlite
+
+import threading
+import queue
 
 
 # afl-collect global settings
@@ -138,18 +140,18 @@ def stdin_mode(target_cmd):
     return not ("@@" in target_cmd)
 
 
-def generate_gdb_exploitable_script(script_filename, sample_index, target_cmd, intermediate=False):
+def generate_gdb_exploitable_script(script_filename, sample_index, target_cmd, script_id, intermediate=False):
     target_cmd = " ".join(target_cmd)
     target_cmd = target_cmd.split()
     gdb_target_binary = target_cmd[0]
     gdb_run_cmd = " ".join(target_cmd[1:])
 
-    script_filename = os.path.abspath(script_filename)
-
     if not intermediate:
+        script_filename = os.path.abspath(script_filename)
         print("Generating final gdb+exploitable script '%s' for %d samples..." % (script_filename,
                                                                                   len(sample_index.outputs())))
     else:
+        script_filename = os.path.abspath("%s.%d" % (script_filename, script_id))
         print("Generating intermediate gdb+exploitable script '%s' for %d samples..." %
               (script_filename, len(sample_index.outputs())))
 
@@ -192,54 +194,61 @@ def generate_gdb_exploitable_script(script_filename, sample_index, target_cmd, i
 
 
 # ok, this needs improvement!!!
-def execute_gdb_script(out_dir, script_filename, num_samples):
+def execute_gdb_script(out_dir, script_filename, num_samples, num_threads):
     classification_data = []
-    print("Executing gdb+exploitable script '%s'..." % script_filename)
 
     out_dir = os.path.expanduser(out_dir) + "/"
-
-    script_args = [
-        str(gdb_binary),
-        "-x",
-        str(os.path.join(out_dir, script_filename)),
-    ]
 
     grep_for = [
         "Crash sample: '",
         "Exploitability Classification: ",
         "Short description: ",
         "Hash: ",
-    ]
+        ]
 
-    try:
-        script_output = subprocess.check_output(" ".join(script_args), shell=True, stderr=subprocess.DEVNULL,
-                                                universal_newlines=True)
-    except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as e:
-        script_output = e.output
+    out_queue_lock = threading.Lock()
+    out_queue = queue.Queue()
 
-    script_output = script_output.splitlines()
+    thread_list = []
+
+    for n in range(0, num_threads, 1):
+        script_args = [
+            str(gdb_binary),
+            "-x",
+            str(os.path.join(out_dir, "%s.%d" % (script_filename, n))),
+        ]
+
+        t = AflThread.GdbThread(n, script_args, out_dir, grep_for, out_queue, out_queue_lock)
+        thread_list.append(t)
+        print("Executing gdb+exploitable script '%s.%d'..." % (script_filename, n))
+        t.start()
+
+    for t in thread_list:
+        t.join()
 
     grepped_output = []
 
-    for line in script_output:
-        matching = [line.replace(g, '') for g in grep_for if g in line]
-        matching = " ".join(matching).strip('\' ')
-        matching = matching.replace(out_dir, '')
-        if len(matching) > 0:
-            grepped_output.append(matching)
+    out_queue_lock.acquire()
+    while not out_queue.empty():
+        grepped_output.append(out_queue.get())
+    out_queue_lock.release()
 
     i = 1
     print("*** GDB+EXPLOITABLE SCRIPT OUTPUT ***")
     for g in range(0, len(grepped_output)-len(grep_for)+1, len(grep_for)):
         print("[%05d] %s: %s [%s]" % (i, grepped_output[g].ljust(64, '.'), grepped_output[g+3], grepped_output[g+1]))
-        classification_data.append({'sample': grepped_output[g], 'classification': grepped_output[g+3], 'description': grepped_output[g+1],
-                                    'hash': grepped_output[g+2]})
+        classification_data.append({'sample': grepped_output[g], 'classification': grepped_output[g+3],
+                                    'description': grepped_output[g+1], 'hash': grepped_output[g+2]})
         i += 1
 
     if i < num_samples:
         print("[%05d] %s: INVALID SAMPLE (Aborting!)" % (i, grepped_output[-1].ljust(64, '.')))
         print("Returned data may be incomplete!")
     print("*** ***************************** ***")
+
+    # remove intermediate gdb scripts...
+    for n in range(0, num_threads, 1):
+        os.remove(os.path.join(out_dir, "%s.%d" % (script_filename, n)))
 
     return classification_data
 
@@ -314,11 +323,15 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     files_collected = []
     # generate gdb+exploitable script
     if args.gdb_expl_script_file:
-        generate_gdb_exploitable_script(os.path.join(out_dir, args.gdb_expl_script_file), sample_index, args.target_cmd,
-                                        intermediate=True)
+        divided_index = sample_index.divide(int(args.num_threads))
+
+        for i in range(0, int(args.num_threads), 1):
+            generate_gdb_exploitable_script(os.path.join(out_dir, args.gdb_expl_script_file), divided_index[i],
+                                            args.target_cmd, i, intermediate=True)
 
         # execute gdb+exploitable script
-        classification_data = execute_gdb_script(out_dir, args.gdb_expl_script_file, len(sample_index.inputs()))
+        classification_data = execute_gdb_script(out_dir, args.gdb_expl_script_file, len(sample_index.inputs()),
+                                                 int(args.num_threads))
 
         # de-dupe by exploitable hash
         seen = set()
@@ -356,7 +369,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         files_collected = copy_crash_samples(sample_index)
         # generate output gdb script
         generate_gdb_exploitable_script(os.path.join(out_dir, args.gdb_expl_script_file), sample_index,
-                                        args.target_cmd)
+                                        args.target_cmd, 0)
 
         # Submit crash classification data into database
         if args.database_file:

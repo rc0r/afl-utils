@@ -18,9 +18,9 @@ import os
 
 
 class SampleIndex:
-    def __init__(self, output_dir):
+    def __init__(self, output_dir, index=[]):
         self.output_dir = os.path.abspath(output_dir)
-        self.index = []
+        self.index = index
 
     def __generate_output__(self, fuzzer, input_file):
         return "%s:%s" % (fuzzer, os.path.basename(input_file))
@@ -31,6 +31,20 @@ class SampleIndex:
 
     def __return_values__(self, key):
         return [v[key] for v in self.index]
+
+    def divide(self, count):
+        """
+        Divide sample index into approx. equally sized parts.
+
+        :param count:   Number of parts
+        :return:        List containing divided sample indexes
+        """
+        indexes = [self.index[i::count] for i in range(count)]
+        sample_indexes = []
+        for i in indexes:
+            sample_indexes.append(SampleIndex(self.output_dir, i))
+
+        return sample_indexes
 
     def add(self, fuzzer, input_file):
         self.index.append({

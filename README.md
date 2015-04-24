@@ -48,7 +48,7 @@ prefer to use a release version, run:
 
 For example:
 
-    $ git checkout v1.01a
+    $ git checkout v1.04a
 
 If necessary make the afl-utils scripts in the root dir executable! Now you're
 good to start:
