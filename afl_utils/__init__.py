@@ -14,5 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-__author__ = 'rc0r (@_rc0r)'
+__author__ = 'rc0r <hlt99@blinkenshell.org> # @_rc0r'
 __version__ = "1.04a"

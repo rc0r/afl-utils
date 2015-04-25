@@ -206,8 +206,7 @@ def execute_gdb_script(out_dir, script_filename, num_samples, num_threads):
         "Hash: ",
         ]
 
-    out_queue_lock = threading.Lock()
-    out_queue = queue.Queue()
+    queue_list = []
 
     thread_list = []
 
@@ -217,6 +216,10 @@ def execute_gdb_script(out_dir, script_filename, num_samples, num_threads):
             "-x",
             str(os.path.join(out_dir, "%s.%d" % (script_filename, n))),
         ]
+
+        out_queue = queue.Queue()
+        out_queue_lock = threading.Lock()
+        queue_list.append((out_queue, out_queue_lock))
 
         t = AflThread.GdbThread(n, script_args, out_dir, grep_for, out_queue, out_queue_lock)
         thread_list.append(t)
@@ -228,10 +231,11 @@ def execute_gdb_script(out_dir, script_filename, num_samples, num_threads):
 
     grepped_output = []
 
-    out_queue_lock.acquire()
-    while not out_queue.empty():
-        grepped_output.append(out_queue.get())
-    out_queue_lock.release()
+    for q in queue_list:
+        q[1].acquire()
+        while not q[0].empty():
+            grepped_output.append(q[0].get())
+        q[1].release()
 
     i = 1
     print("*** GDB+EXPLOITABLE SCRIPT OUTPUT ***")
