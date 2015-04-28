@@ -16,7 +16,7 @@ I might be adding a separate branch for multi-threaded afl-utils releases in the
 
 ### Dependencies
 
-* Python3
+* Python3.4
 * Python `sqlite3` package for database support
 * `nohup` for `afl_multicore` normal mode (I'm using: 8.23 (GNU coreutils))
 * `screen` for `afl_multicore` interactive/screen mode (I'm using: GNU Screen 4.02.01)
