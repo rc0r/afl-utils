@@ -146,7 +146,10 @@ An `afl_multicore` session can (and should!) easily be aborted with the help of
 If you prefer to work with afl's UI instead of background processes and stat files, screen
 mode is for you. "Interactive" screen mode can be enabled using the `-i` switch. In order to
 use it, start `afl_multicore` from **inside** a `screen` session. A new screen window is created
-for every afl instance. Though screen mode is not supported by `afl_multikill`.
+for every afl instance. Though screen mode is not supported by `afl_multikill`.  
+
+**Tip:** `afl_multicore` can be used to resume a parallel fuzzing session. Just provide "-" as
+input dir and leave all other parameters as in the initiating invocation of the fuzzing session.
 
 Usage:
 
@@ -272,9 +275,6 @@ either via Github or directly to `hlt99 at blinkenshell dot org`!
     - [x] screen mode
     - [ ] tmux mode (only, if requested explicitly)
     - [ ] afl_multicore_watch/afl_multiplot for checking fuzzer_stats (might get contributed by [@arisada](https://github.com/arisada)?)
-- [ ] afl_resume: wrapper script that resumes multiple afl-instances at once (resume an `afl_multicore` session)
-- [x] speed improvements for `afl_collect` (multi-threading added in v1.04a)
-- [x] speed improvements for `afl_vcrash` (multi-threading added in v1.03a)
 - [ ] We're growing larger, do we need unit tests?
 
 

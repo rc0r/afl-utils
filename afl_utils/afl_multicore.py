@@ -129,7 +129,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
             print("When using screen mode, please run afl_multicore from inside a screen session!")
             return
 
-        setup_screen(args.slave_only, args.slave_number)
+        setup_screen(args.slave_only, int(args.slave_number))
     else:
         pid_list = []
 
