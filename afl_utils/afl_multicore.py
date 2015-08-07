@@ -93,15 +93,17 @@ def main(argv):
 
     parser = argparse.ArgumentParser(description="afl_multicore starts several parallel fuzzing jobs, that are run \
 in the background. For fuzzer stats see 'sync_dir/SESSION###/fuzzer_stats'!",
-                                     usage="afl_multicore [-h] [-E] [-i] [-j SLAVE_NUMBER] [-S SESSION] [-s] [-v]\n\
-    input_dir sync_dir target_cmd")
+                                     usage="afl_multicore [-h] [-a afl_args] [-e env_vars] [-i] [-j SLAVE_NUMBER]\n\
+    [-S SESSION] [-s] [-v] input_dir sync_dir target_cmd")
 
     parser.add_argument("input_dir",
                         help="Input directory that holds the initial test cases (afl-fuzz's -i option).")
     parser.add_argument("sync_dir", help="afl synchronisation directory that will hold fuzzer output files \
 (afl-fuzz's -o option).")
-    parser.add_argument("-E", "--env-vars", dest="env_vars", help="(Screen mode only) Comma separated list of  \
-environment variable names and values for newly created screen windows. Example: --env-vars \
+    parser.add_argument("-a", "--afl-args", dest="afl_args", help="afl-fuzz specific parameters. Enclose in quotes, \
+-i and -o must not be specified!")
+    parser.add_argument("-e", "--env-vars", dest="env_vars", help="(Screen mode only) Comma separated list of  \
+environment variable names and values for newly created screen windows. Enclose in quotes! Example: --env-vars \
 \"AFL_PERSISTENT=1,LD_PRELOAD=/path/to/yourlib.so\"")
     parser.add_argument("-i", "--screen", dest="screen", action="store_const", const=True,
                         default=False, help="Interactive screen mode. Starts every afl instance in a separate screen \
@@ -156,9 +158,15 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
     if not args.slave_only:
         # compile command-line for master
-        # $ afl-fuzz -i <input_dir> -o <sync_dir> -M <session_name>.000 </path/to/target.bin> <target_args>
-        master_cmd = "%s -i %s -o %s -M %s000 -- %s" % (afl_path, input_dir, sync_dir, args.session,
-                                                        " ".join(args.target_cmd))
+        if not args.afl_args:
+            # $ afl-fuzz -i <input_dir> -o <sync_dir> -M <session_name>.000 </path/to/target.bin> <target_args>
+            master_cmd = "%s -i %s -o %s -M %s000 -- %s" % (afl_path, input_dir, sync_dir, args.session,
+                                                            " ".join(args.target_cmd))
+        else:
+            # $ afl-fuzz -i <input_dir> -o <sync_dir> -M <session_name>.000 <afl_args> \
+            #   </path/to/target.bin> <target_args>
+            master_cmd = "%s -i %s -o %s -M %s000 %s -- %s" % (afl_path, input_dir, sync_dir, args.session,
+                                                               args.afl_args, " ".join(args.target_cmd))
         print("Starting master instance...")
 
         if not args.screen:
@@ -175,11 +183,17 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
             print("Master 000 started inside new screen window")
 
     # compile command-line for slaves
-    # $ afl-fuzz -i <input_dir> -o <sync_dir> -S <session_name>.NNN </path/to/target.bin> <target_args>
     print("Starting slave instances...")
     for i in range(1, int(args.slave_number)+1, 1):
-        slave_cmd = "%s -i %s -o %s -S %s%03d -- %s" % (afl_path, input_dir, sync_dir, args.session, i,
-                                                        " ".join(args.target_cmd))
+        if not args.afl_args:
+            # $ afl-fuzz -i <input_dir> -o <sync_dir> -S <session_name>.NNN </path/to/target.bin> <target_args>
+            slave_cmd = "%s -i %s -o %s -S %s%03d -- %s" % (afl_path, input_dir, sync_dir, args.session, i,
+                                                            " ".join(args.target_cmd))
+        else:
+            # $ afl-fuzz -i <input_dir> -o <sync_dir> -S <session_name>.NNN <afl_args> \
+            #   </path/to/target.bin> <target_args>
+            slave_cmd = "%s -i %s -o %s -S %s%03d %s -- %s" % (afl_path, input_dir, sync_dir, args.session, i,
+                                                               args.afl_args, " ".join(args.target_cmd))
 
         if not args.screen:
             if not args.verbose:

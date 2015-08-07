@@ -157,8 +157,8 @@ input dir and leave all other parameters as in the initiating invocation of the 
 
 Usage:
 
-    afl_multicore [-h] [-i] [-j SLAVE_NUMBER] [-S SESSION] [-s] [-v] input_dir
-                  sync_dir target_cmd
+    afl_multicore [-h] [-a afl_args] [-e env_vars] [-i] [-j SLAVE_NUMBER]
+                  [-S SESSION] [-s] [-v] input_dir sync_dir target_cmd
 
     afl_multicore starts several parallel fuzzing jobs, that are run in the
     background. For fuzzer stats see 'sync_dir/SESSION###/fuzzer_stats'!
@@ -174,10 +174,13 @@ Usage:
 
     optional arguments:
       -h, --help            show this help message and exit
-      -E ENV_VARS, --env-vars ENV_VARS
+      -a AFL_ARGS, --afl-args AFL_ARGS
+                            afl-fuzz specific parameters. Enclose in quotes, -i
+                            and -o must not be specified!
+      -e ENV_VARS, --env-vars ENV_VARS
                             (Screen mode only) Comma separated list of environment
                             variable names and values for newly created screen
-                            windows. Example: --env-vars
+                            windows. Enclose in quotes! Example: --env-vars
                             "AFL_PERSISTENT=1,LD_PRELOAD=/path/to/yourlib.so"
       -i, --screen          Interactive screen mode. Starts every afl instance
                             in a separate screen window. Run from inside screen
@@ -189,7 +192,7 @@ Usage:
                             outputs will be written to 'sync_dir/SESSION000'
                             (Default='SESSION').
       -s, --slave-only      Slave-only mode, do not start a master instance
-      (Default: off).
+                            (Default: off).
       -v, --verbose         For debugging purposes do not redirect stderr and
                             stdout of the created subprocesses to /dev/null
                             (Default: off). Check 'nohup.out' for further outputs.
