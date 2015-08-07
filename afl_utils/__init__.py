@@ -15,4 +15,4 @@ limitations under the License.
 """
 
 __author__ = 'rc0r <hlt99@blinkenshell.org> # @_rc0r'
-__version__ = "1.05a"
+__version__ = "1.06a"
