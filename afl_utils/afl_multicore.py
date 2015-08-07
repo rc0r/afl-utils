@@ -64,7 +64,17 @@ def check_screen():
     return inside_screen
 
 
-def setup_screen(slave_only, slave_num):
+def setup_screen_env(env_tuple):
+    screen_env_cmd = ["screen", "-X", "setenv", env_tuple[0], env_tuple[1]]
+    subprocess.Popen(screen_env_cmd)
+
+
+def setup_screen(slave_only, slave_num, env_list):
+    if env_list:
+        # set environment variables in initializer window
+        for env_tuple in env_list:
+            setup_screen_env(env_tuple)
+
     windows = slave_num
 
     if not slave_only:
@@ -83,13 +93,16 @@ def main(argv):
 
     parser = argparse.ArgumentParser(description="afl_multicore starts several parallel fuzzing jobs, that are run \
 in the background. For fuzzer stats see 'sync_dir/SESSION###/fuzzer_stats'!",
-                                     usage="afl_multicore [-h] [-i] [-j SLAVE_NUMBER] [-S SESSION] [-s] [-v] input_dir\n \
-sync_dir target_cmd")
+                                     usage="afl_multicore [-h] [-E] [-i] [-j SLAVE_NUMBER] [-S SESSION] [-s] [-v]\n\
+    input_dir sync_dir target_cmd")
 
     parser.add_argument("input_dir",
                         help="Input directory that holds the initial test cases (afl-fuzz's -i option).")
     parser.add_argument("sync_dir", help="afl synchronisation directory that will hold fuzzer output files \
 (afl-fuzz's -o option).")
+    parser.add_argument("-E", "--env-vars", dest="env_vars", help="(Screen mode only) Comma separated list of  \
+environment variable names and values for newly created screen windows. Example: --env-vars \
+\"AFL_PERSISTENT=1,LD_PRELOAD=/path/to/yourlib.so\"")
     parser.add_argument("-i", "--screen", dest="screen", action="store_const", const=True,
                         default=False, help="Interactive screen mode. Starts every afl instance in a separate screen \
 window. Run from inside screen (Default: off)!")
@@ -129,19 +142,29 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
             print("When using screen mode, please run afl_multicore from inside a screen session!")
             return
 
-        setup_screen(args.slave_only, int(args.slave_number))
+        env_list = None
+        if args.env_vars:
+            raw_env_list = args.env_vars.split(",")
+            env_list = []
+            for expr in raw_env_list:
+                env_tuple = tuple(expr.split("="))
+                env_list.append(env_tuple)
+
+        setup_screen(args.slave_only, int(args.slave_number), env_list)
     else:
         pid_list = []
 
     if not args.slave_only:
         # compile command-line for master
         # $ afl-fuzz -i <input_dir> -o <sync_dir> -M <session_name>.000 </path/to/target.bin> <target_args>
-        master_cmd = "%s -i %s -o %s -M %s000 -- %s" % (afl_path, input_dir, sync_dir, args.session, " ".join(args.target_cmd))
+        master_cmd = "%s -i %s -o %s -M %s000 -- %s" % (afl_path, input_dir, sync_dir, args.session,
+                                                        " ".join(args.target_cmd))
         print("Starting master instance...")
 
         if not args.screen:
             if not args.verbose:
-                master = subprocess.Popen(" ".join(['nohup', master_cmd]).split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                master = subprocess.Popen(" ".join(['nohup', master_cmd]).split(), stdout=subprocess.DEVNULL,
+                                          stderr=subprocess.DEVNULL)
             else:
                 master = subprocess.Popen(" ".join(['nohup', master_cmd]).split())
             pid_list.append(master.pid)
@@ -155,11 +178,13 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     # $ afl-fuzz -i <input_dir> -o <sync_dir> -S <session_name>.NNN </path/to/target.bin> <target_args>
     print("Starting slave instances...")
     for i in range(1, int(args.slave_number)+1, 1):
-        slave_cmd = "%s -i %s -o %s -S %s%03d -- %s" % (afl_path, input_dir, sync_dir, args.session, i, " ".join(args.target_cmd))
+        slave_cmd = "%s -i %s -o %s -S %s%03d -- %s" % (afl_path, input_dir, sync_dir, args.session, i,
+                                                        " ".join(args.target_cmd))
 
         if not args.screen:
             if not args.verbose:
-                slave = subprocess.Popen(" ".join(['nohup', slave_cmd]).split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                slave = subprocess.Popen(" ".join(['nohup', slave_cmd]).split(), stdout=subprocess.DEVNULL,
+                                         stderr=subprocess.DEVNULL)
             else:
                 slave = subprocess.Popen(" ".join(['nohup', slave_cmd]).split())
             pid_list.append(slave.pid)

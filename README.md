@@ -147,6 +147,10 @@ If you prefer to work with afl's UI instead of background processes and stat fil
 mode is for you. "Interactive" screen mode can be enabled using the `-i` switch. In order to
 use it, start `afl_multicore` from **inside** a `screen` session. A new screen window is created
 for every afl instance. Though screen mode is not supported by `afl_multikill`.  
+**Attention:** When using screen mode be sure to set necessary environment variables using the
+`--env-vars` parameter of `afl_multicore`! Alternatively run `screen -X setenv <var_name> <var_value>`
+ from inside `screen` before running `afl_multicore`. Both ways the environment is inherited
+ by all subsequently created screen windows.
 
 **Tip:** `afl_multicore` can be used to resume a parallel fuzzing session. Just provide "-" as
 input dir and leave all other parameters as in the initiating invocation of the fuzzing session.
@@ -170,6 +174,11 @@ Usage:
 
     optional arguments:
       -h, --help            show this help message and exit
+      -E ENV_VARS, --env-vars ENV_VARS
+                            (Screen mode only) Comma separated list of environment
+                            variable names and values for newly created screen
+                            windows. Example: --env-vars
+                            "AFL_PERSISTENT=1,LD_PRELOAD=/path/to/yourlib.so"
       -i, --screen          Interactive screen mode. Starts every afl instance
                             in a separate screen window. Run from inside screen
                             (Default: off)!

@@ -2,6 +2,8 @@
 
 Release | Description
 :-------:|----
+1.05a | Added flag `--env-vars` to afl_multicore to set environment variables in all windows when
+      | using interactive screen mode.
 1.04a | Multi-threaded gdb script execution added
 1.03a | Parallel sample verification support added to afl_vcrash
 1.02a | Optimizations for afl_collect to reduce/eliminate file cp/rm operations
