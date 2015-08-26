@@ -2,6 +2,7 @@
 
 Release | Description
 :-------:|----
+1.07a | Minor afl_collect and afl_multikill bugs fixed
 1.06a | Added flag `--afl-args` to afl_multicore to set custom afl command line options
 1.05a | Added flag `--env-vars` to afl_multicore to set environment variables in all windows when using interactive screen mode
 1.04a | Multi-threaded gdb script execution added

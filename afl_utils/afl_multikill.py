@@ -33,8 +33,11 @@ def kill_session(session):
         pid_list = f.readlines()
 
         for pid in pid_list:
-            print("Killing job with PID %s" % pid.strip('\r\n'))
-            os.kill(int(pid), 9)
+            try:
+                print("Killing job with PID %s" % pid.strip('\r\n'))
+                os.kill(int(pid), 9)
+            except ProcessLookupError:
+                print(" Warning: Process with PID %s not found!" % (pid.strip('\r\n')))
 
         f.close()
         os.remove("/tmp/afl_multicore.PID.%s" % session)
