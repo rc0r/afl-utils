@@ -288,7 +288,7 @@ crashes (runs 'afl_vcrash.py -r' on collection directory). This step is done pri
 or file list generation/execution.")
     parser.add_argument("-rr", "--remove-unexploitable", dest="remove_unexploitable", action="store_const", const=True,
                         default=False, help="Remove crash samples that have an exploitable classification of \
-'NOT_EXPLOITABLE', 'PROBABLY_NOT_EXPLOITABLE' or 'UNKNOWN'. Sample file removal will take place after gdb+exploitable \
+'NOT_EXPLOITABLE' or 'PROBABLY_NOT_EXPLOITABLE'. Sample file removal will take place after gdb+exploitable \
 script execution. Has no effect without '-e'.")
     parser.add_argument("target_cmd", nargs="+", help="Path to the target binary and its command line arguments. \
 Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
@@ -354,12 +354,11 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         print("Removed %d duplicate samples from index. Will continue with %d remaining samples." %
               (len(uninteresting_samples), len(sample_index.index)))
 
-        # remove crash samples that are classified uninteresting/unknown
+        # remove crash samples that are classified uninteresting
         if args.remove_unexploitable:
             classification_unexploitable = [
                 'NOT_EXPLOITABLE',
                 'PROBABLY_NOT_EXPLOITABLE',
-                'UNKNOWN'
             ]
 
             uninteresting_samples = []
