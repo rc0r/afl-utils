@@ -52,3 +52,7 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# User defined files/dirs
+.idea/
+scratchpad.md

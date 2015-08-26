@@ -303,6 +303,8 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
     if args.collection_dir:
         out_dir = args.collection_dir
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir, exist_ok=True)
     else:
         print("No valid directory provided for <OUT_DIR>!")
         return
