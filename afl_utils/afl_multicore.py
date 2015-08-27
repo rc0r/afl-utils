@@ -21,12 +21,12 @@ import sys
 
 import afl_utils
 
-# afl_multicore global settings
+# afl-multicore global settings
 afl_path = "afl-fuzz"   # in PATH
 
 
 def show_info():
-    print("afl_multicore %s by %s" % (afl_utils.__version__, afl_utils.__author__))
+    print("afl-multicore %s by %s" % (afl_utils.__version__, afl_utils.__author__))
     print("Wrapper script to easily set up parallel fuzzing jobs.")
     print("")
 
@@ -35,14 +35,14 @@ def check_session(session):
     session_active = os.path.isfile("/tmp/afl_multicore.PID.%s" % session)
 
     if session_active:
-        print("It seems you're already running an afl_multicore session with name '%s'." % session)
+        print("It seems you're already running an afl-multicore session with name '%s'." % session)
         print("Please choose another session name using '-S <session>'!")
         print("")
         print("If you're sure there no active session with name '%s'," % session)
         print("you may delete the PID file '/tmp/afl_multicore.PID.%s'." % session)
         print("")
-        print("To avoid this message in the future please abort active afl_multicore")
-        print("sessions using 'afl_multikill -S <session>'!")
+        print("To avoid this message in the future please abort active afl-multicore")
+        print("sessions using 'afl-multikill -S <session>'!")
 
     return not session_active
 
@@ -91,9 +91,9 @@ def setup_screen(slave_only, slave_num, env_list):
 def main(argv):
     show_info()
 
-    parser = argparse.ArgumentParser(description="afl_multicore starts several parallel fuzzing jobs, that are run \
+    parser = argparse.ArgumentParser(description="afl-multicore starts several parallel fuzzing jobs, that are run \
 in the background. For fuzzer stats see 'sync_dir/SESSION###/fuzzer_stats'!",
-                                     usage="afl_multicore [-h] [-a afl_args] [-e env_vars] [-i] [-j SLAVE_NUMBER]\n\
+                                     usage="afl-multicore [-h] [-a afl_args] [-e env_vars] [-i] [-j SLAVE_NUMBER]\n\
     [-S SESSION] [-s] [-v] input_dir sync_dir target_cmd")
 
     parser.add_argument("input_dir",
@@ -141,7 +141,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
     if args.screen:
         if not check_screen():
-            print("When using screen mode, please run afl_multicore from inside a screen session!")
+            print("When using screen mode, please run afl-multicore from inside a screen session!")
             return
 
         env_list = None
@@ -210,7 +210,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
     print("")
     if not args.screen:
-        # write PID list to file /tmp/afl_multicore.<SESSION>
+        # write PID list to file /tmp/afl-multicore.<SESSION>
         f = open("/tmp/afl_multicore.PID.%s" % args.session, "w")
         if f.writable():
             for pid in pid_list:

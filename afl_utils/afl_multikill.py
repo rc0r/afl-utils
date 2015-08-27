@@ -22,8 +22,8 @@ import afl_utils
 
 
 def show_info():
-    print("afl_multikill %s by %s" % (afl_utils.__version__, afl_utils.__author__))
-    print("Wrapper script to easily abort non-interactive afl_multicore sessions.")
+    print("afl-multikill %s by %s" % (afl_utils.__version__, afl_utils.__author__))
+    print("Wrapper script to easily abort non-interactive afl-multicore sessions.")
     print("")
 
 
@@ -48,12 +48,12 @@ def kill_session(session):
 def main(argv):
     show_info()
 
-    parser = argparse.ArgumentParser(description="afl_multikill aborts all afl-fuzz instances belonging to an active \
-afl_multicore session. Interactive screen sessions are not supported!",
-                                     usage="afl_multikill [-S SESSION]")
+    parser = argparse.ArgumentParser(description="afl-multikill aborts all afl-fuzz instances belonging to an active \
+afl-multicore session. Interactive screen sessions are not supported!",
+                                     usage="afl-multikill [-S SESSION]")
 
     parser.add_argument("-S", "--session", dest="session",
-                        help="afl_multicore session to abort (Default='SESSION').", default="SESSION")
+                        help="afl-multicore session to abort (Default='SESSION').", default="SESSION")
 
     args = parser.parse_args(argv[1:])
 

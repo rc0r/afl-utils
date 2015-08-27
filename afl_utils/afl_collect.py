@@ -44,7 +44,7 @@ gdb_exploitable_path = None
 
 
 def show_info():
-    print("afl_collect %s by %s" % (afl_utils.__version__, afl_utils.__author__))
+    print("afl-collect %s by %s" % (afl_utils.__version__, afl_utils.__author__))
     print("Crash sample collection and processing utility for afl-fuzz.")
     print("")
 
@@ -260,9 +260,9 @@ def execute_gdb_script(out_dir, script_filename, num_samples, num_threads):
 def main(argv):
     show_info()
 
-    parser = argparse.ArgumentParser(description="afl_collect copies all crash sample files from an afl sync dir used \
+    parser = argparse.ArgumentParser(description="afl-collect copies all crash sample files from an afl sync dir used \
 by multiple fuzzers when fuzzing in parallel into a single location providing easy access for further crash analysis.",
-                                     usage="afl_collect [-d DATABASE] [-e|-g GDB_EXPL_SCRIPT_FILE] [-f LIST_FILENAME]\n \
+                                     usage="afl-collect [-d DATABASE] [-e|-g GDB_EXPL_SCRIPT_FILE] [-f LIST_FILENAME]\n \
 [-h] [-j THREADS] [-r] [-rr] sync_dir collection_dir target_cmd")
 
     parser.add_argument("sync_dir", help="afl synchronisation directory crash samples  will be collected from.")
@@ -281,10 +281,10 @@ classification. (Like option '-g', plus script execution.)",
                         help="Generate gdb script to run 'exploitable.py' on all collected crash samples. Generated \
 script will be placed into collection directory.", default=None)
     parser.add_argument("-j", "--threads", dest="num_threads", default=1,
-                        help="Enable parallel analysis by specifying the number of threads afl_collect will utilize.")
+                        help="Enable parallel analysis by specifying the number of threads afl-collect will utilize.")
     parser.add_argument("-r", "--remove-invalid", dest="remove_invalid", action="store_const", const=True,
                         default=False, help="Verify collected crash samples and remove samples that do not lead to \
-crashes (runs 'afl_vcrash.py -r' on collection directory). This step is done prior to any script file \
+crashes (runs 'afl-vcrash.py -r' on collection directory). This step is done prior to any script file \
 or file list generation/execution.")
     parser.add_argument("-rr", "--remove-unexploitable", dest="remove_unexploitable", action="store_const", const=True,
                         default=False, help="Remove crash samples that have an exploitable classification of \

@@ -26,7 +26,7 @@ import queue
 
 
 def show_info():
-    print("afl_vcrash %s by %s" % (afl_utils.__version__, afl_utils.__author__))
+    print("afl-vcrash %s by %s" % (afl_utils.__version__, afl_utils.__author__))
     print("Crash verifier for crash samples collected from afl-fuzz.")
     print("")
 
@@ -82,7 +82,7 @@ def main(argv):
     show_info()
 
     parser = argparse.ArgumentParser(description="afl-vcrash verifies that afl-fuzz crash samples lead to crashes in \
-the target binary.", usage="afl_vcrash [-f LIST_FILENAME] [-h] [-j THREADS] [-q] [-r] collection_dir target_command \
+the target binary.", usage="afl-vcrash [-f LIST_FILENAME] [-h] [-j THREADS] [-q] [-r] collection_dir target_command \
 [target_command_args]")
 
     parser.add_argument("collection_dir",
@@ -92,7 +92,7 @@ options. Use '@@' to specify crash sample input file position (see afl-fuzz usag
     parser.add_argument("-f", "--filelist", dest="list_filename", default=None,
                         help="Writes all crash sample file names that do not lead to crashes into a file.")
     parser.add_argument("-j", "--threads", dest="num_threads", default=1,
-                        help="Enable parallel verification by specifying the number of threads afl_vcrash \
+                        help="Enable parallel verification by specifying the number of threads afl-vcrash \
 will utilize.")
     parser.add_argument("-q", "--quiet", dest="quiet", action="store_const", const=True, default=False,
                         help="Suppress output of crash sample file names that do not lead to crashes. This is \
