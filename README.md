@@ -7,6 +7,10 @@ afl-utils includes tools for:
 * automated crash sample collection, verification, reduction and analysis (`afl-collect`, `afl-vcrash`)
 * easy management of parallel (multi-core) fuzzing jobs (`afl-multicore`, `afl-multikill`)
 
+![afl-collect_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_collect_sample.png)
+
+**For installation instructions see [docs/INSTALL.md](https://github.com/rc0r/afl-utils/blob/master/docs/INSTALL.md).**
+
 In versions 1.03a and 1.04a multi-threading capabilities have been introduced to speed up things.
 However if you observe some strange behaviour in one of these (or later) versions, please file a
 bug report (either open an issue here on GH or send it in directly to `hlt99 at blinkenshell dot org`).
@@ -14,74 +18,8 @@ The latest non-multi-threading release that comes with all features is 1.02a. So
 multi-threaded version is somehow troubling for you, you can always `git checkout v1.02a` after cloning.
 I might be adding a separate branch for multi-threaded afl-utils releases in the future.
 
-### Dependencies
 
-* Python3.4
-* Python `sqlite3` package for database support
-* `nohup` for `afl-multicore` normal mode (I'm using: 8.23 (GNU coreutils))
-* `screen` for `afl-multicore` interactive/screen mode (I'm using: GNU Screen 4.02.01)
-* `gdb` with Python support (for gdb script execution support)
-* [Patched Exploitable](https://github.com/rc0r/exploitable) (for gdb script execution support)
-* and of course you'll need [afl](http://lcamtuf.coredump.cx/afl/) for `afl-multicore`, `afl-multikill`
-
-### Installation
-
-The first thing to do is to install all required software packages if necessary. I'll
-assume you've got Python 3 running and have got installed the other required tools.
-Python package requirements should be automatically handled by the setup script
-`setup.py` (see below).
-
-#### Set up exploitable
-
-In order to use advanced afl-utils features exploitable needs to be installed and
-set up to work with `gdb`.
-
-Get the patched version from GH:  
-
-    $ git clone https://github.com/rc0r/exploitable
-
-Next install exploitable globally or locally according to the instructions in the
-`Usage` section of exploitables' `README.md`!
-
-#### afl-utils Installation
-
-Now get `afl-utils` from the GH repo:
-
-    $ git clone https://github.com/rc0r/afl-utils
-    
-If you want to stick with the latest development version you're good to go. If you
-prefer to use a release version, run:
-
-    $ cd afl-utils
-    $ git checkout <release_version>
-
-For example:
-
-    $ git checkout v1.04a
-
-Next use `setup.py` to install the Python package system wide or in a virtual
-environment. For a system wide install simply issue:
-
-    $ python setup.py install
-
-These utilities are in alpha development state so I **highly recommend** to use
-a virtual environment instead:
-
-    $ virtualenv venv
-    $ source venv/bin/activate
-    $ python setup.py install
-
-If at any time something goes wrong, just remove the `venv` directory and start
-all over with a fresh environment!
-
-Now you're good to start:
-
-    $ afl-collect --help
-
-
-### The Tools
-
-#### afl-collect
+## afl-collect
 
 `afl-collect` basically copies all crash sample files from an afl synchronisation directory
 (used by multiple afl instances when run in parallel) into a single location providing
@@ -146,7 +84,7 @@ Usage:
                             gdb+exploitable script execution. Has no effect without '-e'.
 
 
-#### afl-multicore
+## afl-multicore
 
 `afl-multicore` starts several parallel fuzzing jobs in the background using `nohup` (Note:
 So afl's fancy interface is gone). Fuzzer outputs (`stdout` and `stderr`) will be redirected
@@ -213,7 +151,7 @@ Usage:
                             (Default: off). Check 'nohup.out' for further outputs.
 
 
-#### afl-multikill
+## afl-multikill
 
 Aborts all `afl-fuzz` instances belonging to an active non-interactive `afl-multicore`
 session. `afl-multicore` sessions that were started in `screen` mode can not be aborted!
@@ -232,7 +170,7 @@ Usage:
                             (Default='SESSION').
 
 
-#### afl-vcrash
+## afl-vcrash
 
 `afl-vcrash` verifies that afl-fuzz crash samples really lead to crashes in the target
 binary and optionally removes these samples automatically.  
@@ -272,64 +210,17 @@ Usage:
       -r, --remove          Remove crash samples that do not lead to crashes.
 
 
-  
-### Problems
+## Screenshots
 
-* `afl-vcrash` might miss *some* invalid crash samples. Identification of real crashes is
-  hard and needs improvements!
-* `afl-vcrash` identifies *some* crash samples as invalid that are considered valid by
-  `afl-fuzz` when run with option `-C`.
-* Tool outputs might get cluttered if core dumps/kernel crash/libc messages are displayed on
-  your terminal (see `man core(5)`; workaround anybody?).
-  **Hint:** Redirect `stdout` of `afl-collect`/`afl-vcrash` to some file to afterwards check
-  their outputs!
-* ~~gdb+exploitable script execution will be interrupted when using samples that do not lead
-  to actual crashes. `afl-collect` will print the files name causing the trouble (for manual
-  removal).~~ Fixed by using a patched `exploitable.py` that handles `NoThreadRunningError`
-  (see [Exploitable](https://github.com/rc0r/exploitable)). **Be sure to use the patched
-  version of `exploitable.py`!**
-
-### Feature Ideas / ToDo / Contribution
-
-If you're missing some feature in afl-utils or like to propose some changes, I'd appreciate
-your contributions. Just send your bug reports, feature ideas, code patches or pull requests
-either via Github or directly to `hlt99 at blinkenshell dot org`!
-
-- [x] submit classification data into some sort of database
-    - [x] basic sqlite3 database support added
-    - [ ] want more db connectors? Drop me a line!
-- [x] afl-multicore: wrapper script that starts multiple afl-instances for parallel fuzzing on multiple cores
-    - [x] screen mode
-    - [ ] tmux mode (only, if requested explicitly)
-    - [ ] afl-multicore_watch/afl-multiplot for checking fuzzer_stats (might get contributed by [@arisada](https://github.com/arisada)?)
-- [ ] We're growing larger, do we need unit tests?
-
-
-### Screenshots
-
-#### afl-collect
-
-Usage:  
-
-![afl-collect_usage](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_collect_usage.png)
+### afl-collect
 
 Sample output:
 
 ![afl-collect_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_collect_sample.png)
 
-#### afl-multicore
-
-Usage (normal mode):  
-
-![afl-multicore_usage](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_multicore_usage.png)
+### afl-multicore
 
 Sample output (normal mode):
 
 ![afl-multicore_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_multicore_sample.png)
 
-
-#### afl-vcrash
-
-Usage:
-
-![afl-vcrash_usage](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_vcrash_usage.png)
