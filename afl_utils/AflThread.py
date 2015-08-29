@@ -34,8 +34,6 @@ class VerifyThread(threading.Thread):
         self.exit = False
 
     def run(self):
-        cmd_string = " ".join(self.target_cmd)
-
         if afl_utils.afl_collect.stdin_mode(cmd_string):
             cmd_string += " < @@"
 

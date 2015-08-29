@@ -47,10 +47,14 @@ class SampleIndex:
         return sample_indexes
 
     def add(self, fuzzer, input_file):
-        self.index.append({
-            'input': os.path.abspath(input_file),
-            'fuzzer': fuzzer,
-            'output': self.__generate_output__(fuzzer, input_file)})
+        sample_output = self.__generate_output__(fuzzer, input_file)
+        # avoid to add duplicates (by filename) to sample index
+        # 23s for 13200 files vs 7s w/o check
+        if sample_output not in self.outputs():
+            self.index.append({
+                'input': os.path.abspath(os.path.expanduser(input_file)),
+                'fuzzer': fuzzer,
+                'output': sample_output})
         return self.index
 
     def add_output(self, output_file):

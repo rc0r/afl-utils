@@ -112,6 +112,13 @@ particularly useful when combined with '-r' or '-f'.")
 
     print("Verifying %d crash samples..." % num_crashes)
 
+    args.target_cmd = " ".join(args.target_cmd).split()
+    args.target_cmd[0] = os.path.abspath(os.path.expanduser(args.target_cmd[0]))
+    if not os.path.exists(args.target_cmd[0]):
+        print("Target binary not found!")
+        return
+    args.target_cmd = " ".join(args.target_cmd)
+
     invalid_samples = verify_samples(int(args.num_threads), crash_samples, args.target_command)
 
     print("Found %d invalid crash samples." % len(invalid_samples))

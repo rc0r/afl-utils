@@ -139,6 +139,13 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         print("No valid directory provided for <sync_dir>!")
         return
 
+    args.target_cmd = " ".join(args.target_cmd).split()
+    args.target_cmd[0] = os.path.abspath(os.path.expanduser(args.target_cmd[0]))
+    if not os.path.exists(args.target_cmd[0]):
+        print("Target binary not found!")
+        return
+    args.target_cmd = " ".join(args.target_cmd)
+
     if args.screen:
         if not check_screen():
             print("When using screen mode, please run afl-multicore from inside a screen session!")

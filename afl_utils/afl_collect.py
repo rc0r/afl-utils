@@ -123,7 +123,7 @@ def copy_crash_samples(sample_index):
 
 
 def generate_crash_sample_list(list_filename, files_collected):
-    list_filename = os.path.abspath(list_filename)
+    list_filename = os.path.abspath(os.path.expanduser(list_filename))
     fd = open(list_filename, "w")
 
     if not fd:
@@ -141,17 +141,16 @@ def stdin_mode(target_cmd):
 
 
 def generate_gdb_exploitable_script(script_filename, sample_index, target_cmd, script_id, intermediate=False):
-    target_cmd = " ".join(target_cmd)
     target_cmd = target_cmd.split()
     gdb_target_binary = target_cmd[0]
     gdb_run_cmd = " ".join(target_cmd[1:])
 
     if not intermediate:
-        script_filename = os.path.abspath(script_filename)
+        script_filename = os.path.abspath(os.path.expanduser(script_filename))
         print("Generating final gdb+exploitable script '%s' for %d samples..." % (script_filename,
                                                                                   len(sample_index.outputs())))
     else:
-        script_filename = os.path.abspath("%s.%d" % (script_filename, script_id))
+        script_filename = os.path.abspath(os.path.expanduser("%s.%d" % (script_filename, script_id)))
         print("Generating intermediate gdb+exploitable script '%s' for %d samples..." %
               (script_filename, len(sample_index.outputs())))
 
@@ -309,6 +308,13 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         print("No valid directory provided for <OUT_DIR>!")
         return
 
+    args.target_cmd = " ".join(args.target_cmd).split()
+    args.target_cmd[0] = os.path.abspath(os.path.expanduser(args.target_cmd[0]))
+    if not os.path.exists(args.target_cmd[0]):
+        print("Target binary not found!")
+        return
+    args.target_cmd = " ".join(args.target_cmd)
+
     print("Going to collect crash samples from '%s'." % sync_dir)
 
     fuzzers = get_fuzzer_instances(sync_dir)
@@ -326,7 +332,6 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         sample_index.remove_inputs(invalid_samples)
         print("Removed %d invalid crash samples from index." % len(invalid_samples))
 
-    files_collected = []
     # generate gdb+exploitable script
     if args.gdb_expl_script_file:
         divided_index = sample_index.divide(int(args.num_threads))
@@ -370,8 +375,6 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
             sample_index.remove_outputs(uninteresting_samples)
             print("Removed %d uninteresting crash samples from index." % len(uninteresting_samples))
 
-        print("Copying %d samples into output directory..." % len(sample_index.index))
-        files_collected = copy_crash_samples(sample_index)
         # generate output gdb script
         generate_gdb_exploitable_script(os.path.join(out_dir, args.gdb_expl_script_file), sample_index,
                                         args.target_cmd, 0)
@@ -386,14 +389,15 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
                 if not lite_db.dataset_exists(dataset):
                     lite_db.insert_dataset(dataset)
     elif args.gdb_script_file:
-        print("Copying %d samples into output directory..." % len(sample_index.index))
-        files_collected = copy_crash_samples(sample_index)
         generate_gdb_exploitable_script(os.path.join(out_dir, args.gdb_script_file), sample_index, args.target_cmd)
+
+    print("Copying %d samples into output directory..." % len(sample_index.index))
+    files_collected = copy_crash_samples(sample_index)
 
     # generate filelist of collected crash samples
     if args.list_filename:
-        generate_crash_sample_list(os.path.join(out_dir, args.list_filename), files_collected)
-        print("Generated crash sample list '%s'." % os.path.abspath(args.list_filename))
+        generate_crash_sample_list(os.path.abspath(os.path.expanduser(args.list_filename)), files_collected)
+        print("Generated crash sample list '%s'." % os.path.abspath(os.path.expanduser(args.list_filename)))
 
 
 if __name__ == "__main__":
