@@ -2,7 +2,7 @@
 
 Release | Description
 :-------:|----
-1.09a | Docs refactored, bug-fixes in target command path handling and afl-collect when collecting crashes without further processing
+1.09a | Docs refactored, target command path handling improved, bug-fix in afl-collect when collecting crashes without further processing
 1.08a | `setup.py` added, tools names refactored to comply with afl naming scheme
 1.07a | Minor afl-collect and afl-multikill bugs fixed. afl-collect will keep/collect crashes classified as 'UNKNOWN'
 1.06a | Added flag `--afl-args` to afl-multicore to set custom afl command line options
