@@ -4,7 +4,7 @@ from setuptools import find_packages
 import afl_utils
 
 dependencies = ['']
-afl_scripts = ['afl-collect', 'afl-multicore', 'afl-multikill', 'afl-vcrash']
+afl_scripts = ['afl-collect', 'afl-minimize', 'afl-multicore', 'afl-multikill', 'afl-vcrash']
 
 setup(
     name='afl-utils',

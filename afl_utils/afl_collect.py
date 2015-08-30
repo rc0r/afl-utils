@@ -29,6 +29,7 @@ import queue
 
 # afl-collect global settings
 global_crash_subdirs = "crashes"
+global_queue_subdirs = "queue"
 global_exclude_files = [
     "README.txt",
 ]
@@ -49,13 +50,16 @@ def show_info():
     print("")
 
 
-def get_fuzzer_instances(sync_dir):
+def get_fuzzer_instances(sync_dir, crash_dirs=True):
     fuzzer_inst = []
     for fdir in os.listdir(sync_dir):
         if os.path.isdir(os.path.join(sync_dir, fdir)):
             fuzzer_inst.append((fdir, []))
 
-    fuzzer_inst = get_crash_directories(sync_dir, fuzzer_inst)
+    if crash_dirs:
+        fuzzer_inst = get_crash_directories(sync_dir, fuzzer_inst)
+    else:
+        fuzzer_inst = get_queue_directories(sync_dir, fuzzer_inst)
 
     return fuzzer_inst
 
@@ -70,59 +74,69 @@ def get_crash_directories(sync_dir, fuzzer_instances):
     return fuzzer_instances
 
 
-def get_crash_samples_from_dir(crash_subdir, abs_path=False):
-    crashes = []
-    num_crashes = 0
-    for f in os.listdir(crash_subdir):
-        if os.path.isfile(os.path.join(crash_subdir, f)) and f not in global_exclude_files:
-            if abs_path:
-                crashes.append(os.path.join(crash_subdir, f))
-            else:
-                crashes.append(f)
-            num_crashes += 1
-    return num_crashes, crashes
-
-
-def collect_crash_samples(sync_dir, fuzzer_instances):
-    crashes = []
-    num_crashes = 0
+def get_queue_directories(sync_dir, fuzzer_instances):
     for fi in fuzzer_instances:
         fuzz_dir = os.path.join(sync_dir, fi[0])
-        fuzz_crashes = []
+        for qdir in os.listdir(fuzz_dir):
+            if os.path.isdir(os.path.join(fuzz_dir, qdir)) and global_queue_subdirs in qdir:
+                fi[1].append(qdir)
+
+    return fuzzer_instances
+
+
+def get_samples_from_dir(sample_subdir, abs_path=False):
+    samples = []
+    num_samples = 0
+    for f in os.listdir(sample_subdir):
+        if os.path.isfile(os.path.join(sample_subdir, f)) and f not in global_exclude_files:
+            if abs_path:
+                samples.append(os.path.join(sample_subdir, f))
+            else:
+                samples.append(f)
+            num_samples += 1
+    return num_samples, samples
+
+
+def collect_samples(sync_dir, fuzzer_instances):
+    samples = []
+    num_samples = 0
+    for fi in fuzzer_instances:
+        fuzz_dir = os.path.join(sync_dir, fi[0])
+        fuzz_samples = []
 
         for cd in fi[1]:
-            tmp_num_crashes, tmp_crashes = get_crash_samples_from_dir(os.path.join(fuzz_dir, cd))
-            fuzz_crashes.append((cd, tmp_crashes))
-            num_crashes += tmp_num_crashes
+            tmp_num_samples, tmp_samples = get_samples_from_dir(os.path.join(fuzz_dir, cd))
+            fuzz_samples.append((cd, tmp_samples))
+            num_samples += tmp_num_samples
 
-        crashes.append((fi[0], fuzz_crashes))
+        samples.append((fi[0], fuzz_samples))
 
-    return num_crashes, crashes
+    return num_samples, samples
 
 
 def build_sample_index(sync_dir, out_dir, fuzzer_instances):
-    crash_sample_num, samples = collect_crash_samples(sync_dir, fuzzer_instances)
+    sample_num, samples = collect_samples(sync_dir, fuzzer_instances)
 
     sample_index = SampleIndex.SampleIndex(out_dir)
 
     for fuzzer in samples:
-        for crash_dir in fuzzer[1]:
-            for sample in crash_dir[1]:
-                sample_index.add(fuzzer[0], os.path.join(sync_dir, "%s/%s/%s" % (fuzzer[0], crash_dir[0], sample)))
+        for sample_dir in fuzzer[1]:
+            for sample in sample_dir[1]:
+                sample_index.add(fuzzer[0], os.path.join(sync_dir, "%s/%s/%s" % (fuzzer[0], sample_dir[0], sample)))
 
     return sample_index
 
 
-def copy_crash_samples(sample_index):
+def copy_samples(sample_index):
     files_collected = []
     for sample in sample_index.index:
-        shutil.copyfile(sample['input'], os.path.join(sample_index.output_dir, sample['output']))
-        files_collected.append(os.path.join(sample_index.output_dir, sample['output']))
+        dst_file = shutil.copyfile(sample['input'], os.path.join(sample_index.output_dir, sample['output']))
+        files_collected.append(dst_file)
 
     return files_collected
 
 
-def generate_crash_sample_list(list_filename, files_collected):
+def generate_sample_list(list_filename, files_collected):
     list_filename = os.path.abspath(os.path.expanduser(list_filename))
     fd = open(list_filename, "w")
 
@@ -262,9 +276,9 @@ def main(argv):
     parser = argparse.ArgumentParser(description="afl-collect copies all crash sample files from an afl sync dir used \
 by multiple fuzzers when fuzzing in parallel into a single location providing easy access for further crash analysis.",
                                      usage="afl-collect [-d DATABASE] [-e|-g GDB_EXPL_SCRIPT_FILE] [-f LIST_FILENAME]\n \
-[-h] [-j THREADS] [-r] [-rr] sync_dir collection_dir target_cmd")
+[-h] [-j THREADS] [-r] [-rr] sync_dir collection_dir -- target_cmd")
 
-    parser.add_argument("sync_dir", help="afl synchronisation directory crash samples  will be collected from.")
+    parser.add_argument("sync_dir", help="afl synchronisation directory crash samples will be collected from.")
     parser.add_argument("collection_dir",
                         help="Output directory that will hold a copy of all crash samples and other generated files. \
 Existing files in the collection directory will be overwritten!")
@@ -294,14 +308,13 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
     args = parser.parse_args(argv[1:])
 
-    if args.sync_dir:
-        sync_dir = args.sync_dir
-    else:
+    sync_dir = os.path.abspath(os.path.expanduser(args.sync_dir))
+    if not os.path.exists(sync_dir):
         print("No valid directory provided for <SYNC_DIR>!")
         return
 
     if args.collection_dir:
-        out_dir = args.collection_dir
+        out_dir = os.path.abspath(os.path.expanduser(args.collection_dir))
         if not os.path.exists(out_dir):
             os.makedirs(out_dir, exist_ok=True)
     else:
@@ -392,11 +405,11 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         generate_gdb_exploitable_script(os.path.join(out_dir, args.gdb_script_file), sample_index, args.target_cmd)
 
     print("Copying %d samples into output directory..." % len(sample_index.index))
-    files_collected = copy_crash_samples(sample_index)
+    files_collected = copy_samples(sample_index)
 
     # generate filelist of collected crash samples
     if args.list_filename:
-        generate_crash_sample_list(os.path.abspath(os.path.expanduser(args.list_filename)), files_collected)
+        generate_sample_list(os.path.abspath(os.path.expanduser(args.list_filename)), files_collected)
         print("Generated crash sample list '%s'." % os.path.abspath(os.path.expanduser(args.list_filename)))
 
 

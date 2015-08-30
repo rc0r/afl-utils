@@ -84,6 +84,24 @@ Usage:
                             gdb+exploitable script execution. Has no effect without '-e'.
 
 
+## afl-minimize
+
+Helps to create a minimized corpus from samples of a parallel fuzzing job. It
+basically works as follows:
+
+1. Collect all queue samples from an afl synchronisation directory.
+2. Run `afl-cmin` on the collected corpus. -> `collection_dir.cmin`
+3. Run `afl-tmin` on the remaining samples to reduce them in size.
+   -> `collection_dir.tmin` (if step two was omitted) or `collection_dir.cmin.tmin`
+4. Perform a "dry-run" for each sample and move crashes/timeouts out of the
+   newly generated corpus. This step will be useful prior to starting a new
+   parallel fuzzing job on a corpus containing intermittent crashes.
+   -> `collection_dir.crashes` or into fuzzers crashes dir if invoked w/o '-c'
+   
+All these steps are optional, making the tool quite flexible. E.g. running only
+step four can be handy before resuming a parallel fuzzing session.
+
+
 ## afl-multicore
 
 `afl-multicore` starts several parallel fuzzing jobs in the background using `nohup` (Note:

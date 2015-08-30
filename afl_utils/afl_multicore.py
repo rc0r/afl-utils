@@ -94,7 +94,7 @@ def main(argv):
     parser = argparse.ArgumentParser(description="afl-multicore starts several parallel fuzzing jobs, that are run \
 in the background. For fuzzer stats see 'sync_dir/SESSION###/fuzzer_stats'!",
                                      usage="afl-multicore [-h] [-a afl_args] [-e env_vars] [-i] [-j SLAVE_NUMBER]\n\
-    [-S SESSION] [-s] [-v] input_dir sync_dir target_cmd")
+    [-S SESSION] [-s] [-v] input_dir sync_dir -- target_cmd")
 
     parser.add_argument("input_dir",
                         help="Input directory that holds the initial test cases (afl-fuzz's -i option).")

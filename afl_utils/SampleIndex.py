@@ -49,7 +49,7 @@ class SampleIndex:
     def add(self, fuzzer, input_file):
         sample_output = self.__generate_output__(fuzzer, input_file)
         # avoid to add duplicates (by filename) to sample index
-        # 23s for 13200 files vs 7s w/o check
+        # #TODO: Speed this up, if possible
         if sample_output not in self.outputs():
             self.index.append({
                 'input': os.path.abspath(os.path.expanduser(input_file)),

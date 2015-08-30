@@ -82,8 +82,7 @@ def main(argv):
     show_info()
 
     parser = argparse.ArgumentParser(description="afl-vcrash verifies that afl-fuzz crash samples lead to crashes in \
-the target binary.", usage="afl-vcrash [-f LIST_FILENAME] [-h] [-j THREADS] [-q] [-r] collection_dir target_command \
-[target_command_args]")
+the target binary.", usage="afl-vcrash [-f LIST_FILENAME] [-h] [-j THREADS] [-q] [-r] collection_dir -- target_command")
 
     parser.add_argument("collection_dir",
                         help="Directory holding all crash samples that will be verified.")
@@ -108,7 +107,7 @@ particularly useful when combined with '-r' or '-f'.")
         print("No valid directory provided for <collection_dir>!")
         return
 
-    num_crashes, crash_samples = afl_collect.get_crash_samples_from_dir(input_dir, True)
+    num_crashes, crash_samples = afl_collect.get_samples_from_dir(input_dir, True)
 
     print("Verifying %d crash samples..." % num_crashes)
 
@@ -132,7 +131,7 @@ particularly useful when combined with '-r' or '-f'.")
 
     # generate filelist of collected crash samples
     if args.list_filename:
-        afl_collect.generate_crash_sample_list(args.list_filename, invalid_samples)
+        afl_collect.generate_sample_list(args.list_filename, invalid_samples)
         print("Generated invalid crash sample list '%s'." % args.list_filename)
 
 
