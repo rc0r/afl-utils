@@ -34,8 +34,8 @@ class VerifyThread(threading.Thread):
         self.exit = False
 
     def run(self):
-        if afl_utils.afl_collect.stdin_mode(cmd_string):
-            cmd_string += " < @@"
+        if afl_utils.afl_collect.stdin_mode(self.target_cmd):
+            self.target_cmd += " < @@"
 
         while not self.exit:
             self.in_queue_lock.acquire()
@@ -43,7 +43,8 @@ class VerifyThread(threading.Thread):
                 cs = self.in_queue.get()
                 self.in_queue_lock.release()
 
-                cmd = cmd_string.replace("@@", os.path.abspath(cs))
+                cmd = self.target_cmd.replace("@@", os.path.abspath(cs))
+                print(cmd)
                 try:
                     v = subprocess.call(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, shell=True, timeout=60)
                     # check if process was terminated/stopped by signal

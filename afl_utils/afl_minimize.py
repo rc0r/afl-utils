@@ -16,12 +16,12 @@ limitations under the License.
 
 import argparse
 import os
+import shutil
+import subprocess
 import sys
 
 import afl_utils
-from afl_utils import SampleIndex, afl_collect
-
-import subprocess
+from afl_utils import SampleIndex, afl_collect, afl_vcrash
 
 
 def show_info():
@@ -43,6 +43,9 @@ def invoke_cmin(input_dir, output_dir, target_cmd):
 
 def invoke_tmin(input_files, output_dir, target_cmd):
     num_samples = 0
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+
     for f in input_files:
         cmd = "afl-tmin -i %s -o %s -- %s" % (f, os.path.join(output_dir, os.path.basename(f)), target_cmd)
         try:
@@ -51,6 +54,27 @@ def invoke_tmin(input_files, output_dir, target_cmd):
         except subprocess.CalledProcessError as e:
             print("afl-tmin failed with exit code %d!" % e.returncode)
     return num_samples
+
+
+def invoke_dryrun(input_files, crash_dir, target_cmd):
+    # TODO: handle timeouts, if possible
+    invalid_samples = afl_vcrash.verify_samples(1, input_files, target_cmd)
+
+    invalid_sample_set = set(invalid_samples)
+    input_sample_set = set(input_files)
+
+    crashes_set = input_sample_set - invalid_sample_set
+    crashes = list(crashes_set)
+
+    if len(crashes) > 0:
+        if not os.path.exists(crash_dir):
+            os.makedirs(crash_dir, exist_ok=True)
+
+        for c in crashes:
+            shutil.move(c, os.path.join(crash_dir, os.path.basename(c)))
+
+    print("Moved %d crash samples from the corpus to %s." % (len(crashes), crash_dir))
+    return
 
 
 def main(argv):
@@ -121,27 +145,35 @@ Use '--help' for\nusage instructions or checkout README.md for details.")
                 print("Executing: afl-tmin -i %s.cmin/* -o %s.cmin.tmin/* -- %s" % (out_dir, out_dir, args.target_cmd))
                 print("Be patient! Depending on the corpus size this step can take hours...")
                 tmin_num_samples, tmin_samples = afl_collect.get_samples_from_dir("%s.cmin" % out_dir, abs_path=True)
-                tmin_num_samples_processed = invoke_tmin(tmin_samples, "%s.cmin.tmin", args.target_cmd)
+                tmin_num_samples_processed = invoke_tmin(tmin_samples, "%s.cmin.tmin" % out_dir, args.target_cmd)
         elif args.invoke_tmin:
             # invoke tmin on collection
             print("Executing: afl-tmin -i %s/* -o %s.tmin/* -- %s" % (out_dir, out_dir, args.target_cmd))
             print("Be patient! Depending on the corpus size this step can take hours...")
             tmin_num_samples, tmin_samples = afl_collect.get_samples_from_dir(out_dir, abs_path=True)
-            tmin_num_samples_processed = invoke_tmin(tmin_samples, "%s.tmin", args.target_cmd)
+            tmin_num_samples_processed = invoke_tmin(tmin_samples, "%s.tmin" % out_dir, args.target_cmd)
         if args.dry_run:
             # invoke dry-run on collected/minimized corpus
             if args.invoke_cmin and args.invoke_tmin:
-                print("Performing dry-run in %s.cmin.tmin..." % (out_dir))
+                print("Performing dry-run in %s.cmin.tmin..." % out_dir)
                 print("Be patient! Depending on the corpus size this step can take hours...")
+                dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir("%s.cmin.tmin" % out_dir, abs_path=True)
+                invoke_dryrun(dryrun_samples, "%s.cmin.tmin.crashes" % out_dir, args.target_cmd)
             elif args.invoke_cmin:
-                print("Performing dry-run in %s.cmin..." % (out_dir))
+                print("Performing dry-run in %s.cmin..." % out_dir)
                 print("Be patient! Depending on the corpus size this step can take hours...")
+                dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir("%s.cmin" % out_dir, abs_path=True)
+                invoke_dryrun(dryrun_samples, "%s.cmin.crashes" % out_dir, args.target_cmd)
             elif args.invoke_tmin:
-                print("Performing dry-run in %s.tmin..." % (out_dir))
+                print("Performing dry-run in %s.tmin..." % out_dir)
                 print("Be patient! Depending on the corpus size this step can take hours...")
+                dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir("%s.tmin" % out_dir, abs_path=True)
+                invoke_dryrun(dryrun_samples, "%s.tmin.crashes" % out_dir, args.target_cmd)
             else:
-                print("Performing dry-run in %s..." % (out_dir))
+                print("Performing dry-run in %s..." % out_dir)
                 print("Be patient! Depending on the corpus size this step can take hours...")
+                dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir(out_dir, abs_path=True)
+                invoke_dryrun(dryrun_samples, out_dir, args.target_cmd)
     else:
         if args.dry_run:
             # invoke dry-run on original corpus
@@ -149,18 +181,8 @@ Use '--help' for\nusage instructions or checkout README.md for details.")
             for f in fuzzers:
                 print("Performing dry-run in ...")
                 print("Be patient! Depending on the corpus size this step can take hours...")
-        """
-        reuse for dry-run?
-        """
-        """
-        if args.dry_run:
-            from afl_utils import afl_vcrash
-            invalid_samples = afl_vcrash.verify_samples(int(args.num_threads), sample_index.inputs(), args.target_cmd)
-
-            # remove invalid samples from sample index
-            sample_index.remove_inputs(invalid_samples)
-            print("Removed %d invalid crash samples from index." % len(invalid_samples))
-        """
+                dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir("%s.cmin.tmin" % out_dir, abs_path=True)
+                invoke_dryrun(dryrun_samples, "%s.cmin.tmin.crashes" % out_dir, args.target_cmd)
 
 
 if __name__ == "__main__":
