@@ -119,15 +119,15 @@ Use '--help' for\nusage instructions or checkout README.md for details.")
         return
     args.target_cmd = " ".join(args.target_cmd)
 
+    print("Looking for fuzzing queues in '%s'." % sync_dir)
+    fuzzers = afl_collect.get_fuzzer_instances(sync_dir, crash_dirs=False)
+
     if args.collection_dir:
         out_dir = os.path.abspath(os.path.expanduser(args.collection_dir))
         if not os.path.exists(out_dir):
             os.makedirs(out_dir, exist_ok=True)
 
         # collect samples from fuzzer queues
-        print("Going to collect samples from '%s'." % sync_dir)
-        fuzzers = afl_collect.get_fuzzer_instances(sync_dir, crash_dirs=False)
-
         print("Found %d fuzzers, collecting samples." % len(fuzzers))
         sample_index = afl_collect.build_sample_index(sync_dir, out_dir, fuzzers)
 
@@ -138,18 +138,15 @@ Use '--help' for\nusage instructions or checkout README.md for details.")
         if args.invoke_cmin:
             # invoke cmin on collection
             print("Executing: afl-cmin -i %s -o %s.cmin -- %s" % (out_dir, out_dir, args.target_cmd))
-            print("Be patient! Depending on the corpus size this step can take hours...")
             invoke_cmin(out_dir, "%s.cmin" % out_dir, args.target_cmd)
             if args.invoke_tmin:
                 # invoke tmin on minimized collection
                 print("Executing: afl-tmin -i %s.cmin/* -o %s.cmin.tmin/* -- %s" % (out_dir, out_dir, args.target_cmd))
-                print("Be patient! Depending on the corpus size this step can take hours...")
                 tmin_num_samples, tmin_samples = afl_collect.get_samples_from_dir("%s.cmin" % out_dir, abs_path=True)
                 tmin_num_samples_processed = invoke_tmin(tmin_samples, "%s.cmin.tmin" % out_dir, args.target_cmd)
         elif args.invoke_tmin:
             # invoke tmin on collection
             print("Executing: afl-tmin -i %s/* -o %s.tmin/* -- %s" % (out_dir, out_dir, args.target_cmd))
-            print("Be patient! Depending on the corpus size this step can take hours...")
             tmin_num_samples, tmin_samples = afl_collect.get_samples_from_dir(out_dir, abs_path=True)
             tmin_num_samples_processed = invoke_tmin(tmin_samples, "%s.tmin" % out_dir, args.target_cmd)
         if args.dry_run:
@@ -176,13 +173,16 @@ Use '--help' for\nusage instructions or checkout README.md for details.")
                 invoke_dryrun(dryrun_samples, out_dir, args.target_cmd)
     else:
         if args.dry_run:
+            print("Found %d fuzzers, performing dry run." % len(fuzzers))
+            print("Be patient! Depending on the corpus size this step can take hours...")
             # invoke dry-run on original corpus
-            # get fuzzers
             for f in fuzzers:
-                print("Performing dry-run in ...")
-                print("Be patient! Depending on the corpus size this step can take hours...")
-                dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir("%s.cmin.tmin" % out_dir, abs_path=True)
-                invoke_dryrun(dryrun_samples, "%s.cmin.tmin.crashes" % out_dir, args.target_cmd)
+                for q_dir in f[1]:
+                    q_dir_complete = os.path.join(sync_dir, f[0], q_dir)
+                    print("Processing %s..." % q_dir_complete)
+
+                    dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir(q_dir_complete, abs_path=True)
+                    invoke_dryrun(dryrun_samples, os.path.join(sync_dir, f[0], "crashes"), args.target_cmd)
 
 
 if __name__ == "__main__":

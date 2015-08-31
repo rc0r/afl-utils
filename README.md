@@ -89,17 +89,47 @@ Usage:
 Helps to create a minimized corpus from samples of a parallel fuzzing job. It
 basically works as follows:
 
-1. Collect all queue samples from an afl synchronisation directory.
-2. Run `afl-cmin` on the collected corpus. -> `collection_dir.cmin`
-3. Run `afl-tmin` on the remaining samples to reduce them in size.
-   -> `collection_dir.tmin` (if step two was omitted) or `collection_dir.cmin.tmin`
-4. Perform a "dry-run" for each sample and move crashes/timeouts out of the
-   newly generated corpus. This step will be useful prior to starting a new
-   parallel fuzzing job on a corpus containing intermittent crashes.
-   -> `collection_dir.crashes` or into fuzzers crashes dir if invoked w/o '-c'
+1. Collect all queue samples from an afl synchronisation directory in `collection_dir`.
+2. Run `afl-cmin` on the collected corpus, save minimized corpus in `collection_dir.cmin`.
+3. Run `afl-tmin` on the remaining samples to reduce them in size. Save results in
+   `collection_dir.tmin` if step two was omitted or `collection_dir.cmin.tmin` otherwise.
+4. Perform a "dry-run" for each sample and move crashes/timeouts out of the corpus. This
+   step will be useful prior to starting a new or resuming a parallel fuzzing job on a
+   corpus containing intermittent crashes. Crashes will be moved to a `.crashes` directory,
+   if one of steps 1, 2 or 3 were performed. If only "dry-run" is requested crashing
+   samples will be moved from the `queue` dirs to the `crashes` within an afl sync dir.  
    
-All these steps are optional, making the tool quite flexible. E.g. running only
-step four can be handy before resuming a parallel fuzzing session.
+As already indicated, all these steps are optional, making the tool quite flexible. E.g.
+running only step four can be handy before resuming a parallel fuzzing session.
+
+Usage:
+
+    afl-minimize [-c COLLECTION_DIR [--cmin] [--tmin]] [-d] [-h] sync_dir -- target_cmd
+    
+    afl-minimize performs several optimization steps to reduce the size of an afl-
+    fuzz corpus.
+    
+    positional arguments:
+      sync_dir              afl synchronisation directory containing multiple
+                            fuzzers and their queues.
+      target_cmd            Path to the target binary and its command line
+                            arguments. Use '@@' to specify crash sample input file
+                            position (see afl-fuzz usage).
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      -c COLLECTION_DIR, --collect COLLECTION_DIR
+                            Collect all samples from the synchronisation dir and
+                            store them in the collection dir. Existing files in
+                            the collection directory will be overwritten!
+      --cmin                Run afl-cmin on collection dir. Has no effect without
+                            '-c'.
+      --tmin                Run afl-tmin on minimized collection dir if used
+                            together with '--cmin'or on unoptimized collection dir
+                            otherwise. Has no effect without '-c'.
+      -d, --dry-run         Perform dry-run on collection dir, if '-c' is provided
+                            or on synchronisation dir otherwise. Dry-run will move
+                            intermittent crashes out of the corpus.
 
 
 ## afl-multicore

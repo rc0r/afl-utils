@@ -44,7 +44,6 @@ class VerifyThread(threading.Thread):
                 self.in_queue_lock.release()
 
                 cmd = self.target_cmd.replace("@@", os.path.abspath(cs))
-                print(cmd)
                 try:
                     v = subprocess.call(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, shell=True, timeout=60)
                     # check if process was terminated/stopped by signal
