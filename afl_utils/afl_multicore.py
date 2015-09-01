@@ -168,12 +168,12 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         if not args.afl_args:
             # $ afl-fuzz -i <input_dir> -o <sync_dir> -M <session_name>.000 </path/to/target.bin> <target_args>
             master_cmd = "%s -i %s -o %s -M %s000 -- %s" % (afl_path, input_dir, sync_dir, args.session,
-                                                            " ".join(args.target_cmd))
+                                                            args.target_cmd)
         else:
             # $ afl-fuzz -i <input_dir> -o <sync_dir> -M <session_name>.000 <afl_args> \
             #   </path/to/target.bin> <target_args>
             master_cmd = "%s -i %s -o %s -M %s000 %s -- %s" % (afl_path, input_dir, sync_dir, args.session,
-                                                               args.afl_args, " ".join(args.target_cmd))
+                                                               args.afl_args, args.target_cmd)
         print("Starting master instance...")
 
         if not args.screen:
@@ -195,12 +195,12 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         if not args.afl_args:
             # $ afl-fuzz -i <input_dir> -o <sync_dir> -S <session_name>.NNN </path/to/target.bin> <target_args>
             slave_cmd = "%s -i %s -o %s -S %s%03d -- %s" % (afl_path, input_dir, sync_dir, args.session, i,
-                                                            " ".join(args.target_cmd))
+                                                            args.target_cmd)
         else:
             # $ afl-fuzz -i <input_dir> -o <sync_dir> -S <session_name>.NNN <afl_args> \
             #   </path/to/target.bin> <target_args>
             slave_cmd = "%s -i %s -o %s -S %s%03d %s -- %s" % (afl_path, input_dir, sync_dir, args.session, i,
-                                                               args.afl_args, " ".join(args.target_cmd))
+                                                               args.afl_args, args.target_cmd)
 
         if not args.screen:
             if not args.verbose:

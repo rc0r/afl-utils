@@ -6,6 +6,7 @@ afl-utils includes tools for:
 
 * automated crash sample collection, verification, reduction and analysis (`afl-collect`, `afl-vcrash`)
 * easy management of parallel (multi-core) fuzzing jobs (`afl-multicore`, `afl-multikill`)
+* corpus optimization (`afl-minimize`)
 
 ![afl-collect_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_collect_sample.png)
 
@@ -96,11 +97,21 @@ basically works as follows:
 4. Perform a "dry-run" for each sample and move crashes/timeouts out of the corpus. This
    step will be useful prior to starting a new or resuming a parallel fuzzing job on a
    corpus containing intermittent crashes. Crashes will be moved to a `.crashes` directory,
-   if one of steps 1, 2 or 3 were performed. If only "dry-run" is requested crashing
-   samples will be moved from the `queue` dirs to the `crashes` within an afl sync dir.  
+   if one of steps 1, 2 or 3 were performed. If only "dry-run" is requested, crashing
+   samples will be moved from the `queue` to the `crashes` dirs within an afl sync dir.  
    
 As already indicated, all these steps are optional, making the tool quite flexible. E.g.
-running only step four can be handy before resuming a parallel fuzzing session.
+running only step four can be handy before resuming a parallel fuzzing session.  
+
+When operating on corpora with many samples use `--tmin` with caution. Running thousands
+of files through `afl-tmin` can take very long. So make sure the results are as expected
+and worth the effort. You don't want to waste days of CPU time just to reduce your corpus
+size by a few bytes, don't you?!
+
+Performing the "dry-run" step after running `afl-cmin` might seem pointless, but my
+experience showed that sometimes crashes remain the minimized corpus. So this is just
+an additional step to get rid of them. But don't expect "dry-run" to always clear your
+corpus from crashes with a 100% success rate!
 
 Usage:
 
