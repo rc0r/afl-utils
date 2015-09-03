@@ -85,11 +85,11 @@ class GdbThread(threading.Thread):
     def run(self):
         try:
             script_output = subprocess.check_output(" ".join(self.gdb_cmd), shell=True, stderr=subprocess.DEVNULL,
-                                                    stdin=subprocess.DEVNULL, universal_newlines=True)
+                                                    stdin=subprocess.DEVNULL)
         except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as e:
             script_output = e.output
 
-        script_output = script_output.splitlines()
+        script_output = script_output.decode(errors='replace').splitlines()
 
         for line in script_output:
             matching = [line.replace(g, '') for g in self.grep_for if g in line]
