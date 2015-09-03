@@ -86,7 +86,7 @@ the target binary.", usage="afl-vcrash [-f LIST_FILENAME] [-h] [-j THREADS] [-q]
 
     parser.add_argument("collection_dir",
                         help="Directory holding all crash samples that will be verified.")
-    parser.add_argument("target_command", nargs="+", help="Target binary including command line \
+    parser.add_argument("target_cmd", nargs="+", help="Target binary including command line \
 options. Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     parser.add_argument("-f", "--filelist", dest="list_filename", default=None,
                         help="Writes all crash sample file names that do not lead to crashes into a file.")
@@ -118,7 +118,7 @@ particularly useful when combined with '-r' or '-f'.")
         return
     args.target_cmd = " ".join(args.target_cmd)
 
-    invalid_samples = verify_samples(int(args.num_threads), crash_samples, args.target_command)
+    invalid_samples = verify_samples(int(args.num_threads), crash_samples, args.target_cmd)
 
     print("Found %d invalid crash samples." % len(invalid_samples))
 
