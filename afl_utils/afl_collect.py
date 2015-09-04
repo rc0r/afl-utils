@@ -114,7 +114,7 @@ def collect_samples(sync_dir, fuzzer_instances):
     return num_samples, samples
 
 
-def build_sample_index(sync_dir, out_dir, fuzzer_instances):
+def build_sample_index(sync_dir, out_dir, fuzzer_instances, db=None):
     sample_num, samples = collect_samples(sync_dir, fuzzer_instances)
 
     sample_index = SampleIndex.SampleIndex(out_dir)
@@ -122,7 +122,17 @@ def build_sample_index(sync_dir, out_dir, fuzzer_instances):
     for fuzzer in samples:
         for sample_dir in fuzzer[1]:
             for sample in sample_dir[1]:
-                sample_index.add(fuzzer[0], os.path.join(sync_dir, "%s/%s/%s" % (fuzzer[0], sample_dir[0], sample)))
+                sample_file = os.path.join(sync_dir, "%s/%s/%s" % (fuzzer[0], sample_dir[0], sample))
+                sample_name = sample_index.__generate_output__(fuzzer[0], sample_file)
+                if db:
+                    if not db.dataset_exists({'sample': sample_name, 'classification': '%', 'description': '%',
+                                              'hash': '%'}):
+                        sample_index.add(fuzzer[0], sample_file)
+                    else:
+                        # Debug
+                        print("Skipping '%s'..." % sample_name)
+                else:
+                    sample_index.add(fuzzer[0], sample_file)
 
     return sample_index
 
@@ -328,12 +338,24 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         return
     args.target_cmd = " ".join(args.target_cmd)
 
+    if args.database_file:
+        db_file = os.path.abspath(os.path.expanduser(args.database_file))
+        if not os.path.exists(db_file):
+            db_exists = False
+        else:
+            db_exists = True
+
     print("Going to collect crash samples from '%s'." % sync_dir)
+
+    # initialize database
+    if db_file:
+        lite_db = con_sqlite.sqliteConnector(db_file)
+        lite_db.init_database()
 
     fuzzers = get_fuzzer_instances(sync_dir)
     print("Found %d fuzzers, collecting crash samples." % len(fuzzers))
 
-    sample_index = build_sample_index(sync_dir, out_dir, fuzzers)
+    sample_index = build_sample_index(sync_dir, out_dir, fuzzers, lite_db)
 
     print("Successfully indexed %d crash samples." % len(sample_index.index))
 
@@ -393,14 +415,13 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
                                         args.target_cmd, 0)
 
         # Submit crash classification data into database
-        if args.database_file:
-            lite_db = con_sqlite.sqliteConnector(args.database_file)
-
-            lite_db.init_database()
-
-            for dataset in classification_data_dedupe:
-                if not lite_db.dataset_exists(dataset):
-                    lite_db.insert_dataset(dataset)
+        # if db_file:
+        #     lite_db = con_sqlite.sqliteConnector(db_file)
+        #     lite_db.init_database()
+        #
+        #     for dataset in classification_data_dedupe:
+        #         if not lite_db.dataset_exists(dataset):
+        #             lite_db.insert_dataset(dataset)
     elif args.gdb_script_file:
         generate_gdb_exploitable_script(os.path.join(out_dir, args.gdb_script_file), sample_index, args.target_cmd)
 

@@ -2,6 +2,7 @@
 
 Release | Description
 :-------:|----
+1.12a | Target command path handling in afl-vcrash fixed, afl-collect with non-UTF-8 chars fixed (by Mark Janssen)
 1.11a | Minor bug-fix in afl-multicore, some explanations for afl-minimize added to README.md
 1.10a | afl-minimize added, bug fixed in AflThread.py
 1.09a | Docs refactored, target command path handling improved, bug-fix in afl-collect when collecting crashes without further processing
