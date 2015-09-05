@@ -351,7 +351,14 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
     sample_index = build_sample_index(sync_dir, out_dir, fuzzers, lite_db)
 
-    print("Successfully indexed %d crash samples." % len(sample_index.index))
+    if len(sample_index.index) > 0:
+        print("Successfully indexed %d crash samples." % len(sample_index.index))
+    elif db_file:
+        print("No unseen samples found. Check your database for results!")
+        return
+    else:
+        print("No samples found. Check directory settings!")
+        return
 
     if args.remove_invalid:
         from afl_utils import afl_vcrash

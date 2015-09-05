@@ -33,15 +33,15 @@ class sqliteConnector:
         """
         table_data_exists = False
         if os.path.isfile(self.database_path):
-            print("Using existing database to store results.")
-        try:
-            dbcon = lite.connect(self.database_path)
-            dbcur = dbcon.cursor()
-            dbcur.execute("SELECT Count(*) FROM Data")
-            print("%s entries in this database so far." % str(dbcur.fetchone()[0]))
-            table_data_exists = True
-        except lite.OperationalError:
-            print("[W] Table \'Data\' not found in database!")
+            try:
+                dbcon = lite.connect(self.database_path)
+                dbcur = dbcon.cursor()
+                dbcur.execute("SELECT Count(*) FROM Data")
+                print("Using existing database to store results, %s entries in this database so far." %
+                      str(dbcur.fetchone()[0]))
+                table_data_exists = True
+            except lite.OperationalError:
+                print("[W] Table \'Data\' not found in existing database!")
 
         if not table_data_exists:   # If the database doesn't exist, we'll create it.
             print("Creating new table \'Data\' in database \'%s\' to store data!" % self.database_path)
