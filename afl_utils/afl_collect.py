@@ -114,7 +114,7 @@ def collect_samples(sync_dir, fuzzer_instances):
     return num_samples, samples
 
 
-def build_sample_index(sync_dir, out_dir, fuzzer_instances):
+def build_sample_index(sync_dir, out_dir, fuzzer_instances, db=None):
     sample_num, samples = collect_samples(sync_dir, fuzzer_instances)
 
     sample_index = SampleIndex.SampleIndex(out_dir)
@@ -122,7 +122,14 @@ def build_sample_index(sync_dir, out_dir, fuzzer_instances):
     for fuzzer in samples:
         for sample_dir in fuzzer[1]:
             for sample in sample_dir[1]:
-                sample_index.add(fuzzer[0], os.path.join(sync_dir, "%s/%s/%s" % (fuzzer[0], sample_dir[0], sample)))
+                sample_file = os.path.join(sync_dir, "%s/%s/%s" % (fuzzer[0], sample_dir[0], sample))
+                sample_name = sample_index.__generate_output__(fuzzer[0], sample_file)
+                if db:
+                    if not db.dataset_exists({'sample': sample_name, 'classification': '%', 'description': '%',
+                                              'hash': '%'}):
+                        sample_index.add(fuzzer[0], sample_file)
+                else:
+                    sample_index.add(fuzzer[0], sample_file)
 
     return sample_index
 
@@ -282,8 +289,9 @@ by multiple fuzzers when fuzzing in parallel into a single location providing ea
     parser.add_argument("collection_dir",
                         help="Output directory that will hold a copy of all crash samples and other generated files. \
 Existing files in the collection directory will be overwritten!")
-    parser.add_argument("-d", "--database", dest="database_file", help="Submit classification data into a sqlite3 \
-database. Has no effect without '-e'.", default=None)
+    parser.add_argument("-d", "--database", dest="database_file", help="Submit sample data into an sqlite3 database (\
+only when used together with '-e'). afl-collect skips processing of samples already found in existing database.",
+                        default=None)
     parser.add_argument("-e", "--execute-gdb-script", dest="gdb_expl_script_file",
                         help="Generate and execute a gdb+exploitable script after crash sample collection for crash \
 classification. (Like option '-g', plus script execution.)",
@@ -328,18 +336,43 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         return
     args.target_cmd = " ".join(args.target_cmd)
 
+    if args.database_file:
+        db_file = os.path.abspath(os.path.expanduser(args.database_file))
+
     print("Going to collect crash samples from '%s'." % sync_dir)
+
+    # initialize database
+    if db_file:
+        lite_db = con_sqlite.sqliteConnector(db_file)
+        lite_db.init_database()
 
     fuzzers = get_fuzzer_instances(sync_dir)
     print("Found %d fuzzers, collecting crash samples." % len(fuzzers))
 
-    sample_index = build_sample_index(sync_dir, out_dir, fuzzers)
+    sample_index = build_sample_index(sync_dir, out_dir, fuzzers, lite_db)
 
-    print("Successfully indexed %d crash samples." % len(sample_index.index))
+    if len(sample_index.index) > 0:
+        print("Successfully indexed %d crash samples." % len(sample_index.index))
+    elif db_file:
+        print("No unseen samples found. Check your database for results!")
+        return
+    else:
+        print("No samples found. Check directory settings!")
+        return
 
     if args.remove_invalid:
         from afl_utils import afl_vcrash
         invalid_samples = afl_vcrash.verify_samples(int(args.num_threads), sample_index.inputs(), args.target_cmd)
+
+        # store invalid samples in db
+        print("Saving invalid sample info to database.")
+        if args.gdb_expl_script_file and db_file:
+            for sample in invalid_samples:
+                sample_name = sample_index.outputs(input_file=sample)
+                dataset = {'sample': sample_name[0]['output'], 'classification': 'INVALID',
+                           'description': 'Sample does not cause a crash in the target.', 'hash': ''}
+                if not lite_db.dataset_exists(dataset):
+                    lite_db.insert_dataset(dataset)
 
         # remove invalid samples from sample index
         sample_index.remove_inputs(invalid_samples)
@@ -356,6 +389,13 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         # execute gdb+exploitable script
         classification_data = execute_gdb_script(out_dir, args.gdb_expl_script_file, len(sample_index.inputs()),
                                                  int(args.num_threads))
+
+        # Submit crash classification data into database
+        print("Saving sample classification info to database.")
+        if db_file:
+            for dataset in classification_data:
+                if not lite_db.dataset_exists(dataset):
+                    lite_db.insert_dataset(dataset)
 
         # de-dupe by exploitable hash
         seen = set()
@@ -391,16 +431,6 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         # generate output gdb script
         generate_gdb_exploitable_script(os.path.join(out_dir, args.gdb_expl_script_file), sample_index,
                                         args.target_cmd, 0)
-
-        # Submit crash classification data into database
-        if args.database_file:
-            lite_db = con_sqlite.sqliteConnector(args.database_file)
-
-            lite_db.init_database()
-
-            for dataset in classification_data_dedupe:
-                if not lite_db.dataset_exists(dataset):
-                    lite_db.insert_dataset(dataset)
     elif args.gdb_script_file:
         generate_gdb_exploitable_script(os.path.join(out_dir, args.gdb_script_file), sample_index, args.target_cmd)
 

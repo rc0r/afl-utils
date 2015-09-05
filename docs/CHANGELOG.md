@@ -1,7 +1,17 @@
-### afl-utils Changelog
+# afl-utils Changelog
+
+Version 1.12a
+
+  - Target command path handling in afl-vcrash fixed.
+  - Handling non-UTF-8 characters in afl-collect fixed (by Mark Janssen).
+  - Incremental mode added to afl-collect: When afl-collect is pointed to an existing database,
+    afl-collect will now skip samples having an entry in the database. This should be useful for
+    subsequent afl-collect runs on huge crash dirs.
+
+## Old Releases
 
 Release | Description
-:-------:|----
+:-------:|---- 
 1.11a | Minor bug-fix in afl-multicore, some explanations for afl-minimize added to README.md
 1.10a | afl-minimize added, bug fixed in AflThread.py
 1.09a | Docs refactored, target command path handling improved, bug-fix in afl-collect when collecting crashes without further processing
