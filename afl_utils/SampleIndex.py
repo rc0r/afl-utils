@@ -81,8 +81,17 @@ class SampleIndex:
     def inputs(self):
         return self.__return_values__("input")
 
-    def outputs(self):
-        return self.__return_values__("output")
+    def outputs(self, fuzzer=None, input_file=None):
+        if fuzzer is not None and input_file is not None:
+            for i in self.index:
+                if i['fuzzer'] == fuzzer and i['input'] == input_file:
+                    return [i['output']]
+        elif fuzzer is not None:
+            return [i for i in self.index if i['fuzzer'] == fuzzer]
+        elif input_file is not None:
+            return [i for i in self.index if i['input'] == input_file]
+        else:
+            return self.__return_values__("output")
 
     def fuzzers(self):
         return self.__return_values__("fuzzer")

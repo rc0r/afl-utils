@@ -35,6 +35,12 @@ automatic gdb+exploitable script generation and execution. For each backtrace ha
 single crash sample file will be kept.  
 `afl-collect` is quite slow when operating on large sample sets and using gdb+exploitable
 script execution, so be patient!  
+When invoked with `-d <database>`, sample information will be stored in the `database`. This
+will only be done when the gdb-script execution step is selected (`-e`). If `database` is an
+existing database containing sample info, `afl-collect` will skip all samples that already
+have a database entry during sample processing. This will work also when `-e` is not requested.
+This makes subsequent `afl-collect` runs more efficient, since only unseen samples are
+processed (and added to the database).  
 
 Usage:
 
@@ -58,8 +64,9 @@ Usage:
     optional arguments:
       -h, --help            show this help message and exit
       -d DATABASE_FILE, --database DATABASE_FILE
-                            Submit classification data into a sqlite3 database.
-                            Has no effect without '-e'.
+                            Submit sample data into an sqlite3 database (only when
+                            used together with '-e'). afl-collect skips processing
+                            of samples already found in existing database.
       -e GDB_EXPL_SCRIPT_FILE, --execute-gdb-script GDB_EXPL_SCRIPT_FILE
                             Generate and execute a gdb+exploitable script after crash
                             sample collection for crash classification. (Like option
