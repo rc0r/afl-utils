@@ -56,9 +56,9 @@ def invoke_tmin(input_files, output_dir, target_cmd):
     return num_samples
 
 
-def invoke_dryrun(input_files, crash_dir, target_cmd):
+def invoke_dryrun(input_files, crash_dir, target_cmd, num_threads=1):
     # TODO: handle timeouts, if possible
-    invalid_samples = afl_vcrash.verify_samples(1, input_files, target_cmd)
+    invalid_samples = afl_vcrash.verify_samples(num_threads, input_files, target_cmd)
 
     invalid_sample_set = set(invalid_samples)
     input_sample_set = set(input_files)
@@ -82,8 +82,8 @@ def main(argv):
 
     parser = argparse.ArgumentParser(description="afl-minimize performs several optimization steps to reduce the size\n \
 of an afl-fuzz corpus.",
-                                     usage="afl-minimize [-c COLLECTION_DIR [--cmin] [--tmin]] [-d] [-h] sync_dir -- \
-target_cmd\n")
+                                     usage="afl-minimize [-c COLLECTION_DIR [--cmin] [--tmin]] [-d] [-h] [-j] sync_dir \
+-- target_cmd\n")
 
     parser.add_argument("-c", "--collect", dest="collection_dir",
                         help="Collect all samples from the synchronisation dir and store them in the collection dir. \
@@ -96,6 +96,9 @@ or on unoptimized collection dir otherwise. Has no effect without '-c'.")
     parser.add_argument("-d", "--dry-run", dest="dry_run", action="store_const", const=True,
                         default=False, help="Perform dry-run on collection dir, if '-c' is provided or on \
 synchronisation dir otherwise. Dry-run will move intermittent crashes out of the corpus.")
+    parser.add_argument("-j", "--threads", dest="num_threads", default=1,
+                        help="Enable parallel dry-run step by specifying the number of threads afl-minimize \
+will utilize.")
     parser.add_argument("sync_dir", help="afl synchronisation directory containing multiple fuzzers and their queues.")
     parser.add_argument("target_cmd", nargs="+", help="Path to the target binary and its command line arguments. \
 Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
@@ -118,6 +121,11 @@ Use '--help' for\nusage instructions or checkout README.md for details.")
         print("Target binary not found!")
         return
     args.target_cmd = " ".join(args.target_cmd)
+
+    if not args.num_threads:
+        threads = 1
+    else:
+        threads = int(args.num_threads)
 
     print("Looking for fuzzing queues in '%s'." % sync_dir)
     fuzzers = afl_collect.get_fuzzer_instances(sync_dir, crash_dirs=False)
@@ -155,22 +163,22 @@ Use '--help' for\nusage instructions or checkout README.md for details.")
                 print("Performing dry-run in %s.cmin.tmin..." % out_dir)
                 print("Be patient! Depending on the corpus size this step can take hours...")
                 dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir("%s.cmin.tmin" % out_dir, abs_path=True)
-                invoke_dryrun(dryrun_samples, "%s.cmin.tmin.crashes" % out_dir, args.target_cmd)
+                invoke_dryrun(dryrun_samples, "%s.cmin.tmin.crashes" % out_dir, args.target_cmd, num_threads=threads)
             elif args.invoke_cmin:
                 print("Performing dry-run in %s.cmin..." % out_dir)
                 print("Be patient! Depending on the corpus size this step can take hours...")
                 dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir("%s.cmin" % out_dir, abs_path=True)
-                invoke_dryrun(dryrun_samples, "%s.cmin.crashes" % out_dir, args.target_cmd)
+                invoke_dryrun(dryrun_samples, "%s.cmin.crashes" % out_dir, args.target_cmd, num_threads=threads)
             elif args.invoke_tmin:
                 print("Performing dry-run in %s.tmin..." % out_dir)
                 print("Be patient! Depending on the corpus size this step can take hours...")
                 dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir("%s.tmin" % out_dir, abs_path=True)
-                invoke_dryrun(dryrun_samples, "%s.tmin.crashes" % out_dir, args.target_cmd)
+                invoke_dryrun(dryrun_samples, "%s.tmin.crashes" % out_dir, args.target_cmd, num_threads=threads)
             else:
                 print("Performing dry-run in %s..." % out_dir)
                 print("Be patient! Depending on the corpus size this step can take hours...")
                 dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir(out_dir, abs_path=True)
-                invoke_dryrun(dryrun_samples, out_dir, args.target_cmd)
+                invoke_dryrun(dryrun_samples, out_dir, args.target_cmd, num_threads=threads)
     else:
         if args.dry_run:
             print("Found %d fuzzers, performing dry run." % len(fuzzers))
@@ -182,7 +190,7 @@ Use '--help' for\nusage instructions or checkout README.md for details.")
                     print("Processing %s..." % q_dir_complete)
 
                     dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir(q_dir_complete, abs_path=True)
-                    invoke_dryrun(dryrun_samples, os.path.join(sync_dir, f[0], "crashes"), args.target_cmd)
+                    invoke_dryrun(dryrun_samples, os.path.join(sync_dir, f[0], "crashes"), args.target_cmd, num_threads=threads)
 
 
 if __name__ == "__main__":

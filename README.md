@@ -122,7 +122,7 @@ corpus from crashes with a 100% success rate!
 
 Usage:
 
-    afl-minimize [-c COLLECTION_DIR [--cmin] [--tmin]] [-d] [-h] sync_dir -- target_cmd
+    afl-minimize [-c COLLECTION_DIR [--cmin] [--tmin]] [-d] [-h] [-j] sync_dir -- target_cmd
     
     afl-minimize performs several optimization steps to reduce the size of an afl-
     fuzz corpus.
@@ -148,6 +148,9 @@ Usage:
       -d, --dry-run         Perform dry-run on collection dir, if '-c' is provided
                             or on synchronisation dir otherwise. Dry-run will move
                             intermittent crashes out of the corpus.
+      -j NUM_THREADS, --threads NUM_THREADS
+                            Enable parallel dry-run step by specifying the number
+                            of threads afl-minimize will utilize.
 
 
 ## afl-multicore

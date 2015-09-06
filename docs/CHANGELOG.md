@@ -1,5 +1,9 @@
 # afl-utils Changelog
 
+Version 1.13a
+
+  - Added multi-threaded dry-runs in afl-minimize.
+
 Version 1.12a
 
   - Target command path handling in afl-vcrash fixed.
