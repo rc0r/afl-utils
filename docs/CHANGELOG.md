@@ -1,5 +1,9 @@
 # afl-utils Changelog
 
+Version 1.14a
+
+  - Path handling in afl-multicore improved.
+
 Version 1.13a
 
   - Added multi-threaded dry-runs in afl-minimize.

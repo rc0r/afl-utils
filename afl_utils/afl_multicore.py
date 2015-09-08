@@ -127,17 +127,12 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     if not check_session(args.session):
         return
 
-    if args.input_dir:
-        input_dir = args.input_dir
-    else:
+    input_dir = os.path.abspath(os.path.expanduser(args.input_dir))
+    if not os.path.exists(input_dir):
         print("No valid directory provided for <INPUT_DIR>!")
         return
 
-    if args.sync_dir:
-        sync_dir = args.sync_dir
-    else:
-        print("No valid directory provided for <sync_dir>!")
-        return
+    sync_dir = os.path.abspath(os.path.expanduser(args.sync_dir))
 
     args.target_cmd = " ".join(args.target_cmd).split()
     args.target_cmd[0] = os.path.abspath(os.path.expanduser(args.target_cmd[0]))
