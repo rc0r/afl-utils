@@ -3,6 +3,7 @@
 Version 1.14a
 
   - Path handling in afl-multicore improved.
+  - Uninitialized variable bugs fixed in afl-collect.
 
 Version 1.13a
 

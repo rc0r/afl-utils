@@ -338,6 +338,8 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
     if args.database_file:
         db_file = os.path.abspath(os.path.expanduser(args.database_file))
+    else:
+        db_file = None
 
     print("Going to collect crash samples from '%s'." % sync_dir)
 
@@ -345,6 +347,8 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     if db_file:
         lite_db = con_sqlite.sqliteConnector(db_file)
         lite_db.init_database()
+    else:
+        lite_db = None
 
     fuzzers = get_fuzzer_instances(sync_dir)
     print("Found %d fuzzers, collecting crash samples." % len(fuzzers))
