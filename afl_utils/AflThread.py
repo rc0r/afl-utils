@@ -99,3 +99,39 @@ class GdbThread(threading.Thread):
                 self.out_queue_lock.acquire()
                 self.out_queue.put(matching)
                 self.out_queue_lock.release()
+
+
+class AflTminThread(threading.Thread):
+    def __init__(self, thread_id, target_cmd, output_dir, in_queue, out_queue, in_queue_lock, out_queue_lock):
+        threading.Thread.__init__(self)
+        self.id = thread_id
+        self.target_cmd = target_cmd
+        self.output_dir = output_dir
+        self.in_queue = in_queue
+        self.out_queue = out_queue
+        self.in_queue_lock = in_queue_lock
+        self.out_queue_lock = out_queue_lock
+        self.exit = False
+
+    def run(self):
+        while not self.exit:
+            self.in_queue_lock.acquire()
+            if not self.in_queue.empty():
+                f = self.in_queue.get()
+                self.in_queue_lock.release()
+
+                cmd = "afl-tmin -i %s -o %s -- %s" % (f, os.path.join(self.output_dir, os.path.basename(f)),
+                                                      self.target_cmd)
+                try:
+                    subprocess.check_call(cmd, shell=True)
+                    self.out_queue_lock.acquire()
+                    self.out_queue.put(os.path.join(self.output_dir, os.path.basename(f)))
+                    self.out_queue_lock.release()
+                except subprocess.CalledProcessError as e:
+                    #print("afl-tmin failed with exit code %d!" % e.returncode)
+                    pass
+                except Exception:
+                    pass
+            else:
+                self.in_queue_lock.release()
+                self.exit = True

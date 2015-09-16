@@ -20,8 +20,11 @@ import shutil
 import subprocess
 import sys
 
+import threading
+import queue
+
 import afl_utils
-from afl_utils import SampleIndex, afl_collect, afl_vcrash
+from afl_utils import SampleIndex, afl_collect, afl_vcrash, AflThread
 
 
 def show_info():
@@ -41,19 +44,40 @@ def invoke_cmin(input_dir, output_dir, target_cmd):
     return success
 
 
-def invoke_tmin(input_files, output_dir, target_cmd):
-    num_samples = 0
+def invoke_tmin(input_files, output_dir, target_cmd, num_threads=1):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
+    in_queue_lock = threading.Lock()
+    out_queue_lock = threading.Lock()
+    in_queue = queue.Queue(len(input_files))
+    out_queue = queue.Queue(len(input_files))
+
+    # fill input queue with input files
+    in_queue_lock.acquire()
     for f in input_files:
-        cmd = "afl-tmin -i %s -o %s -- %s" % (f, os.path.join(output_dir, os.path.basename(f)), target_cmd)
-        try:
-            subprocess.check_call(cmd, shell=True)
-            num_samples += 1
-        except subprocess.CalledProcessError as e:
-            print("afl-tmin failed with exit code %d!" % e.returncode)
-    return num_samples
+        in_queue.put(f)
+    in_queue_lock.release()
+
+    thread_list = []
+
+    for i in range(0, num_threads, 1):
+        t = AflThread.AflTminThread(i, target_cmd, output_dir, in_queue, out_queue, in_queue_lock, out_queue_lock)
+        thread_list.append(t)
+        t.start()
+
+    for t in thread_list:
+        t.join()
+
+    files_processed = []
+
+    # read processed files from output queue
+    out_queue_lock.acquire()
+    while not out_queue.empty():
+        files_processed.append(out_queue.get())
+    out_queue_lock.release()
+
+    return len(files_processed)
 
 
 def invoke_dryrun(input_files, crash_dir, target_cmd, num_threads=1):
@@ -97,8 +121,8 @@ or on unoptimized collection dir otherwise. Has no effect without '-c'.")
                         default=False, help="Perform dry-run on collection dir, if '-c' is provided or on \
 synchronisation dir otherwise. Dry-run will move intermittent crashes out of the corpus.")
     parser.add_argument("-j", "--threads", dest="num_threads", default=1,
-                        help="Enable parallel dry-run step by specifying the number of threads afl-minimize \
-will utilize.")
+                        help="Enable parallel dry-run and t-minimization step by specifying the number of threads \
+afl-minimize will utilize.")
     parser.add_argument("sync_dir", help="afl synchronisation directory containing multiple fuzzers and their queues.")
     parser.add_argument("target_cmd", nargs="+", help="Path to the target binary and its command line arguments. \
 Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
@@ -151,28 +175,33 @@ Use '--help' for\nusage instructions or checkout README.md for details.")
                 # invoke tmin on minimized collection
                 print("Executing: afl-tmin -i %s.cmin/* -o %s.cmin.tmin/* -- %s" % (out_dir, out_dir, args.target_cmd))
                 tmin_num_samples, tmin_samples = afl_collect.get_samples_from_dir("%s.cmin" % out_dir, abs_path=True)
-                tmin_num_samples_processed = invoke_tmin(tmin_samples, "%s.cmin.tmin" % out_dir, args.target_cmd)
+                tmin_num_samples_processed = invoke_tmin(tmin_samples, "%s.cmin.tmin" % out_dir, args.target_cmd,
+                                                         num_threads=threads)
         elif args.invoke_tmin:
             # invoke tmin on collection
             print("Executing: afl-tmin -i %s/* -o %s.tmin/* -- %s" % (out_dir, out_dir, args.target_cmd))
             tmin_num_samples, tmin_samples = afl_collect.get_samples_from_dir(out_dir, abs_path=True)
-            tmin_num_samples_processed = invoke_tmin(tmin_samples, "%s.tmin" % out_dir, args.target_cmd)
+            tmin_num_samples_processed = invoke_tmin(tmin_samples, "%s.tmin" % out_dir, args.target_cmd,
+                                                     num_threads=threads)
         if args.dry_run:
             # invoke dry-run on collected/minimized corpus
             if args.invoke_cmin and args.invoke_tmin:
                 print("Performing dry-run in %s.cmin.tmin..." % out_dir)
                 print("Be patient! Depending on the corpus size this step can take hours...")
-                dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir("%s.cmin.tmin" % out_dir, abs_path=True)
+                dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir("%s.cmin.tmin" % out_dir,
+                                                                                      abs_path=True)
                 invoke_dryrun(dryrun_samples, "%s.cmin.tmin.crashes" % out_dir, args.target_cmd, num_threads=threads)
             elif args.invoke_cmin:
                 print("Performing dry-run in %s.cmin..." % out_dir)
                 print("Be patient! Depending on the corpus size this step can take hours...")
-                dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir("%s.cmin" % out_dir, abs_path=True)
+                dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir("%s.cmin" % out_dir,
+                                                                                      abs_path=True)
                 invoke_dryrun(dryrun_samples, "%s.cmin.crashes" % out_dir, args.target_cmd, num_threads=threads)
             elif args.invoke_tmin:
                 print("Performing dry-run in %s.tmin..." % out_dir)
                 print("Be patient! Depending on the corpus size this step can take hours...")
-                dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir("%s.tmin" % out_dir, abs_path=True)
+                dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir("%s.tmin" % out_dir,
+                                                                                      abs_path=True)
                 invoke_dryrun(dryrun_samples, "%s.tmin.crashes" % out_dir, args.target_cmd, num_threads=threads)
             else:
                 print("Performing dry-run in %s..." % out_dir)

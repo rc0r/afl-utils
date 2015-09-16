@@ -149,8 +149,9 @@ Usage:
                             or on synchronisation dir otherwise. Dry-run will move
                             intermittent crashes out of the corpus.
       -j NUM_THREADS, --threads NUM_THREADS
-                            Enable parallel dry-run step by specifying the number
-                            of threads afl-minimize will utilize.
+                            Enable parallel dry-run and t-minimization step by
+                            specifying the number of threads afl-minimize will
+                            utilize.
 
 
 ## afl-multicore
