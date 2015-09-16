@@ -48,6 +48,7 @@ def verify_samples(num_threads, samples, target_cmd):
     for i in range(0, num_threads, 1):
         t = AflThread.VerifyThread(i, target_cmd, in_queue, out_queue, in_queue_lock, out_queue_lock)
         thread_list.append(t)
+        t.daemon = True
         t.start()
 
     for t in thread_list:

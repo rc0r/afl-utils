@@ -123,7 +123,7 @@ class AflTminThread(threading.Thread):
                 cmd = "afl-tmin -i %s -o %s -- %s" % (f, os.path.join(self.output_dir, os.path.basename(f)),
                                                       self.target_cmd)
                 try:
-                    subprocess.check_call(cmd, shell=True)
+                    subprocess.call(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, shell=True)
                     self.out_queue_lock.acquire()
                     self.out_queue.put(os.path.join(self.output_dir, os.path.basename(f)))
                     self.out_queue_lock.release()

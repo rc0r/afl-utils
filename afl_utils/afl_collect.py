@@ -244,6 +244,7 @@ def execute_gdb_script(out_dir, script_filename, num_samples, num_threads):
         t = AflThread.GdbThread(n, script_args, out_dir, grep_for, out_queue, out_queue_lock)
         thread_list.append(t)
         print("Executing gdb+exploitable script '%s.%d'..." % (script_filename, n))
+        t.daemon = True
         t.start()
 
     for t in thread_list:

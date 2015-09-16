@@ -64,7 +64,11 @@ def invoke_tmin(input_files, output_dir, target_cmd, num_threads=1):
     for i in range(0, num_threads, 1):
         t = AflThread.AflTminThread(i, target_cmd, output_dir, in_queue, out_queue, in_queue_lock, out_queue_lock)
         thread_list.append(t)
+        print("Starting afl-tmin worker %d." % i)
+        t.daemon = True
         t.start()
+
+    print("Be patient, afl-tmin is running. This can take hours, if not days...")
 
     for t in thread_list:
         t.join()
