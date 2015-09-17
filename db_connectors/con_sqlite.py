@@ -48,7 +48,7 @@ class sqliteConnector:
             dbcon = lite.connect(self.database_path)
             dbcur = dbcon.cursor()
             dbcur.execute('CREATE TABLE Data (ID INTEGER PRIMARY KEY ASC, Sample text, Classification text, \
-Classification_Description text, Hash text)')
+Classification_Description text, Hash text, User_Comment text)')
 
     def dataset_exists(self, dataset):
         """
@@ -84,7 +84,8 @@ Classification_Description text, Hash text)')
         """
         # Just a simple function to write the results to the database.
         con = lite.connect(self.database_path)
-        qstring = "INSERT INTO Data VALUES(NULL, ?, ?, ?, ?)"
+        qstring = "INSERT INTO Data VALUES(NULL, ?, ?, ?, ?, ?)"
         with con:
             cur = con.cursor()
-            cur.execute(qstring, (dataset['sample'], dataset['classification'], dataset['description'], dataset['hash']))
+            cur.execute(qstring, (dataset['sample'], dataset['classification'], dataset['description'],
+                                  dataset['hash'], ''))

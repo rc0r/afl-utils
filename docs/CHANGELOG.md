@@ -1,5 +1,10 @@
 # afl-utils Changelog
 
+Version 1.15a
+
+  - User comment field added in Data table of afl-collect crash database. Update
+    your existing databases accordingly!
+
 Version 1.14a
 
   - Path handling in afl-multicore improved.
