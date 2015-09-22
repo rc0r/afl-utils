@@ -253,7 +253,7 @@ def main(argv):
         if int(config_interval) < 0:
             doExit = True
         else:
-            time.sleep(config_interval*60)
+            time.sleep(int(config_interval)*60)
 
 
 if __name__ == "__main__":
