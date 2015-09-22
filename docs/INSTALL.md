@@ -8,7 +8,8 @@ Python package requirements should be automatically handled by the setup script
 ## Dependencies
 
 * Python3.4
-* Python `sqlite3` package for database support
+* Python `sqlite3` package for database support (auto-installed)
+* Python `twitter` package for `afl-stat` support (auto-installed)
 * `nohup` for `afl-multicore` normal mode (I'm using: 8.23 (GNU coreutils))
 * `screen` for `afl-multicore` interactive/screen mode (I'm using: GNU Screen 4.02.01)
 * `gdb` with Python support (for gdb script execution support)
@@ -62,3 +63,22 @@ all over with a fresh environment!
 Now you're good to start:
 
     $ afl-collect --help
+
+## afl-stats setup
+
+For `afl-stats` to work, you'll have to create a Twitter application at
+[Twitter Dev](https://dev.twitter.com/apps). Put your `consumer_key` and `consumer_secret`
+tokens in an `afl-stats` configuration file:
+
+    $ cp afl-stats.conf.sample afl-stats.conf
+    # now edit afl-stats.conf to your needs
+    
+The sample configuration file `afl-stats.conf.sample` is quite self-explanatory. Once
+you've finished configuration. Start `afl-stat`:
+
+    $ afl-stat
+    
+On the first run `afl-fast` needs to be authorized with your Twitter account. This is done
+using OAuth. A browser window should pop up, asking for permission to access your Twitter
+account. Once confirmed a PIN code is displayed that must be entered into `afl-fast` as
+asked. Most of the time this process is quite straight-forward.

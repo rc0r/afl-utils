@@ -7,6 +7,9 @@ afl-utils includes tools for:
 * automated crash sample collection, verification, reduction and analysis (`afl-collect`, `afl-vcrash`)
 * easy management of parallel (multi-core) fuzzing jobs (`afl-multicore`, `afl-multikill`)
 * corpus optimization (`afl-minimize`)
+* fuzzer stats supervision (`afl-stats`)
+
+![afl-stats_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_stats_sample.png)
 
 ![afl-collect_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_collect_sample.png)
 
@@ -238,6 +241,27 @@ Usage:
       -S SESSION, --session SESSION
                             afl-multicore session to abort
                             (Default='SESSION').
+
+
+## afl-stats
+
+Prints fuzzing statistics similar to `afl-whatsup -s` and posts (tweets) them to Twitter.
+This is especially useful when fuzzing on multiple machines. Regularly ssh-ing into all
+of your boxes to check `fuzzer_stats` quickly becomes a PITA...  
+For setup instructions, please see
+[docs/INSTALL.md](https://github.com/rc0r/afl-utils/blob/master/docs/INSTALL.md)!
+Screenshots of sample tweets can be found in the final section of this document.
+
+Usage:
+
+    afl-stats [-c]
+
+    Post selected contents of fuzzer_stats to Twitter.
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -c CONFIG_FILE, --config CONFIG_FILE
+                            afl-stats config file (Default: afl-stats.conf)!
 
 
 ## afl-vcrash

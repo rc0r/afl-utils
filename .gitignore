@@ -55,4 +55,7 @@ target/
 
 # User defined files/dirs
 .idea/
+test/
+venv/
 scratchpad.md
+*stats.*
