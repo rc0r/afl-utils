@@ -74,11 +74,11 @@ tokens in an `afl-stats` configuration file:
     # now edit afl-stats.conf to your needs
     
 The sample configuration file `afl-stats.conf.sample` is quite self-explanatory. Once
-you've finished configuration. Start `afl-stat`:
+you've finished configuration. Start `afl-stats`:
 
-    $ afl-stat
+    $ afl-stats
     
-On the first run `afl-fast` needs to be authorized with your Twitter account. This is done
+On the first run `afl-stats` needs to be authorized with your Twitter account. This is done
 using OAuth. A browser window should pop up, asking for permission to access your Twitter
-account. Once confirmed a PIN code is displayed that must be entered into `afl-fast` as
+account. Once confirmed a PIN code is displayed that must be entered into `afl-stats` as
 asked. Most of the time this process is quite straight-forward.
