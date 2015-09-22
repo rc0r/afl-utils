@@ -4,6 +4,7 @@ Version 1.15a
 
   - User comment field added in Data table of afl-collect crash database. Update
     your existing databases accordingly!
+  - Added afl-stats for status printing and tweeting.
 
 Version 1.14a
 
@@ -20,7 +21,7 @@ Version 1.12a
   - Target command path handling in afl-vcrash fixed.
   - Handling non-UTF-8 characters in afl-collect fixed (by Mark Janssen).
   - Incremental mode added to afl-collect: When afl-collect is pointed to an existing database,
-    afl-collect will now skip samples having an entry in the database. This should be useful for
+    afl-collect will now skip samples having an entry in the database. This should be useful 
     subsequent afl-collect runs on huge crash dirs.
 
 ## Old Releases

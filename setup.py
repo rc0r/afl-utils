@@ -3,8 +3,8 @@ from setuptools import find_packages
 
 import afl_utils
 
-dependencies = ['']
-afl_scripts = ['afl-collect', 'afl-minimize', 'afl-multicore', 'afl-multikill', 'afl-vcrash']
+dependencies = ['twitter']
+afl_scripts = ['afl-collect', 'afl-minimize', 'afl-multicore', 'afl-multikill', 'afl-stats', 'afl-vcrash']
 
 setup(
     name='afl-utils',
