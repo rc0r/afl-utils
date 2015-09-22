@@ -45,13 +45,13 @@ def read_config(config_file):
         config_file = os.path.abspath(os.path.expanduser(config_file))
 
         if not os.path.isfile(config_file):
-            print("Error: Config file not found!")
+            print(clr.LRD + "[!]" + clr.RST + " Config file not found!")
             sys.exit(1)
 
         config = ConfigParser()
         config.read(config_file)
     except (MissingSectionHeaderError, UnicodeDecodeError):
-        print("Error: No valid configuration file specified!")
+        print(clr.LRD + "[!]" + clr.RST + " No valid configuration file specified!")
         sys.exit(1)
 
     try:
@@ -62,10 +62,12 @@ def read_config(config_file):
         config_twitter_creds_file = config.get("twitter", "credentials_file", raw=True)
         config_twitter_creds_file = os.path.abspath(os.path.expanduser(config_twitter_creds_file))
     except NoOptionError as e:
-        print("Error: No valid configuration file specified! Option '%s.%s' not found!" % (e.section, e.option))
+        print(clr.LRD + "[!]" + clr.RST + " No valid configuration file specified! Option '" + clr.GRA +
+              "%s.%s" % (e.section, e.option) + clr.RST + "' not found!")
         sys.exit(1)
     except NoSectionError as e:
-        print("Error: No valid configuration file specified! Section '%s' not found!" % e.section)
+        print(clr.LRD + "[!]" + clr.RST + " No valid configuration file specified! Section '" + clr.GRA +
+              "%s" % e.section + clr.RST + "' not found!")
         sys.exit(1)
 
     exists = True
@@ -90,7 +92,7 @@ def twitter_init():
                                                               config_twitter_consumer_secret))
         return twitter_instance
     except (twitter.TwitterHTTPError, URLError):
-        print("Network error, twitter login failed! Check your connection!")
+        print(clr.LRD + "[!]" + clr.RST + " Network error, twitter login failed! Check your connection!")
         sys.exit(1)
 
 
@@ -131,7 +133,7 @@ def parse_stat_file(stat_file):
 
         return stats
     except FileNotFoundError as e:
-        print("Error: Stat file '%s' not found!" % e.filename)
+        print(clr.YEL + "[!]" + clr.RST + " Stat file " + clr.GRA + "%s" % e.filename + clr.RST + "not found!")
 
     return None
 
@@ -140,7 +142,8 @@ def load_stats(fuzzer_dir):
     fuzzer_dir = os.path.abspath(os.path.expanduser(fuzzer_dir))
 
     if not os.path.isdir(fuzzer_dir):
-        print("Invalid fuzzing directory specified ('%s')." % fuzzer_dir)
+        print(clr.YEL + "[!]" + clr.RST + " Invalid fuzzing directory specified: " + clr.GRA + "%s" % fuzzer_dir +
+              clr.RST)
         return None
 
     fuzzer_stats = []
@@ -201,15 +204,17 @@ def prettify_stat(_stat, console=True):
         lbl = clr.GRA
         if _stat['fuzzer_pid'] == 0:
             alc = clr.LRD
+            slc = clr.GRA
         else:
             alc = clr.LGN if _stat['fuzzer_pid'] == _stat['fuzzers'] else clr.YEL
+            slc = ""
         clc = clr.MGN if _stat['unique_crashes'] == 0 else clr.LRD
         rst = clr.RST
         pretty_stat =\
-            "[%s on %s]\n %sAlive:%s   %s%d/%d%s\n %sExecs:%s   %d m\n %sSpeed:%s   %.1f x/s\n %sPend:%s    %d/%d\n" \
-            " %sCrashes:%s %s%d%s\n" % (_stat['afl_banner'], _stat['host'], lbl, rst, alc, _stat['fuzzer_pid'],
-                                        _stat['fuzzers'], rst, lbl, rst, _stat['execs_done'], lbl, rst,
-                                        _stat['execs_per_sec'], lbl, rst, _stat['pending_total'],
+            "[%s on %s]\n %sAlive:%s   %s%d/%d%s\n %sExecs:%s   %d m\n %sSpeed:%s   %s%.1f x/s%s\n %sPend:%s    %d/%d\n" \
+            " %sCrashes:%s %s%d%s" % (_stat['afl_banner'], _stat['host'], lbl, rst, alc, _stat['fuzzer_pid'],
+                                        _stat['fuzzers'], rst, lbl, rst, _stat['execs_done'], lbl, rst, slc,
+                                        _stat['execs_per_sec'], rst, lbl, rst, _stat['pending_total'],
                                         _stat['pending_favs'], lbl, rst, clc, _stat['unique_crashes'], rst)
     else:
         pretty_stat = "[%s on %s]\nAlive: %d/%d\nExecs: %d m\nSpeed: %.1f x/s\nPend: %d/%d\nCrashes: %d" %\
@@ -235,25 +240,38 @@ def main(argv):
 
     doExit = False
     while not doExit:
-        for fuzzer in config_fuzz_directories:
-            stats = load_stats(fuzzer)
-            sum_stats = summarize_stats(stats)
+        try:
+            for fuzzer in config_fuzz_directories:
+                stats = load_stats(fuzzer)
 
-            print(prettify_stat(sum_stats, True))
+                if not stats:
+                    continue
 
-            tweet = prettify_stat(sum_stats, False)
+                sum_stats = summarize_stats(stats)
 
-            l = len(tweet)
-            c = clr.LRD if l>140 else clr.LGN
-            print("[" + clr.LGN + "+" + clr.RST + "] Tweeting status (%s%d" % (c, l) + clr.RST + " chars)...")
-            print()
+                print(prettify_stat(sum_stats, True))
 
-            twitter_inst.statuses.update(status=tweet)
+                tweet = prettify_stat(sum_stats, False)
 
-        if int(config_interval) < 0:
-            doExit = True
-        else:
-            time.sleep(int(config_interval)*60)
+                l = len(tweet)
+                c = clr.LRD if l>140 else clr.LGN
+                print(clr.LGN + "[*]" + clr.RST + " Tweeting status (%s%d" % (c, l) + clr.RST + " chars)...")
+
+                try:
+                    twitter_inst.statuses.update(status=tweet)
+                except (twitter.TwitterHTTPError, URLError):
+                    print(clr.YEL + "[!]" + clr.RST + " Problem connecting to Twitter! Tweet not sent!")
+                except Exception as e:
+                    print(clr.LRD + "[!]" + clr.RST + " Sending tweet failed (Reason: " + clr.GRA +
+                          "%s" % e.__cause__ + clr.RST + ")")
+
+            if int(config_interval) < 0:
+                doExit = True
+            else:
+                time.sleep(int(config_interval)*60)
+        except KeyboardInterrupt:
+                print("\b\b" + clr.LGN + "[*]" + clr.RST + " Aborted by user. Good bye!")
+                doExit = True
 
 
 if __name__ == "__main__":
