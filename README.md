@@ -294,3 +294,8 @@ Sample output (normal mode):
 
 ![afl-multicore_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_multicore_sample.png)
 
+### afl-stats
+
+![afl-stats_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_stats_sample.png)
+
+![afl-stats_tweet](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_stats_tweet.png)

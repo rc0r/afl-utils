@@ -10,7 +10,7 @@ either via Github or directly to `hlt99 at blinkenshell dot org`!
 - [x] afl-multicore: wrapper script that starts multiple afl-instances for parallel fuzzing on multiple cores
     - [x] screen mode
     - [ ] tmux mode (only, if requested explicitly)
-    - [ ] afl-multicore_watch/afl-multiplot for checking fuzzer_stats (might get contributed by [@arisada](https://github.com/arisada)?)
+    - [x] afl-stats for checking fuzzer_stats (might get contributed by [@arisada](https://github.com/arisada)?)
 
 
 # Problems
