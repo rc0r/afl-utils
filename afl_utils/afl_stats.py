@@ -242,20 +242,18 @@ def main(argv):
             print(prettify_stat(sum_stats, True))
 
             tweet = prettify_stat(sum_stats, False)
-            #print(tweet)
+
             l = len(tweet)
             c = clr.LRD if l>140 else clr.LGN
             print("[" + clr.LGN + "+" + clr.RST + "] Tweeting status (%s%d" % (c, l) + clr.RST + " chars)...")
             print()
 
-            #twitter_inst.statuses.update(status=tweet)
-
+            twitter_inst.statuses.update(status=tweet)
 
         if int(config_interval) < 0:
             doExit = True
         else:
             time.sleep(config_interval*60)
-
 
 
 if __name__ == "__main__":
