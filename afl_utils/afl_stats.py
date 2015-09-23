@@ -96,6 +96,15 @@ def twitter_init():
         sys.exit(1)
 
 
+def shorten_tweet(tweet):
+    if len(tweet) > 140:
+        print(clr.LGN + "[*]" + clr.RST + " Status too long, will be shortened to 140 chars!")
+        short_tweet = tweet[:137] + "..."
+    else:
+        short_tweet = tweet
+    return short_tweet
+
+
 def fuzzer_alive(pid):
     try:
         os.kill(pid, 0)
@@ -180,7 +189,7 @@ def summarize_stats(stats):
             'unique_crashes': 0,
             'unique_hangs': 0,
             'afl_banner': 0,
-            'host': socket.gethostname()
+            'host': socket.gethostname()[:10]
         }
 
     for s in stats:
@@ -189,15 +198,74 @@ def summarize_stats(stats):
                 if k != "afl_banner":
                     sum_stat[k] += float(s[k])
                 else:
-                    sum_stat[k] = s[k][:15]
+                    sum_stat[k] = s[k][:10]
 
     return sum_stat
 
 
-def prettify_stat(_stat, console=True):
-    _stat = _stat.copy()
+def diff_stats(sum_stats, old_stats):
+    if len(sum_stats) != len(old_stats):
+        print(clr.YEL + "[!]" + clr.RST + " Stats corrupted for '" + clr.GRA + "%s" % sum_stats['afl_banner'] +
+              clr.RST + "'!")
+        return None
+
+    diff_stat = {
+            'fuzzers': len(sum_stats),
+            'fuzzer_pid': 0,
+            'execs_done': 0,
+            'execs_per_sec': 0,
+            'paths_total': 0,
+            'paths_favored': 0,
+            'pending_favs': 0,
+            'pending_total': 0,
+            'unique_crashes': 0,
+            'unique_hangs': 0,
+            'afl_banner': 0,
+            'host': socket.gethostname()[:10]
+        }
+
+    for k in sum_stats.keys():
+        if k not in ['afl_banner', 'host']:
+            diff_stat[k] = sum_stats[k] - old_stats[k]
+        else:
+            diff_stat[k] = sum_stats[k]
+
+    return diff_stat
+
+
+def prettify_stat(stat, dstat, console=True):
+    _stat = stat.copy()
+    _dstat = dstat.copy()
     _stat['execs_done'] /= 1e6
+    _dstat['execs_done'] /= 1e6
+
+    if _dstat['fuzzer_pid'] == _dstat['fuzzers'] == 0:
+        ds_alive = ""
+    else:
+        ds_alive = " (%+d/%+d)" % (_dstat['fuzzer_pid'], _dstat['fuzzers'])
+
+    if int(_dstat['execs_done']) == 0:
+        ds_exec = " "
+    else:
+        ds_exec = " (%+d) " % _dstat['execs_done']
+
+    if _dstat['execs_per_sec'] == 0:
+        ds_speed = " "
+    else:
+        ds_speed = " (%+1.f) " % _dstat['execs_per_sec']
+
+    if _dstat['pending_total'] == _dstat['pending_favs'] == 0:
+        ds_pend = ""
+    else:
+        ds_pend = " (%+d/%+d)" % (_dstat['pending_total'], _dstat['pending_favs'])
+
+    if _dstat['unique_crashes'] == 0:
+        ds_crash = ""
+    else:
+        ds_crash = " (%+d)" % _dstat['unique_crashes']
+
     if console:
+        # colorize stats
         _stat['afl_banner'] = clr.BLU + _stat['afl_banner'] + clr.RST
         _stat['host'] = clr.LBL + _stat['host'] + clr.RST
 
@@ -210,16 +278,42 @@ def prettify_stat(_stat, console=True):
             slc = ""
         clc = clr.MGN if _stat['unique_crashes'] == 0 else clr.LRD
         rst = clr.RST
+
+        # colorize diffs
+        if _dstat['fuzzer_pid'] < 0 or _dstat['fuzzers'] < 0:
+            ds_alive = clr.RED + ds_alive + clr.RST
+        else:
+            ds_alive = clr.GRN + ds_alive + clr.RST
+
+        if int(_dstat['execs_done']) < 0:
+            ds_exec = clr.RED + ds_exec + clr.RST
+        else:
+            ds_exec = clr.GRN + ds_exec + clr.RST
+
+        if _dstat['execs_per_sec'] < 0:
+            ds_speed = clr.RED + ds_speed + clr.RST
+        else:
+            ds_speed = clr.GRN + ds_speed + clr.RST
+
+        if _dstat['unique_crashes'] < 0:
+            ds_crash = clr.RED + ds_crash + clr.RST
+        else:
+            ds_crash = clr.GRN + ds_crash + clr.RST
+
+        ds_pend = clr.GRA + ds_pend + clr.RST
+
         pretty_stat =\
-            "[%s on %s]\n %sAlive:%s   %s%d/%d%s\n %sExecs:%s   %d m\n %sSpeed:%s   %s%.1f x/s%s\n %sPend:%s    %d/%d\n" \
-            " %sCrashes:%s %s%d%s" % (_stat['afl_banner'], _stat['host'], lbl, rst, alc, _stat['fuzzer_pid'],
-                                        _stat['fuzzers'], rst, lbl, rst, _stat['execs_done'], lbl, rst, slc,
-                                        _stat['execs_per_sec'], rst, lbl, rst, _stat['pending_total'],
-                                        _stat['pending_favs'], lbl, rst, clc, _stat['unique_crashes'], rst)
+            "[%s on %s]\n %sAlive:%s   %s%d/%d%s%s\n %sExecs:%s   %d%sm\n %sSpeed:%s   %s%.1f%sx/s%s\n %sPend:%s    %d/%d%s\n" \
+            " %sCrashes:%s %s%d%s%s" % (_stat['afl_banner'], _stat['host'], lbl, rst, alc, _stat['fuzzer_pid'],
+                                        _stat['fuzzers'], rst, ds_alive, lbl, rst, _stat['execs_done'], ds_exec, lbl, rst, slc,
+                                        _stat['execs_per_sec'], ds_speed, rst, lbl, rst, _stat['pending_total'],
+                                        _stat['pending_favs'], ds_pend, lbl, rst, clc, _stat['unique_crashes'], rst, ds_crash)
     else:
-        pretty_stat = "[%s on %s]\nAlive: %d/%d\nExecs: %d m\nSpeed: %.1f x/s\nPend: %d/%d\nCrashes: %d" %\
-                      (_stat['afl_banner'], _stat['host'], _stat['fuzzer_pid'], _stat['fuzzers'], _stat['execs_done'],
-                       _stat['execs_per_sec'], _stat['pending_total'], _stat['pending_favs'], _stat['unique_crashes'])
+        pretty_stat = "[%s #%s]\nAlive: %d/%d%s\nExecs: %d%sm\nSpeed: %.1f%sx/s\n" \
+                      "Pend: %d/%d%s\nCrashes: %d%s" %\
+                      (_stat['afl_banner'], _stat['host'], _stat['fuzzer_pid'], _stat['fuzzers'], ds_alive,
+                       _stat['execs_done'], ds_exec, _stat['execs_per_sec'], ds_speed,
+                       _stat['pending_total'], _stat['pending_favs'], ds_pend, _stat['unique_crashes'], ds_crash)
     return pretty_stat
 
 
@@ -239,6 +333,11 @@ def main(argv):
     twitter_inst = twitter_init()
 
     doExit = False
+    firstRun = True
+
+    # { 'fuzzer_dir': (stat, old_stat) }
+    stat_dict = dict()
+
     while not doExit:
         try:
             for fuzzer in config_fuzz_directories:
@@ -249,26 +348,41 @@ def main(argv):
 
                 sum_stats = summarize_stats(stats)
 
-                print(prettify_stat(sum_stats, True))
+                if firstRun:
+                    # old_stat <- stat
+                    old_stats = sum_stats.copy()
+                    firstRun = False
+                else:
+                    # old_stat <- last_stat
+                    old_stats = stat_dict[fuzzer][0].copy()
 
-                tweet = prettify_stat(sum_stats, False)
+                stat_dict[fuzzer] = (sum_stats, old_stats)
+
+                stat_change = diff_stats(sum_stats, old_stats)
+
+                if not diff_stats:
+                    continue
+
+                print(prettify_stat(sum_stats, stat_change, True))
+
+                tweet = prettify_stat(sum_stats, stat_change, False)
 
                 l = len(tweet)
                 c = clr.LRD if l>140 else clr.LGN
                 print(clr.LGN + "[*]" + clr.RST + " Tweeting status (%s%d" % (c, l) + clr.RST + " chars)...")
 
                 try:
-                    twitter_inst.statuses.update(status=tweet)
+                    twitter_inst.statuses.update(status=shorten_tweet(tweet))
                 except (twitter.TwitterHTTPError, URLError):
                     print(clr.YEL + "[!]" + clr.RST + " Problem connecting to Twitter! Tweet not sent!")
                 except Exception as e:
                     print(clr.LRD + "[!]" + clr.RST + " Sending tweet failed (Reason: " + clr.GRA +
                           "%s" % e.__cause__ + clr.RST + ")")
 
-            if int(config_interval) < 0:
+            if float(config_interval) < 0:
                 doExit = True
             else:
-                time.sleep(int(config_interval)*60)
+                time.sleep(float(config_interval)*60)
         except KeyboardInterrupt:
                 print("\b\b" + clr.LGN + "[*]" + clr.RST + " Aborted by user. Good bye!")
                 doExit = True

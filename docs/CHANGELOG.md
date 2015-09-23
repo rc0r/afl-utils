@@ -1,5 +1,12 @@
 # afl-utils Changelog
 
+Version 1.16a
+
+  - afl-stat shows diffs of current and last stat.
+  - afl-stat auto-shortens statuses to 140 chars.
+  - afl-stat interval configuration setting is now a float. Thus polling
+    intervals of less than one minute can be configured.
+
 Version 1.15a
 
   - User comment field added in Data table of afl-collect crash database. Update
