@@ -21,6 +21,7 @@ import sys
 
 import afl_utils
 from afl_utils import SampleIndex, AflThread
+from afl_utils.AflPrettyPrint import *
 from db_connectors import con_sqlite
 
 import threading
@@ -45,7 +46,7 @@ gdb_exploitable_path = None
 
 
 def show_info():
-    print("afl-collect %s by %s" % (afl_utils.__version__, afl_utils.__author__))
+    print(clr.CYA + "afl-collect " + clr.BRI + "%s" % afl_utils.__version__ + clr.RST + " by %s" % afl_utils.__author__)
     print("Crash sample collection and processing utility for afl-fuzz.")
     print("")
 
@@ -148,7 +149,7 @@ def generate_sample_list(list_filename, files_collected):
     fd = open(list_filename, "w")
 
     if not fd:
-        print("Error: Could not create filelist '%s'!" % list_filename)
+        print_err("Could not create file list '%s'!" % list_filename)
         return
 
     for f in files_collected:
@@ -168,16 +169,16 @@ def generate_gdb_exploitable_script(script_filename, sample_index, target_cmd, s
 
     if not intermediate:
         script_filename = os.path.abspath(os.path.expanduser(script_filename))
-        print("Generating final gdb+exploitable script '%s' for %d samples..." % (script_filename,
+        print_ok("Generating final gdb+exploitable script '%s' for %d samples..." % (script_filename,
                                                                                   len(sample_index.outputs())))
     else:
         script_filename = os.path.abspath(os.path.expanduser("%s.%d" % (script_filename, script_id)))
-        print("Generating intermediate gdb+exploitable script '%s' for %d samples..." %
+        print_ok("Generating intermediate gdb+exploitable script '%s' for %d samples..." %
               (script_filename, len(sample_index.outputs())))
 
     fd = open(script_filename, "w")
     if not fd:
-        print("Could not open script file '%s' for writing!" % script_filename)
+        print_err("Could not open script file '%s' for writing!" % script_filename)
         return
 
     #<script header>
@@ -243,7 +244,7 @@ def execute_gdb_script(out_dir, script_filename, num_samples, num_threads):
 
         t = AflThread.GdbThread(n, script_args, out_dir, grep_for, out_queue, out_queue_lock)
         thread_list.append(t)
-        print("Executing gdb+exploitable script '%s.%d'..." % (script_filename, n))
+        print_ok("Executing gdb+exploitable script '%s.%d'..." % (script_filename, n))
         t.daemon = True
         t.start()
 
@@ -259,6 +260,7 @@ def execute_gdb_script(out_dir, script_filename, num_samples, num_threads):
         q[1].release()
 
     i = 1
+    # TODO: colorize output
     print("*** GDB+EXPLOITABLE SCRIPT OUTPUT ***")
     for g in range(0, len(grepped_output)-len(grep_for)+1, len(grep_for)):
         print("[%05d] %s: %s [%s]" % (i, grepped_output[g].ljust(64, '.'), grepped_output[g+3], grepped_output[g+1]))
@@ -319,7 +321,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
     sync_dir = os.path.abspath(os.path.expanduser(args.sync_dir))
     if not os.path.exists(sync_dir):
-        print("No valid directory provided for <SYNC_DIR>!")
+        print_err("No valid directory provided for <SYNC_DIR>!")
         return
 
     if args.collection_dir:
@@ -327,13 +329,13 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         if not os.path.exists(out_dir):
             os.makedirs(out_dir, exist_ok=True)
     else:
-        print("No valid directory provided for <OUT_DIR>!")
+        print_err("No valid directory provided for <OUT_DIR>!")
         return
 
     args.target_cmd = " ".join(args.target_cmd).split()
     args.target_cmd[0] = os.path.abspath(os.path.expanduser(args.target_cmd[0]))
     if not os.path.exists(args.target_cmd[0]):
-        print("Target binary not found!")
+        print_err("Target binary not found!")
         return
     args.target_cmd = " ".join(args.target_cmd)
 
@@ -342,7 +344,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     else:
         db_file = None
 
-    print("Going to collect crash samples from '%s'." % sync_dir)
+    print_ok("Going to collect crash samples from '%s'." % sync_dir)
 
     # initialize database
     if db_file:
@@ -352,17 +354,17 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         lite_db = None
 
     fuzzers = get_fuzzer_instances(sync_dir)
-    print("Found %d fuzzers, collecting crash samples." % len(fuzzers))
+    print_ok("Found %d fuzzers, collecting crash samples." % len(fuzzers))
 
     sample_index = build_sample_index(sync_dir, out_dir, fuzzers, lite_db)
 
     if len(sample_index.index) > 0:
-        print("Successfully indexed %d crash samples." % len(sample_index.index))
+        print_ok("Successfully indexed %d crash samples." % len(sample_index.index))
     elif db_file:
-        print("No unseen samples found. Check your database for results!")
+        print_warn("No unseen samples found. Check your database for results!")
         return
     else:
-        print("No samples found. Check directory settings!")
+        print_warn("No samples found. Check directory settings!")
         return
 
     if args.remove_invalid:
@@ -370,7 +372,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         invalid_samples = afl_vcrash.verify_samples(int(args.num_threads), sample_index.inputs(), args.target_cmd)
 
         # store invalid samples in db
-        print("Saving invalid sample info to database.")
+        print_ok("Saving invalid sample info to database.")
         if args.gdb_expl_script_file and db_file:
             for sample in invalid_samples:
                 sample_name = sample_index.outputs(input_file=sample)
@@ -381,7 +383,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
         # remove invalid samples from sample index
         sample_index.remove_inputs(invalid_samples)
-        print("Removed %d invalid crash samples from index." % len(invalid_samples))
+        print_warn("Removed %d invalid crash samples from index." % len(invalid_samples))
 
     # generate gdb+exploitable script
     if args.gdb_expl_script_file:
@@ -396,7 +398,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
                                                  int(args.num_threads))
 
         # Submit crash classification data into database
-        print("Saving sample classification info to database.")
+        print_ok("Saving sample classification info to database.")
         if db_file:
             for dataset in classification_data:
                 if not lite_db.dataset_exists(dataset):
@@ -414,7 +416,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
         sample_index.remove_outputs(uninteresting_samples)
 
-        print("Removed %d duplicate samples from index. Will continue with %d remaining samples." %
+        print_warn("Removed %d duplicate samples from index. Will continue with %d remaining samples." %
               (len(uninteresting_samples), len(sample_index.index)))
 
         # remove crash samples that are classified uninteresting
@@ -431,7 +433,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
                     uninteresting_samples.append(c['sample'])
 
             sample_index.remove_outputs(uninteresting_samples)
-            print("Removed %d uninteresting crash samples from index." % len(uninteresting_samples))
+            print_warn("Removed %d uninteresting crash samples from index." % len(uninteresting_samples))
 
         # generate output gdb script
         generate_gdb_exploitable_script(os.path.join(out_dir, args.gdb_expl_script_file), sample_index,
@@ -439,13 +441,13 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     elif args.gdb_script_file:
         generate_gdb_exploitable_script(os.path.join(out_dir, args.gdb_script_file), sample_index, args.target_cmd)
 
-    print("Copying %d samples into output directory..." % len(sample_index.index))
+    print_ok("Copying %d samples into output directory..." % len(sample_index.index))
     files_collected = copy_samples(sample_index)
 
     # generate filelist of collected crash samples
     if args.list_filename:
         generate_sample_list(os.path.abspath(os.path.expanduser(args.list_filename)), files_collected)
-        print("Generated crash sample list '%s'." % os.path.abspath(os.path.expanduser(args.list_filename)))
+        print_ok("Generated crash sample list '%s'." % os.path.abspath(os.path.expanduser(args.list_filename)))
 
 
 if __name__ == "__main__":

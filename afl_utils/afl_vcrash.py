@@ -20,13 +20,14 @@ import sys
 
 import afl_utils
 from afl_utils import AflThread
+from afl_utils.AflPrettyPrint import *
 
 import threading
 import queue
 
 
 def show_info():
-    print("afl-vcrash %s by %s" % (afl_utils.__version__, afl_utils.__author__))
+    print(clr.CYA + "afl-vcrash " + clr.BRI + "%s" % afl_utils.__version__ + clr.RST + " by %s" % afl_utils.__author__)
     print("Crash verifier for crash samples collected from afl-fuzz.")
     print("")
 
@@ -102,29 +103,28 @@ particularly useful when combined with '-r' or '-f'.")
 
     args = parser.parse_args(argv[1:])
 
-    if args.collection_dir:
-        input_dir = args.collection_dir
-    else:
-        print("No valid directory provided for <collection_dir>!")
+    input_dir = os.path.abspath(os.path.expanduser(args.collection_dir))
+    if not os.path.exists(input_dir):
+        print_err("No valid directory provided for <collection_dir>!")
         return
 
     num_crashes, crash_samples = afl_collect.get_samples_from_dir(input_dir, True)
 
-    print("Verifying %d crash samples..." % num_crashes)
+    print_ok("Verifying %d crash samples..." % num_crashes)
 
     args.target_cmd = " ".join(args.target_cmd).split()
     args.target_cmd[0] = os.path.abspath(os.path.expanduser(args.target_cmd[0]))
     if not os.path.exists(args.target_cmd[0]):
-        print("Target binary not found!")
+        print_err("Target binary not found!")
         return
     args.target_cmd = " ".join(args.target_cmd)
 
     invalid_samples = verify_samples(int(args.num_threads), crash_samples, args.target_cmd)
 
-    print("Found %d invalid crash samples." % len(invalid_samples))
+    print_warn("Found %d invalid crash samples." % len(invalid_samples))
 
     if args.remove:
-        print("Removing invalid crash samples.")
+        print_ok("Removing invalid crash samples.")
         remove_samples(invalid_samples, args.quiet)
     elif not args.quiet:
         for ci in invalid_samples:
@@ -133,7 +133,7 @@ particularly useful when combined with '-r' or '-f'.")
     # generate filelist of collected crash samples
     if args.list_filename:
         afl_collect.generate_sample_list(args.list_filename, invalid_samples)
-        print("Generated invalid crash sample list '%s'." % args.list_filename)
+        print_ok("Generated invalid crash sample list '%s'." % args.list_filename)
 
 
 if __name__ == "__main__":

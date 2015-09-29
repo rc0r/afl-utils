@@ -19,10 +19,11 @@ import os
 import sys
 
 import afl_utils
+from afl_utils.AflPrettyPrint import *
 
 
 def show_info():
-    print("afl-multikill %s by %s" % (afl_utils.__version__, afl_utils.__author__))
+    print(clr.CYA + "afl-multikill " + clr.BRI + "%s" % afl_utils.__version__ + clr.RST + " by %s" % afl_utils.__author__)
     print("Wrapper script to easily abort non-interactive afl-multicore sessions.")
     print("")
 
@@ -34,15 +35,15 @@ def kill_session(session):
 
         for pid in pid_list:
             try:
-                print("Killing job with PID %s" % pid.strip('\r\n'))
+                print_ok("Killing job with PID %s" % pid.strip('\r\n'))
                 os.kill(int(pid), 9)
             except ProcessLookupError:
-                print(" Warning: Process with PID %s not found!" % (pid.strip('\r\n')))
+                print_warn("Process with PID %s not found!" % (pid.strip('\r\n')))
 
         f.close()
         os.remove("/tmp/afl_multicore.PID.%s" % session)
     else:
-        print("Fatal error: PID file '/tmp/afl_multicore.PID.%s' not found! Aborting!" % session)
+        print_err("PID file '/tmp/afl_multicore.PID.%s' not found! Aborting!" % session)
 
 
 def main(argv):

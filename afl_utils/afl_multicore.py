@@ -20,13 +20,14 @@ import subprocess
 import sys
 
 import afl_utils
+from afl_utils.AflPrettyPrint import *
 
 # afl-multicore global settings
 afl_path = "afl-fuzz"   # in PATH
 
 
 def show_info():
-    print("afl-multicore %s by %s" % (afl_utils.__version__, afl_utils.__author__))
+    print(clr.CYA + "afl-multicore " + clr.BRI + "%s" % afl_utils.__version__ + clr.RST + " by %s" % afl_utils.__author__)
     print("Wrapper script to easily set up parallel fuzzing jobs.")
     print("")
 
@@ -131,7 +132,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     if input_dir != "-":
         input_dir = os.path.abspath(os.path.expanduser(args.input_dir))
         if not os.path.exists(input_dir):
-            print("No valid directory provided for <INPUT_DIR>!")
+            print_err("No valid directory provided for <INPUT_DIR>!")
             return
 
     sync_dir = os.path.abspath(os.path.expanduser(args.sync_dir))
@@ -139,13 +140,13 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     args.target_cmd = " ".join(args.target_cmd).split()
     args.target_cmd[0] = os.path.abspath(os.path.expanduser(args.target_cmd[0]))
     if not os.path.exists(args.target_cmd[0]):
-        print("Target binary not found!")
+        print_err("Target binary not found!")
         return
     args.target_cmd = " ".join(args.target_cmd)
 
     if args.screen:
         if not check_screen():
-            print("When using screen mode, please run afl-multicore from inside a screen session!")
+            print_err("When using screen mode, please run afl-multicore from inside a screen session!")
             return
 
         env_list = None
@@ -171,7 +172,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
             #   </path/to/target.bin> <target_args>
             master_cmd = "%s -i %s -o %s -M %s000 %s -- %s" % (afl_path, input_dir, sync_dir, args.session,
                                                                args.afl_args, args.target_cmd)
-        print("Starting master instance...")
+        print_ok("Starting master instance...")
 
         if not args.screen:
             if not args.verbose:
@@ -180,14 +181,14 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
             else:
                 master = subprocess.Popen(" ".join(['nohup', master_cmd]).split())
             pid_list.append(master.pid)
-            print("Master 000 started (PID: %d)" % master.pid)
+            print(" Master 000 started (PID: %d)" % master.pid)
         else:
             screen_cmd = ["screen", "-X", "eval", "exec %s" % master_cmd, "next"]
             subprocess.Popen(screen_cmd)
-            print("Master 000 started inside new screen window")
+            print(" Master 000 started inside new screen window")
 
     # compile command-line for slaves
-    print("Starting slave instances...")
+    print_ok("Starting slave instances...")
     for i in range(1, int(args.slave_number)+1, 1):
         if not args.afl_args:
             # $ afl-fuzz -i <input_dir> -o <sync_dir> -S <session_name>.NNN </path/to/target.bin> <target_args>
@@ -206,11 +207,11 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
             else:
                 slave = subprocess.Popen(" ".join(['nohup', slave_cmd]).split())
             pid_list.append(slave.pid)
-            print("Slave %03d started (PID: %d)" % (i, slave.pid))
+            print(" Slave %03d started (PID: %d)" % (i, slave.pid))
         else:
             screen_cmd = ["screen", "-X", "eval", "exec %s" % slave_cmd, "next"]
             subprocess.Popen(screen_cmd)
-            print("Slave %03d started inside new screen window" % i)
+            print(" Slave %03d started inside new screen window" % i)
 
     print("")
     if not args.screen:
@@ -220,9 +221,9 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
             for pid in pid_list:
                 f.write("%d\n" % pid)
         f.close()
-        print("For progress info check: %s/%sxxx/fuzzer_stats!" % (args.sync_dir, args.session))
+        print_ok("For progress info check: %s/%sxxx/fuzzer_stats!" % (args.sync_dir, args.session))
     else:
-        print("Check the newly created screen windows!")
+        print_ok("Check the newly created screen windows!")
 
 
 if __name__ == "__main__":

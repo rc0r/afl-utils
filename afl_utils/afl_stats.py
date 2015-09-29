@@ -24,7 +24,7 @@ import twitter
 from urllib.error import URLError
 
 import afl_utils
-from afl_utils.colors import clr
+from afl_utils.AflPrettyPrint import *
 
 
 config_interval = 30
@@ -45,13 +45,13 @@ def read_config(config_file):
         config_file = os.path.abspath(os.path.expanduser(config_file))
 
         if not os.path.isfile(config_file):
-            print(clr.LRD + "[!]" + clr.RST + " Config file not found!")
+            print_err("Config file not found!")
             sys.exit(1)
 
         config = ConfigParser()
         config.read(config_file)
     except (MissingSectionHeaderError, UnicodeDecodeError):
-        print(clr.LRD + "[!]" + clr.RST + " No valid configuration file specified!")
+        print_err("No valid configuration file specified!")
         sys.exit(1)
 
     try:
@@ -62,12 +62,12 @@ def read_config(config_file):
         config_twitter_creds_file = config.get("twitter", "credentials_file", raw=True)
         config_twitter_creds_file = os.path.abspath(os.path.expanduser(config_twitter_creds_file))
     except NoOptionError as e:
-        print(clr.LRD + "[!]" + clr.RST + " No valid configuration file specified! Option '" + clr.GRA +
-              "%s.%s" % (e.section, e.option) + clr.RST + "' not found!")
+        print_err("No valid configuration file specified! Option '" + clr.GRA + "%s.%s" % (e.section, e.option) +
+                  clr.RST + "' not found!")
         sys.exit(1)
     except NoSectionError as e:
-        print(clr.LRD + "[!]" + clr.RST + " No valid configuration file specified! Section '" + clr.GRA +
-              "%s" % e.section + clr.RST + "' not found!")
+        print_err("No valid configuration file specified! Section '" + clr.GRA + "%s" % e.section + clr.RST +
+                  "' not found!")
         sys.exit(1)
 
     exists = True
@@ -92,13 +92,13 @@ def twitter_init():
                                                               config_twitter_consumer_secret))
         return twitter_instance
     except (twitter.TwitterHTTPError, URLError):
-        print(clr.LRD + "[!]" + clr.RST + " Network error, twitter login failed! Check your connection!")
+        print_err("Network error, twitter login failed! Check your connection!")
         sys.exit(1)
 
 
 def shorten_tweet(tweet):
     if len(tweet) > 140:
-        print(clr.LGN + "[*]" + clr.RST + " Status too long, will be shortened to 140 chars!")
+        print_ok("Status too long, will be shortened to 140 chars!")
         short_tweet = tweet[:137] + "..."
     else:
         short_tweet = tweet
@@ -142,7 +142,7 @@ def parse_stat_file(stat_file):
 
         return stats
     except FileNotFoundError as e:
-        print(clr.YEL + "[!]" + clr.RST + " Stat file " + clr.GRA + "%s" % e.filename + clr.RST + "not found!")
+        print_warn("Stat file " + clr.GRA + "%s" % e.filename + clr.RST + "not found!")
 
     return None
 
@@ -151,8 +151,7 @@ def load_stats(fuzzer_dir):
     fuzzer_dir = os.path.abspath(os.path.expanduser(fuzzer_dir))
 
     if not os.path.isdir(fuzzer_dir):
-        print(clr.YEL + "[!]" + clr.RST + " Invalid fuzzing directory specified: " + clr.GRA + "%s" % fuzzer_dir +
-              clr.RST)
+        print_warn("Invalid fuzzing directory specified: " + clr.GRA + "%s" % fuzzer_dir + clr.RST)
         return None
 
     fuzzer_stats = []
@@ -205,8 +204,7 @@ def summarize_stats(stats):
 
 def diff_stats(sum_stats, old_stats):
     if len(sum_stats) != len(old_stats):
-        print(clr.YEL + "[!]" + clr.RST + " Stats corrupted for '" + clr.GRA + "%s" % sum_stats['afl_banner'] +
-              clr.RST + "'!")
+        print_warn("Stats corrupted for '" + clr.GRA + "%s" % sum_stats['afl_banner'] + clr.RST + "'!")
         return None
 
     diff_stat = {
@@ -369,22 +367,22 @@ def main(argv):
 
                 l = len(tweet)
                 c = clr.LRD if l>140 else clr.LGN
-                print(clr.LGN + "[*]" + clr.RST + " Tweeting status (%s%d" % (c, l) + clr.RST + " chars)...")
+                print_ok("Tweeting status (%s%d" % (c, l) + clr.RST + " chars)...")
 
                 try:
                     twitter_inst.statuses.update(status=shorten_tweet(tweet))
                 except (twitter.TwitterHTTPError, URLError):
-                    print(clr.YEL + "[!]" + clr.RST + " Problem connecting to Twitter! Tweet not sent!")
+                    print_warn("Problem connecting to Twitter! Tweet not sent!")
                 except Exception as e:
-                    print(clr.LRD + "[!]" + clr.RST + " Sending tweet failed (Reason: " + clr.GRA +
-                          "%s" % e.__cause__ + clr.RST + ")")
+                    print_err("Sending tweet failed (Reason: " + clr.GRA + "%s" % e.__cause__ + clr.RST + ")")
 
             if float(config_interval) < 0:
                 doExit = True
             else:
                 time.sleep(float(config_interval)*60)
         except KeyboardInterrupt:
-                print("\b\b" + clr.LGN + "[*]" + clr.RST + " Aborted by user. Good bye!")
+                print("\b\b")
+                print_ok("Aborted by user. Good bye!")
                 doExit = True
 
 

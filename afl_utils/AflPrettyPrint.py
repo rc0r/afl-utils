@@ -34,3 +34,15 @@ class clr:
     LCY = "\x1b[1;36m"
     BRI = "\x1b[1;37m"
     RST = "\x1b[0m"
+
+
+def print_ok(msg_str):
+    print("{0}[*] {1}{2}".format(clr.LGN, clr.RST, msg_str))
+
+
+def print_warn(msg_str):
+    print("{0}[!] {1}{2}".format(clr.YEL, clr.RST, msg_str))
+
+
+def print_err(msg_str):
+    print("{0}[!] {1}{2}".format(clr.LRD, clr.RST, msg_str))
