@@ -111,7 +111,10 @@ basically works as follows:
    samples will be moved from the `queue` to the `crashes` dirs within an afl sync dir.  
    
 As already indicated, all these steps are optional, making the tool quite flexible. E.g.
-running only step four can be handy before resuming a parallel fuzzing session.  
+running only step four can be handy before resuming a parallel fuzzing session. In order
+to skip step one, simply provide a directory containing fuzzing samples. Then `afl-minimize`
+will not collect any samples, instead `afl-cmin` and/or `afl-tmin` are run on the samples
+in the provided directory.  
 
 When operating on corpora with many samples use `--tmin` with caution. Running thousands
 of files through `afl-tmin` can take very long. So make sure the results are as expected

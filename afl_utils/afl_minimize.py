@@ -155,21 +155,24 @@ Use '--help' for\nusage instructions or checkout README.md for details.")
     else:
         threads = int(args.num_threads)
 
-    print("Looking for fuzzing queues in '%s'." % sync_dir)
-    fuzzers = afl_collect.get_fuzzer_instances(sync_dir, crash_dirs=False)
-
     if args.collection_dir:
         out_dir = os.path.abspath(os.path.expanduser(args.collection_dir))
-        if not os.path.exists(out_dir):
+        if not os.path.exists(out_dir) or len(os.listdir(out_dir)) == 0:
             os.makedirs(out_dir, exist_ok=True)
 
-        # collect samples from fuzzer queues
-        print("Found %d fuzzers, collecting samples." % len(fuzzers))
-        sample_index = afl_collect.build_sample_index(sync_dir, out_dir, fuzzers)
+            print("Looking for fuzzing queues in '%s'." % sync_dir)
+            fuzzers = afl_collect.get_fuzzer_instances(sync_dir, crash_dirs=False)
 
-        print("Successfully indexed %d samples." % len(sample_index.index))
-        print("Copying %d samples into collection directory..." % len(sample_index.index))
-        afl_collect.copy_samples(sample_index)
+            # collect samples from fuzzer queues
+            print("Found %d fuzzers, collecting samples." % len(fuzzers))
+            sample_index = afl_collect.build_sample_index(sync_dir, out_dir, fuzzers)
+
+            print("Successfully indexed %d samples." % len(sample_index.index))
+            print("Copying %d samples into collection directory..." % len(sample_index.index))
+            afl_collect.copy_samples(sample_index)
+        else:
+            print("Collection directory exists and is not empty!")
+            print("Skipping collection step...")
 
         if args.invoke_cmin:
             # invoke cmin on collection
@@ -214,6 +217,8 @@ Use '--help' for\nusage instructions or checkout README.md for details.")
                 invoke_dryrun(dryrun_samples, out_dir, args.target_cmd, num_threads=threads)
     else:
         if args.dry_run:
+            print("Looking for fuzzing queues in '%s'." % sync_dir)
+            fuzzers = afl_collect.get_fuzzer_instances(sync_dir, crash_dirs=False)
             print("Found %d fuzzers, performing dry run." % len(fuzzers))
             print("Be patient! Depending on the corpus size this step can take hours...")
             # invoke dry-run on original corpus

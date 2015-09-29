@@ -1,5 +1,10 @@
 # afl-utils Changelog
 
+Version 1.17a
+  - afl-minimize will skip file collection if collection dir exists and is not empty.
+    This way you can run the automated afl-cmin and afl-tmin invocations directly on
+    any directory containing fuzzing samples.
+
 Version 1.16a
 
   - afl-stat shows diffs of current and last stat.
