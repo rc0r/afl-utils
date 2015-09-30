@@ -17,6 +17,8 @@ limitations under the License.
 import os
 import sqlite3 as lite
 
+from afl_utils.AflPrettyPrint import *
+
 
 class sqliteConnector:
 
@@ -37,14 +39,14 @@ class sqliteConnector:
                 dbcon = lite.connect(self.database_path)
                 dbcur = dbcon.cursor()
                 dbcur.execute("SELECT Count(*) FROM Data")
-                print("Using existing database to store results, %s entries in this database so far." %
+                print_warn("Using existing database to store results, %s entries in this database so far." %
                       str(dbcur.fetchone()[0]))
                 table_data_exists = True
             except lite.OperationalError:
-                print("[W] Table \'Data\' not found in existing database!")
+                print_warn("Table \'Data\' not found in existing database!")
 
         if not table_data_exists:   # If the database doesn't exist, we'll create it.
-            print("Creating new table \'Data\' in database \'%s\' to store data!" % self.database_path)
+            print_ok("Creating new table \'Data\' in database \'%s\' to store data!" % self.database_path)
             dbcon = lite.connect(self.database_path)
             dbcur = dbcon.cursor()
             dbcur.execute('CREATE TABLE Data (ID INTEGER PRIMARY KEY ASC, Sample text, Classification text, \

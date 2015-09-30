@@ -1,9 +1,15 @@
 # afl-utils Changelog
 
 Version 1.17a
+
   - afl-minimize will skip file collection if collection dir exists and is not empty.
     This way you can run the automated afl-cmin and afl-tmin invocations directly on
     any directory containing fuzzing samples.
+  - All tools' outputs have been colorized.
+  - https://github.com/rc0r/exploitable has been updated to avoid crashing when
+    multiple inferiors have been detected. Instead an UNKNOWN classification with
+    an according message is generated. Be sure to update exploitable to increase
+    afl-collect stability!
 
 Version 1.16a
 

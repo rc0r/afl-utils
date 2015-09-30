@@ -260,17 +260,36 @@ def execute_gdb_script(out_dir, script_filename, num_samples, num_threads):
         q[1].release()
 
     i = 1
-    # TODO: colorize output
     print("*** GDB+EXPLOITABLE SCRIPT OUTPUT ***")
     for g in range(0, len(grepped_output)-len(grep_for)+1, len(grep_for)):
-        print("[%05d] %s: %s [%s]" % (i, grepped_output[g].ljust(64, '.'), grepped_output[g+3], grepped_output[g+1]))
+        if grepped_output[g+3] == "EXPLOITABLE":
+            cex = clr.RED
+            ccl = clr.BRI
+        elif grepped_output[g+3] == "PROBABLY_EXPLOITABLE":
+            cex = clr.YEL
+            ccl = clr.BRI
+        elif grepped_output[g+3] == "PROBABLY_NOT_EXPLOITABLE":
+            cex = clr.BRN
+            ccl = clr.RST
+        elif grepped_output[g+3] == "NOT_EXPLOITABLE":
+            cex = clr.GRN
+            ccl = clr.GRA
+        elif grepped_output[g+3] == "UNKNOWN":
+            cex = clr.BLU
+            ccl = clr.GRA
+        else:
+            cex = clr.GRA
+            ccl = clr.GRA
+        print("%s[%05d]%s %s: %s%s%s %s[%s]%s" % (clr.GRA, i, clr.RST, grepped_output[g].ljust(64, '.'), cex,
+                                                  grepped_output[g+3], clr.RST, ccl, grepped_output[g+1], clr.RST))
         classification_data.append({'sample': grepped_output[g], 'classification': grepped_output[g+3],
                                     'description': grepped_output[g+1], 'hash': grepped_output[g+2]})
         i += 1
 
     if i < num_samples:
-        print("[%05d] %s: INVALID SAMPLE (Aborting!)" % (i, grepped_output[-1].ljust(64, '.')))
-        print("Returned data may be incomplete!")
+        print("%s[%05d]%s %s: %sINVALID SAMPLE (Aborting!)%s" % (clr.GRA, i, clr.RST, grepped_output[-1].ljust(64, '.'),
+                                                                 clr.LRD, clr.RST))
+        print(clr.LRD + "Returned data may be incomplete!" + clr.RST)
     print("*** ***************************** ***")
 
     # remove intermediate gdb scripts...
