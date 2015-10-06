@@ -3,8 +3,23 @@ from setuptools import find_packages
 
 import afl_utils
 
-dependencies = ['twitter']
-afl_scripts = ['afl-collect', 'afl-minimize', 'afl-multicore', 'afl-multikill', 'afl-stats', 'afl-vcrash']
+dependencies = [
+    'twitter',
+    'exploitable>=1.0.0-rcor'
+]
+
+dependency_links = [
+    'https://github.com/rc0r/exploitable/tarball/master#egg=exploitable-1.0.0-rcor'
+]
+
+afl_scripts = [
+    'afl-collect',
+    'afl-minimize',
+    'afl-multicore',
+    'afl-multikill',
+    'afl-stats',
+    'afl-vcrash'
+]
 
 setup(
     name='afl-utils',
@@ -14,8 +29,10 @@ setup(
     license='Apache License 2.0',
     author=afl_utils.__author_name__,
     author_email=afl_utils.__author_email__,
-    description='Utilities for automated crash sample processing/analysis and easy afl-fuzz job management',
+    description='Utilities for automated crash sample processing/analysis, easy afl-fuzz job management and corpus '
+                'optimization',
     install_requires=dependencies,
+    dependency_links=dependency_links,
     platforms=[
         'Any',
     ],
