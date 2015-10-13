@@ -331,7 +331,6 @@ def main(argv):
     twitter_inst = twitter_init()
 
     doExit = False
-    firstRun = True
 
     # { 'fuzzer_dir': (stat, old_stat) }
     stat_dict = dict()
@@ -346,14 +345,16 @@ def main(argv):
 
                 sum_stats = summarize_stats(stats)
 
-                if firstRun:
-                    # old_stat <- stat
-                    old_stats = sum_stats.copy()
-                    firstRun = False
-                else:
-                    # old_stat <- last_stat
+                try:
+                    # stat_dict has already been initialized for fuzzer
+                    #  old_stat <- last_stat
                     old_stats = stat_dict[fuzzer][0].copy()
+                except KeyError:
+                    # stat_dict has not yet been initialized for fuzzer
+                    #  old_stat <- cur_stat
+                    old_stats = sum_stats.copy()
 
+                # initialize/update stat_dict
                 stat_dict[fuzzer] = (sum_stats, old_stats)
 
                 stat_change = diff_stats(sum_stats, old_stats)

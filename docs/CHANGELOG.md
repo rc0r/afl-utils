@@ -1,5 +1,10 @@
 # afl-utils Changelog
 
+Version 1.18a
+
+  - Bug fixed that caused afl-stats to crash when monitoring more than one fuzzer
+    output directory.
+
 Version 1.17a
 
   - afl-minimize will skip file collection if collection dir exists and is not empty.
