@@ -5,11 +5,11 @@ import afl_utils
 
 dependencies = [
     'twitter',
-    'exploitable>=1.0.0-rcor'
+#    'exploitable>=1.0.0-rcor'
 ]
 
 dependency_links = [
-    'https://github.com/rc0r/exploitable/tarball/master#egg=exploitable-1.0.0-rcor'
+    'https://github.com/rc0r/exploitable/tarball/experimental#egg=exploitable-1.0.0-rcor'
 ]
 
 afl_scripts = [
