@@ -115,10 +115,10 @@ def collect_samples(sync_dir, fuzzer_instances):
     return num_samples, samples
 
 
-def build_sample_index(sync_dir, out_dir, fuzzer_instances, db=None):
+def build_sample_index(sync_dir, out_dir, fuzzer_instances, db=None, min_filename=False):
     sample_num, samples = collect_samples(sync_dir, fuzzer_instances)
 
-    sample_index = SampleIndex.SampleIndex(out_dir)
+    sample_index = SampleIndex.SampleIndex(out_dir, min_filename=min_filename)
 
     for fuzzer in samples:
         for sample_dir in fuzzer[1]:
@@ -305,7 +305,7 @@ def main(argv):
     parser = argparse.ArgumentParser(description="afl-collect copies all crash sample files from an afl sync dir used \
 by multiple fuzzers when fuzzing in parallel into a single location providing easy access for further crash analysis.",
                                      usage="afl-collect [-d DATABASE] [-e|-g GDB_EXPL_SCRIPT_FILE] [-f LIST_FILENAME]\n \
-[-h] [-j THREADS] [-r] [-rr] sync_dir collection_dir -- target_cmd")
+[-m] [-h] [-j THREADS] [-r] [-rr] sync_dir collection_dir -- target_cmd")
 
     parser.add_argument("sync_dir", help="afl synchronisation directory crash samples will be collected from.")
     parser.add_argument("collection_dir",
@@ -320,6 +320,8 @@ classification. (Like option '-g', plus script execution.)",
                         default=None)
     parser.add_argument("-f", "--filelist", dest="list_filename", default=None,
                         help="Writes all collected crash sample filenames into a file in the collection directory.")
+    parser.add_argument("-m", "--minimize-filenames", dest="min_filename", action="store_const", const=True,
+                        default=False, help="Minimize crash sample filenames by only keeping its fuzzer name and ID.")
     parser.add_argument("-g", "--generate-gdb-script", dest="gdb_script_file",
                         help="Generate gdb script to run 'exploitable.py' on all collected crash samples. Generated \
 script will be placed into collection directory.", default=None)
@@ -375,7 +377,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     fuzzers = get_fuzzer_instances(sync_dir)
     print_ok("Found %d fuzzers, collecting crash samples." % len(fuzzers))
 
-    sample_index = build_sample_index(sync_dir, out_dir, fuzzers, lite_db)
+    sample_index = build_sample_index(sync_dir, out_dir, fuzzers, lite_db, args.min_filename)
 
     if len(sample_index.index) > 0:
         print_ok("Successfully indexed %d crash samples." % len(sample_index.index))
