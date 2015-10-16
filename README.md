@@ -48,7 +48,7 @@ processed (and added to the database).
 Usage:
 
     afl-collect [-d DATABASE] [-e|-g GDB_EXPL_SCRIPT_FILE] [-f LIST_FILENAME]
-                [-h] [-j THREADS] [-r] [-rr] sync_dir collection_dir target_cmd
+                [-h] [-j THREADS] [-m] [-r] [-rr] sync_dir collection_dir target_cmd
 
     afl-collect copies all crash sample files from an afl sync dir used by multiple
     fuzzers when fuzzing in parallel into a single location providing easy access
@@ -84,6 +84,9 @@ Usage:
       -j NUM_THREADS, --threads NUM_THREADS
                             Enable parallel analysis by specifying the number of
                             threads afl-collect will utilize.
+      -m, --minimize-filenames
+                            Minimize crash sample file names by only keeping fuzzer
+                            name and ID.
       -r, --remove-invalid  Verify collected crash samples and remove samples that
                             do not lead to crashes (runs 'afl-vcrash -qr' on collection
                             directory). This step is done prior to any script file or

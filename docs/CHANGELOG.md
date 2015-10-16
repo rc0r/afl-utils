@@ -4,6 +4,8 @@ Version 1.18a
 
   - Bug fixed that caused afl-stats to crash when monitoring more than one fuzzer
     output directory.
+  - Added option to afl-collect that simplifies crash sample file names keeping only
+    the originating fuzzer name and sample ID (by Martin Gallo).
 
 Version 1.17a
 

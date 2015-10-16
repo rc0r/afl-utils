@@ -280,14 +280,22 @@ def execute_gdb_script(out_dir, script_filename, num_samples, num_threads):
         else:
             cex = clr.GRA
             ccl = clr.GRA
-        print("%s[%05d]%s %s: %s%s%s %s[%s]%s" % (clr.GRA, i, clr.RST, grepped_output[g].ljust(64, '.'), cex,
+
+        if len(grepped_output[g]) < 24:
+            # Assume simplified sample file names,
+            # so save some output space.
+            ljust_width = 24
+        else:
+            ljust_width = 64
+        print("%s[%05d]%s %s: %s%s%s %s[%s]%s" % (clr.GRA, i, clr.RST, grepped_output[g].ljust(ljust_width, '.'), cex,
                                                   grepped_output[g+3], clr.RST, ccl, grepped_output[g+1], clr.RST))
         classification_data.append({'sample': grepped_output[g], 'classification': grepped_output[g+3],
                                     'description': grepped_output[g+1], 'hash': grepped_output[g+2]})
         i += 1
 
     if i < num_samples:
-        print("%s[%05d]%s %s: %sINVALID SAMPLE (Aborting!)%s" % (clr.GRA, i, clr.RST, grepped_output[-1].ljust(64, '.'),
+        print("%s[%05d]%s %s: %sINVALID SAMPLE (Aborting!)%s" % (clr.GRA, i, clr.RST,
+                                                                 grepped_output[-1].ljust(ljust_width, '.'),
                                                                  clr.LRD, clr.RST))
         print(clr.LRD + "Returned data may be incomplete!" + clr.RST)
     print("*** ***************************** ***")
@@ -305,7 +313,7 @@ def main(argv):
     parser = argparse.ArgumentParser(description="afl-collect copies all crash sample files from an afl sync dir used \
 by multiple fuzzers when fuzzing in parallel into a single location providing easy access for further crash analysis.",
                                      usage="afl-collect [-d DATABASE] [-e|-g GDB_EXPL_SCRIPT_FILE] [-f LIST_FILENAME]\n \
-[-m] [-h] [-j THREADS] [-r] [-rr] sync_dir collection_dir -- target_cmd")
+[-h] [-j THREADS] [-m] [-r] [-rr] sync_dir collection_dir -- target_cmd")
 
     parser.add_argument("sync_dir", help="afl synchronisation directory crash samples will be collected from.")
     parser.add_argument("collection_dir",
@@ -320,13 +328,13 @@ classification. (Like option '-g', plus script execution.)",
                         default=None)
     parser.add_argument("-f", "--filelist", dest="list_filename", default=None,
                         help="Writes all collected crash sample filenames into a file in the collection directory.")
-    parser.add_argument("-m", "--minimize-filenames", dest="min_filename", action="store_const", const=True,
-                        default=False, help="Minimize crash sample filenames by only keeping its fuzzer name and ID.")
     parser.add_argument("-g", "--generate-gdb-script", dest="gdb_script_file",
                         help="Generate gdb script to run 'exploitable.py' on all collected crash samples. Generated \
 script will be placed into collection directory.", default=None)
     parser.add_argument("-j", "--threads", dest="num_threads", default=1,
                         help="Enable parallel analysis by specifying the number of threads afl-collect will utilize.")
+    parser.add_argument("-m", "--minimize-filenames", dest="min_filename", action="store_const", const=True,
+                        default=False, help="Minimize crash sample file names by only keeping fuzzer name and ID.")
     parser.add_argument("-r", "--remove-invalid", dest="remove_invalid", action="store_const", const=True,
                         default=False, help="Verify collected crash samples and remove samples that do not lead to \
 crashes (runs 'afl-vcrash.py -r' on collection directory). This step is done prior to any script file \
