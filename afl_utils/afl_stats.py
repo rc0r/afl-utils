@@ -319,7 +319,7 @@ def main(argv):
     show_info()
 
     parser = argparse.ArgumentParser(description="Post selected contents of fuzzer_stats to Twitter.",
-                                     usage="afl-stats [-c]\n")
+                                     usage="afl-stats [-h] [-c config]\n")
 
     parser.add_argument("-c", "--config", dest="config_file",
                         help="afl-stats config file (Default: afl-stats.conf)!", default="afl-stats.conf")
