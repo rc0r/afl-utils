@@ -1,5 +1,13 @@
 # afl-utils Changelog
 
+Version 1.19a
+
+  - afl-multicore revamped. Create config file for your target and desired afl
+    options. Easily start and resume configured fuzzer instances. New feature:
+    Subsequently add new instances using the 'add' command.
+  - Auto-installation of my hacked version of exploitable added (make sure to
+    source exploitable.py as indicated during setup!).
+
 Version 1.18a
 
   - Bug fixed that caused afl-stats to crash when monitoring more than one fuzzer

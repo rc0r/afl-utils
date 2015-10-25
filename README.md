@@ -184,50 +184,59 @@ for every afl instance. Though screen mode is not supported by `afl-multikill`.
  from inside `screen` before running `afl-multicore`. Both ways the environment is inherited
  by all subsequently created screen windows.
 
-**Tip:** `afl-multicore` can be used to resume a parallel fuzzing session. Just provide "-" as
-input dir and leave all other parameters as in the initiating invocation of the fuzzing session.
-
 Usage:
 
-    afl-multicore [-h] [-a afl_args] [-e env_vars] [-i] [-j SLAVE_NUMBER]
-                  [-S SESSION] [-s] [-v] input_dir sync_dir target_cmd
+    afl-multicore [-c config] [-h] [-v] <cmd> <jobs>
 
     afl-multicore starts several parallel fuzzing jobs, that are run in the
-    background. For fuzzer stats see 'sync_dir/SESSION###/fuzzer_stats'!
+    background. For fuzzer stats see 'out_dir/SESSION###/fuzzer_stats'!
 
     positional arguments:
-      input_dir             Input directory that holds the initial test cases
-                            (afl-fuzz's -i option).
-      sync_dir              afl synchronisation directory that will hold fuzzer
-                            output files (afl-fuzz's -o option).
-      target_cmd            Path to the target binary and its command line
-                            arguments. Use '@@' to specify crash sample input
-                            file position (see afl-fuzz usage).
+      cmd                   afl-multicore command to execute: start, resume, add.
+      jobs                  Number of slave instances to start/resume/add.
 
     optional arguments:
       -h, --help            show this help message and exit
-      -a AFL_ARGS, --afl-args AFL_ARGS
-                            afl-fuzz specific parameters. Enclose in quotes, -i
-                            and -o must not be specified!
-      -e ENV_VARS, --env-vars ENV_VARS
-                            (Screen mode only) Comma separated list of environment
-                            variable names and values for newly created screen
-                            windows. Enclose in quotes! Example: --env-vars
-                            "AFL_PERSISTENT=1,LD_PRELOAD=/path/to/yourlib.so"
-      -i, --screen          Interactive screen mode. Starts every afl instance
-                            in a separate screen window. Run from inside screen
-                            (Default: off)!
-      -j SLAVE_NUMBER, --slave-number SLAVE_NUMBER
-                            Number of slave instances to run (Default: 3).
-      -S SESSION, --session SESSION
-                            Provide a name for the fuzzing session. Master
-                            outputs will be written to 'sync_dir/SESSION000'
-                            (Default='SESSION').
-      -s, --slave-only      Slave-only mode, do not start a master instance
-                            (Default: off).
-      -v, --verbose         For debugging purposes do not redirect stderr and
-                            stdout of the created subprocesses to /dev/null
-                            (Default: off). Check 'nohup.out' for further outputs.
+      -c CONFIG_FILE, --config CONFIG_FILE
+                            afl-multicore config file (Default: afl-
+                            multicore.conf)!
+      -v, --verbose         For debugging purposes do not redirect stderr/stdout
+                            of the created subprocesses to /dev/null (Default:
+                            off). Check 'nohup.out' for further outputs.
+
+Target settings and afl options are configured in an INI-like configuration file. The most simple
+configuration may look something like:
+
+    [afl.dirs]
+    input = ./in
+    output = ./out
+
+    [target]
+    target = ~/bin/target
+    cmdline = --target-opt
+
+Of course a lot more settings can be configured, some of these settings are:
+
+* afl options: timeout, memory limit, dictionary, ...
+* job options: session name, interactive mode
+* environment variables for interactive screen mode
+
+For a complete list of options and their descriptions see the included sample
+configuration file `afl-multicore.conf.sample`.
+
+To start four fuzzing instances simply do:
+
+    $ afl-multicore -c target.conf start 4
+
+Now, if you want to add two more instances because `afl-gotcpu` states you've got
+some spare CPU cycles available, use the `add` command:
+
+    $ afl-multicore -c target.conf add 2
+
+Interrupted fuzzing jobs can be resumed the same way using the `resume` command.
+**Note:** It is possible to tell `afl-multicore` to resume more jobs than previoulsy
+were started for a specific target. Obviously `afl-multicore` will resume just as
+many afl instances as it finds output directories for!
 
 
 ## afl-multikill

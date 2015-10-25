@@ -239,7 +239,7 @@ def main(argv):
     show_info()
 
     parser = argparse.ArgumentParser(description="afl-multicore starts several parallel fuzzing jobs, that are run \
-in the background. For fuzzer stats see 'sync_dir/SESSION###/fuzzer_stats'!",
+in the background. For fuzzer stats see 'out_dir/SESSION###/fuzzer_stats'!",
                                      usage="afl-multicore [-c config] [-h] [-v] <cmd> <jobs>")
 
     parser.add_argument("-c", "--config", dest="config_file",

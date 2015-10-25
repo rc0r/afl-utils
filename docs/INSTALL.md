@@ -5,6 +5,7 @@ assume you've got Python 3 running and have got installed the other required too
 Python package requirements should be automatically handled by the setup script
 `setup.py` (see below).
 
+
 ## Dependencies
 
 * Python3.4
@@ -13,7 +14,7 @@ Python package requirements should be automatically handled by the setup script
 * `nohup` for `afl-multicore` normal mode (I'm using: 8.23 (GNU coreutils))
 * `screen` for `afl-multicore` interactive/screen mode (I'm using: GNU Screen 4.02.01)
 * `gdb` with Python support (for gdb script execution support)
-* [Patched Exploitable](https://github.com/rc0r/exploitable) (for gdb script execution support)
+* [Patched Exploitable](https://github.com/rc0r/exploitable) (for gdb script execution support) (auto-installed)
 * and of course you'll need [afl](http://lcamtuf.coredump.cx/afl/) for `afl-multicore`, `afl-multikill`
 
 
@@ -22,12 +23,16 @@ Python package requirements should be automatically handled by the setup script
 In order to use advanced afl-utils features exploitable needs to be installed and
 set up to work with `gdb`.
 
-Get the patched version from GH:  
+Since `v1.19a` the patched version is auto-installed when installing `afl-utils` using
+`setup.py`. See next section for instructions!
+
+However, if you want to install exploitable manually, get the patched version from GH:  
 
     $ git clone https://github.com/rc0r/exploitable
 
 Next install exploitable globally or locally according to the instructions in the
 `Usage` section of exploitables' `README.md`!
+
 
 ## afl-utils Installation
 
@@ -60,9 +65,17 @@ a virtual environment instead:
 If at any time something goes wrong, just remove the `venv` directory and start
 all over with a fresh environment!
 
+This will also fetch and install Python `twitter` and `exploitable` packages into
+your Python environment.
+**Attention:** Make sure you source `exploitable.py` in your `~/.gdbinit` file as
+inidicated by the `exploitable` installer! Otherwise `gdb` won't recognize
+`exploitable` and the advanced features of `afl-collect` are not going to work
+properly!
+
 Now you're good to start:
 
     $ afl-collect --help
+
 
 ## afl-stats setup
 
@@ -82,3 +95,4 @@ On the first run `afl-stats` needs to be authorized with your Twitter account. T
 using OAuth. A browser window should pop up, asking for permission to access your Twitter
 account. Once confirmed a PIN code is displayed that must be entered into `afl-stats` as
 asked. Most of the time this process is quite straight-forward.
+
