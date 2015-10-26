@@ -179,10 +179,10 @@ If you prefer to work with afl's UI instead of background processes and stat fil
 mode is for you. "Interactive" screen mode can be enabled using the `-i` switch. In order to
 use it, start `afl-multicore` from **inside** a `screen` session. A new screen window is created
 for every afl instance. Though screen mode is not supported by `afl-multikill`.  
-**Attention:** When using screen mode be sure to set necessary environment variables using the
-`--env-vars` parameter of `afl-multicore`! Alternatively run `screen -X setenv <var_name> <var_value>`
- from inside `screen` before running `afl-multicore`. Both ways the environment is inherited
- by all subsequently created screen windows.
+**Attention:** When using screen mode be sure to set necessary environment variables in the
+`[environment]` section of your `afl-multicore` configuration! Alternatively run
+`screen -X setenv <var_name> <var_value>` from inside `screen` before running `afl-multicore`.
+Both ways the environment is inherited by all subsequently created screen windows.
 
 Usage:
 
@@ -233,10 +233,11 @@ some spare CPU cycles available, use the `add` command:
 
     $ afl-multicore -c target.conf add 2
 
-Interrupted fuzzing jobs can be resumed the same way using the `resume` command.
-**Note:** It is possible to tell `afl-multicore` to resume more jobs than previoulsy
-were started for a specific target. Obviously `afl-multicore` will resume just as
-many afl instances as it finds output directories for!
+Interrupted fuzzing jobs can be resumed the same way using the `resume` command.  
+**Note:** It is possible to *tell* `afl-multicore` to resume more jobs for a specific
+target than were previously started. Obviously `afl-multicore` can resume just as
+many afl instances as it finds output directories for! Use the `add` command to
+start additional afl instances!
 
 
 ## afl-multikill

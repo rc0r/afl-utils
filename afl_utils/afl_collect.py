@@ -21,7 +21,7 @@ import sys
 
 import afl_utils
 from afl_utils import SampleIndex, AflThread
-from afl_utils.AflPrettyPrint import *
+from afl_utils.AflPrettyPrint import clr, print_ok, print_err, print_warn
 from db_connectors import con_sqlite
 
 import threading
@@ -170,25 +170,25 @@ def generate_gdb_exploitable_script(script_filename, sample_index, target_cmd, s
     if not intermediate:
         script_filename = os.path.abspath(os.path.expanduser(script_filename))
         print_ok("Generating final gdb+exploitable script '%s' for %d samples..." % (script_filename,
-                                                                                  len(sample_index.outputs())))
+                                                                                     len(sample_index.outputs())))
     else:
         script_filename = os.path.abspath(os.path.expanduser("%s.%d" % (script_filename, script_id)))
         print_ok("Generating intermediate gdb+exploitable script '%s' for %d samples..." %
-              (script_filename, len(sample_index.outputs())))
+                 (script_filename, len(sample_index.outputs())))
 
     fd = open(script_filename, "w")
     if not fd:
         print_err("Could not open script file '%s' for writing!" % script_filename)
         return
 
-    #<script header>
+    # <script header>
     # source exploitable.py if necessary
     if gdb_exploitable_path:
         fd.writelines("source %s\n" % gdb_exploitable_path)
 
     # load executable
     fd.writelines("file %s\n" % gdb_target_binary)
-    #</script_header>
+    # </script_header>
 
     # fill script with content
     for f in sample_index.index:
@@ -207,9 +207,9 @@ def generate_gdb_exploitable_script(script_filename, sample_index, target_cmd, s
         fd.writelines(run_cmd)
         fd.writelines("exploitable\n")
 
-    #<script_footer>
+    # <script_footer>
     fd.writelines("quit")
-    #</script_footer>
+    # </script_footer>
 
     fd.close()
 
@@ -446,7 +446,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         sample_index.remove_outputs(uninteresting_samples)
 
         print_warn("Removed %d duplicate samples from index. Will continue with %d remaining samples." %
-              (len(uninteresting_samples), len(sample_index.index)))
+                   (len(uninteresting_samples), len(sample_index.index)))
 
         # remove crash samples that are classified uninteresting
         if args.remove_unexploitable:
