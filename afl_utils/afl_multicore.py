@@ -33,14 +33,14 @@ def show_info():
 
 
 def check_session(session):
-    session_active = os.path.isfile("/tmp/afl_multicore.PID.%s" % session)
+    session_active = os.path.isfile("/tmp/afl_multicore.PGID.%s" % session)
 
     if session_active:
         print("It seems you're already running an afl-multicore session with name '%s'." % session)
         print("Please choose another session name using '-S <session>'!")
         print("")
         print("If you're sure there no active session with name '%s'," % session)
-        print("you may delete the PID file '/tmp/afl_multicore.PID.%s'." % session)
+        print("you may delete the PGID file '/tmp/afl_multicore.PGID.%s'." % session)
         print("")
         print("To avoid this message in the future please abort active afl-multicore")
         print("sessions using 'afl-multikill -S <session>'!")
@@ -158,8 +158,6 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
                 env_list.append(env_tuple)
 
         setup_screen(args.slave_only, int(args.slave_number), env_list)
-    else:
-        pid_list = []
 
     if not args.slave_only:
         # compile command-line for master
@@ -180,7 +178,6 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
                                           stderr=subprocess.DEVNULL)
             else:
                 master = subprocess.Popen(" ".join(['nohup', master_cmd]).split())
-            pid_list.append(master.pid)
             print(" Master 000 started (PID: %d)" % master.pid)
         else:
             screen_cmd = ["screen", "-X", "eval", "exec %s" % master_cmd, "next"]
@@ -206,7 +203,6 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
                                          stderr=subprocess.DEVNULL)
             else:
                 slave = subprocess.Popen(" ".join(['nohup', slave_cmd]).split())
-            pid_list.append(slave.pid)
             print(" Slave %03d started (PID: %d)" % (i, slave.pid))
         else:
             screen_cmd = ["screen", "-X", "eval", "exec %s" % slave_cmd, "next"]
@@ -215,11 +211,10 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
     print("")
     if not args.screen:
-        # write PID list to file /tmp/afl-multicore.<SESSION>
-        f = open("/tmp/afl_multicore.PID.%s" % args.session, "w")
+        # write PGID to file /tmp/afl-multicore.PGID.<SESSION>
+        f = open("/tmp/afl_multicore.PGID.%s" % args.session, "w")
         if f.writable():
-            for pid in pid_list:
-                f.write("%d\n" % pid)
+            f.write("%d\n" % os.getpgid(0))
         f.close()
         print_ok("For progress info check: %s/%sxxx/fuzzer_stats!" % (args.sync_dir, args.session))
     else:
