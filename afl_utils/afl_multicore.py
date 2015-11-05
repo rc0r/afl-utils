@@ -184,14 +184,14 @@ def afl_cmdline_from_config(config_settings):
 
 
 def check_session(session):
-    session_active = os.path.isfile("/tmp/afl_multicore.PID.%s" % session)
+    session_active = os.path.isfile("/tmp/afl_multicore.PGID.%s" % session)
 
     if session_active:
         print("It seems you're already running an afl-multicore session with name '%s'." % session)
         print("Please choose another session name using '-S <session>'!")
         print("")
         print("If you're sure there no active session with name '%s'," % session)
-        print("you may delete the PID file '/tmp/afl_multicore.PID.%s'." % session)
+        print("you may delete the PGID file '/tmp/afl_multicore.PGID.%s'." % session)
         print("")
         print("To avoid this message in the future please abort active afl-multicore")
         print("sessions using 'afl-multikill -S <session>'!")
@@ -294,8 +294,6 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
             return
 
         setup_screen(int(args.jobs), environment)
-    else:
-        pid_list = []
 
     if not conf_settings["slave_only"]:
         # compile command-line for master
@@ -312,7 +310,6 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
                                           stderr=subprocess.DEVNULL)
             else:
                 master = subprocess.Popen(" ".join(['nohup', master_cmd]).split())
-            pid_list.append(master.pid)
             print(" Master 000 started (PID: %d)" % master.pid)
         else:
             subprocess.Popen("screen -X select 1".split())
@@ -335,7 +332,6 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
                                          stderr=subprocess.DEVNULL)
             else:
                 slave = subprocess.Popen(" ".join(['nohup', slave_cmd]).split())
-            pid_list.append(slave.pid)
             print(" Slave %03d started (PID: %d)" % (i, slave.pid))
         else:
             subprocess.Popen(["screen", "-X", "select", "%d" % (i+1)])
@@ -345,11 +341,10 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
 
     print("")
     if not conf_settings["interactive"]:
-        # write PID list to file /tmp/afl-multicore.<SESSION>
-        f = open("/tmp/afl_multicore.PID.%s" % conf_settings["session"], "w")
+        # write PGID to file /tmp/afl-multicore.PGID.<SESSION>
+        f = open("/tmp/afl_multicore.PGID.%s" % args.session, "w")
         if f.writable():
-            for pid in pid_list:
-                f.write("%d\n" % pid)
+            f.write("%d\n" % os.getpgid(0))
         f.close()
         print_ok("For progress info check: %s/%sxxx/fuzzer_stats!" % (conf_settings["output"],
                                                                       conf_settings["session"]))

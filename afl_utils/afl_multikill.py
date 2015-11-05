@@ -17,6 +17,7 @@ limitations under the License.
 import argparse
 import os
 import sys
+import signal
 
 import afl_utils
 from afl_utils.AflPrettyPrint import *
@@ -29,21 +30,20 @@ def show_info():
 
 
 def kill_session(session):
-    if os.path.isfile("/tmp/afl_multicore.PID.%s" % session):
-        f = open("/tmp/afl_multicore.PID.%s" % session)
-        pid_list = f.readlines()
+    if os.path.isfile("/tmp/afl_multicore.PGID.%s" % session):
+        f = open("/tmp/afl_multicore.PGID.%s" % session)
+        pgid = f.readline()
 
-        for pid in pid_list:
-            try:
-                print_ok("Killing job with PID %s" % pid.strip('\r\n'))
-                os.kill(int(pid), 9)
-            except ProcessLookupError:
-                print_warn("Process with PID %s not found!" % (pid.strip('\r\n')))
+        try:
+            print_ok("Killing jobs with PGID %s" % pgid.strip('\r\n'))
+            os.killpg(int(pgid), signal.SIGTERM)
+        except ProcessLookupError:
+            print_warn("No processes with PGID %s found!" % (pgid.strip('\r\n')))
 
         f.close()
-        os.remove("/tmp/afl_multicore.PID.%s" % session)
+        os.remove("/tmp/afl_multicore.PGID.%s" % session)
     else:
-        print_err("PID file '/tmp/afl_multicore.PID.%s' not found! Aborting!" % session)
+        print_err("PGID file '/tmp/afl_multicore.PGID.%s' not found! Aborting!" % session)
 
 
 def main(argv):
