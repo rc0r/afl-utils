@@ -342,7 +342,7 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
     print("")
     if not conf_settings["interactive"]:
         # write PGID to file /tmp/afl-multicore.PGID.<SESSION>
-        f = open("/tmp/afl_multicore.PGID.%s" % args.session, "w")
+        f = open("/tmp/afl_multicore.PGID.%s" % conf_settings["session"], "w")
         if f.writable():
             f.write("%d\n" % os.getpgid(0))
         f.close()

@@ -5,6 +5,9 @@ Version 1.19a
   - afl-multicore revamped. Create config file for your target and desired afl
     options. Easily start and resume configured fuzzer instances. New feature:
     Subsequently add new instances using the 'add' command.
+  - afl-multikill updated to terminate fuzzing sessions by process group id
+    instead of individual PIDs and using SIGTERM instead of SIGKILL (by Mark
+    Janssen).
   - Auto-installation of my hacked version of exploitable added (make sure to
     source exploitable.py as indicated during setup!).
 
