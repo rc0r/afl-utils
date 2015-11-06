@@ -1,5 +1,10 @@
 # afl-utils Changelog
 
+Version 1.20a
+
+  - afl-multicore docs updated to reflect latest changes (by Mark Janssen).
+  - ...
+
 Version 1.19a
 
   - afl-multicore revamped. Create config file for your target and desired afl
