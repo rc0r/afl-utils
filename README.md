@@ -193,7 +193,7 @@ Usage:
 
     positional arguments:
       cmd                   afl-multicore command to execute: start, resume, add.
-      jobs                  Number of slave instances to start/resume/add.
+      jobs                  Number of instances to start/resume/add.
 
     optional arguments:
       -h, --help            show this help message and exit

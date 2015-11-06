@@ -248,7 +248,7 @@ in the background. For fuzzer stats see 'out_dir/SESSION###/fuzzer_stats'!",
                         default=False, help="For debugging purposes do not redirect stderr/stdout of the created \
 subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.")
     parser.add_argument("cmd", help="afl-multicore command to execute: start, resume, add.")
-    parser.add_argument("jobs", help="Number of slave instances to start/resume/add.")
+    parser.add_argument("jobs", help="Number of instances to start/resume/add.")
 
     args = parser.parse_args(argv[1:])
 
