@@ -3,8 +3,10 @@
 Version 1.20a
 
   - afl-multicore docs updated to reflect latest changes (by Mark Janssen).
-  - afl-multicore session check bug fixed, that prevented adding of additional
+  - Fixed afl-multicore session check bug, that prevented adding additional
     afl instances in normal mode (spotted by Mark Janssen).
+  - afl-multicore now properly updates its session file when adding additional
+    instances. afl-multikill was adapted accordingly.
 
 Version 1.19a
 

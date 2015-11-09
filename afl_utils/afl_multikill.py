@@ -20,11 +20,12 @@ import sys
 import signal
 
 import afl_utils
-from afl_utils.AflPrettyPrint import *
+from afl_utils.AflPrettyPrint import clr, print_err, print_ok, print_warn
 
 
 def show_info():
-    print(clr.CYA + "afl-multikill " + clr.BRI + "%s" % afl_utils.__version__ + clr.RST + " by %s" % afl_utils.__author__)
+    print(clr.CYA + "afl-multikill " + clr.BRI + "%s" % afl_utils.__version__ + clr.RST +
+          " by %s" % afl_utils.__author__)
     print("Wrapper script to easily abort non-interactive afl-multicore sessions.")
     print("")
 
@@ -32,13 +33,14 @@ def show_info():
 def kill_session(session):
     if os.path.isfile("/tmp/afl_multicore.PGID.%s" % session):
         f = open("/tmp/afl_multicore.PGID.%s" % session)
-        pgid = f.readline()
+        pgids = f.readlines()
 
-        try:
-            print_ok("Killing jobs with PGID %s" % pgid.strip('\r\n'))
-            os.killpg(int(pgid), signal.SIGTERM)
-        except ProcessLookupError:
-            print_warn("No processes with PGID %s found!" % (pgid.strip('\r\n')))
+        for pgid in pgids:
+            try:
+                print_ok("Killing jobs with PGID %s" % pgid.strip('\r\n'))
+                os.killpg(int(pgid), signal.SIGTERM)
+            except ProcessLookupError:
+                print_warn("No processes with PGID %s found!" % (pgid.strip('\r\n')))
 
         f.close()
         os.remove("/tmp/afl_multicore.PGID.%s" % session)
