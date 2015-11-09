@@ -190,7 +190,7 @@ def check_session(session):
         print("It seems you're already running an afl-multicore session with name '%s'." % session)
         print("Please choose another session name using '-S <session>'!")
         print("")
-        print("If you're sure there no active session with name '%s'," % session)
+        print("If you're sure there is no active session with name '%s'," % session)
         print("you may delete the PGID file '/tmp/afl_multicore.PGID.%s'." % session)
         print("")
         print("To avoid this message in the future please abort active afl-multicore")
@@ -254,8 +254,8 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
 
     conf_settings, environment = read_config(os.path.abspath(os.path.expanduser(args.config_file)))
 
-    if not check_session(conf_settings["session"]):
-        return
+    # if not check_session(conf_settings["session"]):
+    #     return
 
     if args.cmd != "resume":
         conf_settings["input"] = os.path.abspath(os.path.expanduser(conf_settings["input"]))
