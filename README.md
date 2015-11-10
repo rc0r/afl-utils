@@ -169,16 +169,27 @@ Usage:
 So afl's fancy interface is gone). Fuzzer outputs (`stdout` and `stderr`) will be redirected
 to `/dev/null`. Use `--verbose` to turn output redirection off. This is particularly useful
 when debugging `afl-fuzz` invocations. The auto-generated file `nohup.out` might also contain
-some useful info.  
+some useful info.
+
+Another way to debug `afl-fuzz` invocations is test mode. Just start `afl-multicore` from
+inside a screen session and provide the `--test` flag to perform a test run. `afl-multicore`
+will start a single fuzzing instance in interactive mode using a test output directory
+`<out-dir>_test`. The `interactive` setting in your config file will be ignored.
+
+**Note:** After running a test you will have to clean up the test output directory
+`<out-dir>_test` yourself!
+
 If you want to check the fuzzers' progress see `fuzzer_stats` in the respective fuzzer
 directory in the synchronisation dir (`sync_dir/SESSION###/fuzzer_stats`)! The master instance
 files are always located at `sync_dir/SESSION000/`.  
 An `afl-multicore` session can (and should!) easily be aborted with the help of
-`afl-multikill` (see below).  
+`afl-multikill` (see below).
+
 If you prefer to work with afl's UI instead of background processes and stat files, screen
 mode is for you. "Interactive" screen mode can be enabled using the `-i` switch. In order to
 use it, start `afl-multicore` from **inside** a `screen` session. A new screen window is created
-for every afl instance. Though screen mode is not supported by `afl-multikill`.  
+for every afl instance. Though screen mode is not supported by `afl-multikill`.
+
 **Attention:** When using screen mode be sure to set necessary environment variables in the
 `[environment]` section of your `afl-multicore` configuration! Alternatively run
 `screen -X setenv <var_name> <var_value>` from inside `screen` before running `afl-multicore`.
@@ -186,7 +197,7 @@ Both ways the environment is inherited by all subsequently created screen window
 
 Usage:
 
-    afl-multicore [-c config] [-h] [-v] <cmd> <jobs>
+    afl-multicore [-c config] [-h] [-t] [-v] <cmd> <jobs>
 
     afl-multicore starts several parallel fuzzing jobs, that are run in the
     background. For fuzzer stats see 'out_dir/SESSION###/fuzzer_stats'!
@@ -200,12 +211,14 @@ Usage:
       -c CONFIG_FILE, --config CONFIG_FILE
                             afl-multicore config file (Default: afl-
                             multicore.conf)!
+      -t, --test            Perform a test run by starting a single afl instance
+                            in interactive mode using a test output directory.
       -v, --verbose         For debugging purposes do not redirect stderr/stdout
                             of the created subprocesses to /dev/null (Default:
                             off). Check 'nohup.out' for further outputs.
 
-Target settings and afl options are configured in an INI-like configuration file. The most simple
-configuration may look something like:
+Target settings and afl options are configured in an INI-like configuration file.
+The most simple configuration may look something like:
 
     [afl.dirs]
     input = ./in
@@ -228,16 +241,16 @@ To start four fuzzing instances simply do:
 
     $ afl-multicore -c target.conf start 4
 
-Now, if you want to add two more instances because `afl-gotcpu` states you've got
-some spare CPU cycles available, use the `add` command:
+Now, if you want to add two more instances because `afl-gotcpu` states you've
+got some spare CPU cycles available, use the `add` command:
 
     $ afl-multicore -c target.conf add 2
 
 Interrupted fuzzing jobs can be resumed the same way using the `resume` command.  
-**Note:** It is possible to *tell* `afl-multicore` to resume more jobs for a specific
-target than were previously started. Obviously `afl-multicore` can resume just as
-many afl instances as it finds output directories for! Use the `add` command to
-start additional afl instances!
+**Note:** It is possible to *tell* `afl-multicore` to resume more jobs for a
+specific target than were previously started. Obviously `afl-multicore` can
+resume just as many afl instances as it finds output directories for! Use the
+`add` command to start additional afl instances!
 
 
 ## afl-multikill

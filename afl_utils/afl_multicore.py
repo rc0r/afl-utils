@@ -183,22 +183,6 @@ def afl_cmdline_from_config(config_settings):
     return afl_cmdline
 
 
-def check_session(session):
-    session_active = os.path.isfile("/tmp/afl_multicore.PGID.%s" % session)
-
-    if session_active:
-        print("It seems you're already running an afl-multicore session with name '%s'." % session)
-        print("Please choose another session name using '-S <session>'!")
-        print("")
-        print("If you're sure there is no active session with name '%s'," % session)
-        print("you may delete the PGID file '/tmp/afl_multicore.PGID.%s'." % session)
-        print("")
-        print("To avoid this message in the future please abort active afl-multicore")
-        print("sessions using 'afl-multikill -S <session>'!")
-
-    return not session_active
-
-
 def check_screen():
     inside_screen = False
     try:
@@ -240,10 +224,12 @@ def main(argv):
 
     parser = argparse.ArgumentParser(description="afl-multicore starts several parallel fuzzing jobs, that are run \
 in the background. For fuzzer stats see 'out_dir/SESSION###/fuzzer_stats'!",
-                                     usage="afl-multicore [-c config] [-h] [-v] <cmd> <jobs>")
+                                     usage="afl-multicore [-c config] [-h] [-t] [-v] <cmd> <jobs>")
 
     parser.add_argument("-c", "--config", dest="config_file",
                         help="afl-multicore config file (Default: afl-multicore.conf)!", default="afl-multicore.conf")
+    parser.add_argument("-t", "--test", dest="test_run", action="store_const", const=True, default=False, help="Perform \
+a test run by starting a single afl instance in interactive mode using a test output directory.")
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_const", const=True,
                         default=False, help="For debugging purposes do not redirect stderr/stdout of the created \
 subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.")
@@ -254,8 +240,11 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
 
     conf_settings, environment = read_config(os.path.abspath(os.path.expanduser(args.config_file)))
 
-    # if not check_session(conf_settings["session"]):
-    #     return
+    if args.test_run:
+        conf_settings["output"] += "_test"
+        conf_settings["interactive"] = True
+        args.jobs = 1
+        args.cmd = "start"
 
     if args.cmd != "resume":
         conf_settings["input"] = os.path.abspath(os.path.expanduser(conf_settings["input"]))
@@ -290,7 +279,8 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
 
     if conf_settings["interactive"]:
         if not check_screen():
-            print_err("When using screen mode, please run afl-multicore from inside a screen session!")
+            print_err("When using screen mode or performing a test run, please run afl-multicore\n\
+    from inside a screen session!")
             return
 
         setup_screen(int(args.jobs), environment)

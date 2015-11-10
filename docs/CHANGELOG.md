@@ -7,6 +7,7 @@ Version 1.20a
     afl instances in normal mode (spotted by Mark Janssen).
   - afl-multicore now properly updates its session file when adding additional
     instances. afl-multikill was adapted accordingly.
+  - Simple interactive test mode added to afl-multicore.
 
 Version 1.19a
 
