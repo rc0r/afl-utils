@@ -170,10 +170,10 @@ So afl's fancy interface is gone). Fuzzer outputs (`stdout` and `stderr`) will b
 to `/dev/null`. Use `--verbose` to turn output redirection off. This is particularly useful
 when debugging `afl-fuzz` invocations. The auto-generated file `nohup.out` might also contain
 some useful info.  
-Another way to debug `afl-fuzz` invocations is test mode. Just start `afl-multicore` from
-inside a screen session and provide the `--test` flag to perform a test run. `afl-multicore`
-will start a single fuzzing instance in interactive mode using a test output directory
-`<out-dir>_test`. The `interactive` setting in your config file will be ignored.  
+Another way to debug `afl-fuzz` invocations is test mode. Just start `afl-multicore` and
+provide the `--test` flag to perform a test run. `afl-multicore` will start a single fuzzing
+instance in interactive mode using a test output directory `<out-dir>_test`. The `interactive`
+setting in your config file will be ignored.  
 **Note:** After running a test you will have to clean up the test output directory
 `<out-dir>_test` yourself!
 

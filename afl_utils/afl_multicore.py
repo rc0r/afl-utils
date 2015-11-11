@@ -16,6 +16,7 @@ limitations under the License.
 
 import argparse
 import os
+import signal
 import subprocess
 import sys
 from configparser import ConfigParser, NoOptionError, NoSectionError, MissingSectionHeaderError
@@ -219,6 +220,12 @@ def setup_screen(windows, env_list):
     subprocess.Popen("screen -X select 0".split())
 
 
+def sigint_handler(signal, frame):
+    print()
+    print_ok("Test run aborted by user!")
+    sys.exit(0)
+
+
 def main(argv):
     show_info()
 
@@ -241,8 +248,9 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
     conf_settings, environment = read_config(os.path.abspath(os.path.expanduser(args.config_file)))
 
     if args.test_run:
+        signal.signal(signal.SIGINT, sigint_handler)
         conf_settings["output"] += "_test"
-        conf_settings["interactive"] = True
+        conf_settings["interactive"] = False
         args.jobs = 1
         args.cmd = "start"
 
@@ -279,19 +287,23 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
 
     if conf_settings["interactive"]:
         if not check_screen():
-            print_err("When using screen mode or performing a test run, please run afl-multicore\n\
-    from inside a screen session!")
+            print_err("When using screen mode, please run afl-multicore from inside a screen session!")
             return
 
         setup_screen(int(args.jobs), environment)
 
+    # compile command-line for master
+    # $ afl-fuzz -i <input_dir> -o <output_dir> -M <session_name>.000 <afl_args> \
+    #   </path/to/target.bin> <target_args>
+    master_cmd = [afl_path] + afl_cmdline_from_config(conf_settings)
+    master_cmd += ["-M", "%s000" % conf_settings["session"], "--", target_cmd]
+    master_cmd = " ".join(master_cmd)
+
+    if args.test_run:
+        with subprocess.Popen(master_cmd.split()) as test_proc:
+            print(" Test instance started (PID: %d)" % test_proc.pid)
+
     if not conf_settings["slave_only"]:
-        # compile command-line for master
-        # $ afl-fuzz -i <input_dir> -o <output_dir> -M <session_name>.000 <afl_args> \
-        #   </path/to/target.bin> <target_args>
-        master_cmd = [afl_path] + afl_cmdline_from_config(conf_settings)
-        master_cmd += ["-M", "%s000" % conf_settings["session"], "--", target_cmd]
-        master_cmd = " ".join(master_cmd)
         print_ok("Starting master instance...")
 
         if not conf_settings["interactive"]:
