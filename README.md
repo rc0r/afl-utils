@@ -175,7 +175,8 @@ provide the `--test` flag to perform a test run. `afl-multicore` will start a si
 instance in interactive mode using a test output directory `<out-dir>_test`. The `interactive`
 setting in your config file will be ignored.  
 **Note:** After running a test you will have to clean up the test output directory
-`<out-dir>_test` yourself!
+`<out-dir>_test` yourself!  
+**Note:** For interactive *test runs* `screen` is not required!
 
 If you want to check the fuzzers' progress see `fuzzer_stats` in the respective fuzzer
 directory in the synchronisation dir (`sync_dir/SESSION###/fuzzer_stats`)! The master instance
@@ -184,9 +185,10 @@ An `afl-multicore` session can (and should!) easily be aborted with the help of
 `afl-multikill` (see below).
 
 If you prefer to work with afl's UI instead of background processes and stat files, screen
-mode is for you. "Interactive" screen mode can be enabled using the `-i` switch. In order to
-use it, start `afl-multicore` from **inside** a `screen` session. A new screen window is created
-for every afl instance. Though screen mode is not supported by `afl-multikill`.  
+mode is for you. "Interactive" screen mode can be enabled using the `interactive = on` directive
+in the config file (see below). In order to use it, start `afl-multicore` from **inside** a
+`screen` session. A new screen window is created for every afl instance. Though screen mode is
+not supported by `afl-multikill`.  
 **Attention:** When using screen mode be sure to set necessary environment variables in the
 `[environment]` section of your `afl-multicore` configuration! Alternatively run
 `screen -X setenv <var_name> <var_value>` from inside `screen` before running `afl-multicore`.

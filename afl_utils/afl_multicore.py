@@ -301,7 +301,7 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
 
     if args.test_run:
         with subprocess.Popen(master_cmd.split()) as test_proc:
-            print(" Test instance started (PID: %d)" % test_proc.pid)
+            print_ok("Test instance started (PID: %d)" % test_proc.pid)
 
     if not conf_settings["slave_only"]:
         print_ok("Starting master instance...")
