@@ -1,5 +1,10 @@
 # afl-utils Changelog
 
+Version 1.21a
+
+  - Ineffective subprocess timeout during crash verification fixed for afl-collect
+    and afl-vcrash.
+
 Version 1.20a
 
   - afl-multicore docs updated to reflect latest changes (by Mark Janssen).

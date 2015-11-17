@@ -34,9 +34,6 @@ class VerifyThread(threading.Thread):
         self.exit = False
 
     def run(self):
-        if afl_utils.afl_collect.stdin_mode(self.target_cmd):
-            self.target_cmd += " < @@"
-
         while not self.exit:
             self.in_queue_lock.acquire()
             if not self.in_queue.empty():
@@ -45,7 +42,12 @@ class VerifyThread(threading.Thread):
 
                 cmd = self.target_cmd.replace("@@", os.path.abspath(cs))
                 try:
-                    v = subprocess.call(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, shell=True, timeout=60)
+                    if afl_utils.afl_collect.stdin_mode(self.target_cmd):
+                        v = subprocess.call(cmd.split(), stdin=open(os.path.abspath(cs)), stderr=subprocess.DEVNULL,
+                                            stdout=subprocess.DEVNULL, timeout=60)
+                    else:
+                        v = subprocess.call(cmd.split(), stderr=subprocess.DEVNULL,
+                                            stdout=subprocess.DEVNULL, timeout=60)
                     # check if process was terminated/stopped by signal
                     if not os.WIFSIGNALED(v) and not os.WIFSTOPPED(v):
                         self.out_queue_lock.acquire()
@@ -60,11 +62,11 @@ class VerifyThread(threading.Thread):
                             self.out_queue.put(cs)
                             self.out_queue_lock.release()
                         # debug
-                        #else:
-                        #    if os.WIFSIGNALED(v):
-                        #        print("%s: sig: %d (%d)" % (cs, os.WTERMSIG(v), v))
-                        #    elif os.WIFSTOPPED(v):
-                        #        print("%s: sig: %d (%d)" % (cs, os.WSTOPSIG(v), v))
+                        # else:
+                        #     if os.WIFSIGNALED(v):
+                        #         print("%s: sig: %d (%d)" % (cs, os.WTERMSIG(v), v))
+                        #     elif os.WIFSTOPPED(v):
+                        #         print("%s: sig: %d (%d)" % (cs, os.WSTOPSIG(v), v))
                 except Exception:
                     pass
             else:
@@ -127,8 +129,9 @@ class AflTminThread(threading.Thread):
                     self.out_queue_lock.acquire()
                     self.out_queue.put(os.path.join(self.output_dir, os.path.basename(f)))
                     self.out_queue_lock.release()
-                except subprocess.CalledProcessError as e:
-                    #print("afl-tmin failed with exit code %d!" % e.returncode)
+                # except subprocess.CalledProcessError as e:
+                    # print("afl-tmin failed with exit code %d!" % e.returncode)
+                except subprocess.CalledProcessError:
                     pass
                 except Exception:
                     pass
