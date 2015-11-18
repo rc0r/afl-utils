@@ -56,14 +56,19 @@ def verify_samples(num_threads, samples, target_cmd):
         t.join()
 
     crashes_invalid = []
+    crashes_timeout = []
 
     # read invalid samples from output queue
     out_queue_lock.acquire()
     while not out_queue.empty():
-        crashes_invalid.append(out_queue.get())
+        st = out_queue.get()
+        if(st[1] == 'invalid'):
+            crashes_invalid.append(st[0])
+        elif(st[1] == 'timeout'):
+            crashes_timeout.append(st[0])
     out_queue_lock.release()
 
-    return crashes_invalid
+    return crashes_invalid, crashes_timeout
 
 
 def remove_samples(crash_samples, quiet=True):
@@ -119,20 +124,23 @@ particularly useful when combined with '-r' or '-f'.")
         return
     args.target_cmd = " ".join(args.target_cmd)
 
-    invalid_samples = verify_samples(int(args.num_threads), crash_samples, args.target_cmd)
+    invalid_samples, timeout_samples = verify_samples(int(args.num_threads), crash_samples, args.target_cmd)
 
     print_warn("Found %d invalid crash samples." % len(invalid_samples))
+    print_warn("%d samples caused a timeout." % len(timeout_samples))
 
     if args.remove:
         print_ok("Removing invalid crash samples.")
         remove_samples(invalid_samples, args.quiet)
+        print_ok("Removing timeouts.")
+        remvove_samples(timeout_samples, args.quiet)
     elif not args.quiet:
         for ci in invalid_samples:
             print(ci)
 
     # generate filelist of collected crash samples
     if args.list_filename:
-        afl_collect.generate_sample_list(args.list_filename, invalid_samples)
+        afl_collect.generate_sample_list(args.list_filename, invalid_samples + timeout_samples)
         print_ok("Generated invalid crash sample list '%s'." % args.list_filename)
 
 

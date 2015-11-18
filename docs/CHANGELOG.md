@@ -4,6 +4,8 @@ Version 1.21a
 
   - Ineffective subprocess timeout during crash verification fixed for afl-collect
     and afl-vcrash.
+  - Added timeout handling to afl-collect, afl-minimize and afl-vcrash to avoid
+    infinite/excessive blocking during sample processing.
 
 Version 1.20a
 

@@ -51,7 +51,7 @@ class VerifyThread(threading.Thread):
                     # check if process was terminated/stopped by signal
                     if not os.WIFSIGNALED(v) and not os.WIFSTOPPED(v):
                         self.out_queue_lock.acquire()
-                        self.out_queue.put(cs)
+                        self.out_queue.put((cs, 'invalid'))
                         self.out_queue_lock.release()
                     else:
                         # need extension (add uninteresting signals):
@@ -59,7 +59,7 @@ class VerifyThread(threading.Thread):
                         # os.WTERMSIG(v) ?= v & 0x7f ???
                         if (os.WTERMSIG(v) or os.WSTOPSIG(v)) in [1]:
                             self.out_queue_lock.acquire()
-                            self.out_queue.put(cs)
+                            self.out_queue.put((cs, 'invalid'))
                             self.out_queue_lock.release()
                         # debug
                         # else:
@@ -67,6 +67,10 @@ class VerifyThread(threading.Thread):
                         #         print("%s: sig: %d (%d)" % (cs, os.WTERMSIG(v), v))
                         #     elif os.WIFSTOPPED(v):
                         #         print("%s: sig: %d (%d)" % (cs, os.WSTOPSIG(v), v))
+                except subprocess.TimeoutExpired:
+                    self.out_queue_lock.acquire()
+                    self.out_queue.put((cs, 'timeout'))
+                    self.out_queue_lock.release()
                 except Exception:
                     pass
             else:

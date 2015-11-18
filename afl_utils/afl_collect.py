@@ -337,8 +337,8 @@ script will be placed into collection directory.", default=None)
                         default=False, help="Minimize crash sample file names by only keeping fuzzer name and ID.")
     parser.add_argument("-r", "--remove-invalid", dest="remove_invalid", action="store_const", const=True,
                         default=False, help="Verify collected crash samples and remove samples that do not lead to \
-crashes (runs 'afl-vcrash.py -r' on collection directory). This step is done prior to any script file \
-or file list generation/execution.")
+crashes or cause timeouts (runs 'afl-vcrash.py -r' on collection directory). This step is done prior to any script \
+file execution or file list generation.")
     parser.add_argument("-rr", "--remove-unexploitable", dest="remove_unexploitable", action="store_const", const=True,
                         default=False, help="Remove crash samples that have an exploitable classification of \
 'NOT_EXPLOITABLE' or 'PROBABLY_NOT_EXPLOITABLE'. Sample file removal will take place after gdb+exploitable \
@@ -398,7 +398,8 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
     if args.remove_invalid:
         from afl_utils import afl_vcrash
-        invalid_samples = afl_vcrash.verify_samples(int(args.num_threads), sample_index.inputs(), args.target_cmd)
+        invalid_samples, timeout_samples = afl_vcrash.verify_samples(int(args.num_threads), sample_index.inputs(),
+                                                                     args.target_cmd)
 
         # store invalid samples in db
         print_ok("Saving invalid sample info to database.")
@@ -410,9 +411,17 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
                 if not lite_db.dataset_exists(dataset):
                     lite_db.insert_dataset(dataset)
 
+            for sample in timeout_samples:
+                sample_name = sample_index.outputs(input_file=sample)
+                dataset = {'sample': sample_name[0]['output'], 'classification': 'TIMEOUT',
+                           'description': 'Sample caused a target execution timeout.', 'hash': ''}
+                if not lite_db.dataset_exists(dataset):
+                    lite_db.insert_dataset(dataset)
+
         # remove invalid samples from sample index
-        sample_index.remove_inputs(invalid_samples)
+        sample_index.remove_inputs(invalid_samples+timeout_samples)
         print_warn("Removed %d invalid crash samples from index." % len(invalid_samples))
+        print_warn("Removed %d timed out samples from index." % len(timeout_samples))
 
     # generate gdb+exploitable script
     if args.gdb_expl_script_file:

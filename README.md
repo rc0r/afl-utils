@@ -88,9 +88,10 @@ Usage:
                             Minimize crash sample file names by only keeping fuzzer
                             name and ID.
       -r, --remove-invalid  Verify collected crash samples and remove samples that
-                            do not lead to crashes (runs 'afl-vcrash -qr' on collection
-                            directory). This step is done prior to any script file or
-                            file list generation/execution.
+                            do not lead to crashes or cause timeouts (runs
+                            'afl-vcrash -r' on collection directory). This step is
+                            done prior to any script file execution or file list
+                            generation.
       -rr, --remove-unexploitable
                             Remove crash samples that have an exploitable
                             classification of 'NOT_EXPLOITABLE', 'PROBABLY_NOT_EXPLOITABLE'
@@ -111,7 +112,10 @@ basically works as follows:
    step will be useful prior to starting a new or resuming a parallel fuzzing job on a
    corpus containing intermittent crashes. Crashes will be moved to a `.crashes` directory,
    if one of steps 1, 2 or 3 were performed. If only "dry-run" is requested, crashing
-   samples will be moved from the `queue` to the `crashes` dirs within an afl sync dir.  
+   samples will be moved from the `queue` to the `crashes` dirs within an afl sync dir.
+   For timeouts the behavior is similar: When operating on a collection directory timeouts
+   will be moved to a `.hangs` directory. When operating on the original afl synchronisation
+   directory timeouts will go into `hangs` dir within the corresponding afl fuzzer dir.  
    
 As already indicated, all these steps are optional, making the tool quite flexible. E.g.
 running only step four can be handy before resuming a parallel fuzzing session. In order
