@@ -48,4 +48,5 @@ setup(
         'Fuzzing',
         'American Fuzzy Lop',
     ],
+    test_suite='tests'
 )
