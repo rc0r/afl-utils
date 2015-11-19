@@ -1,4 +1,4 @@
-# afl-utils
+# afl-utils [![Build Status](https://travis-ci.org/rc0r/afl-utils.svg?branch=travis-exp)](https://travis-ci.org/rc0r/afl-utils)
 
 afl-utils is a collection of utilities to assist fuzzing with
 [american-fuzzy-lop (afl)](http://lcamtuf.coredump.cx/afl/).
