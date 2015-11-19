@@ -186,17 +186,20 @@ def afl_cmdline_from_config(config_settings):
 
 def check_screen():
     inside_screen = False
-    try:
-        screen_output = subprocess.check_output("screen -ls", shell=True, stderr=subprocess.DEVNULL,
-                                                universal_newlines=True)
-    except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as e:
-        screen_output = e.output
+    # try:
+    #     screen_output = subprocess.check_output("screen -ls", shell=True, stderr=subprocess.DEVNULL,
+    #                                             universal_newlines=True)
+    # except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as e:
+    #     screen_output = e.output
+    #
+    # screen_output = screen_output.splitlines()
+    #
+    # for line in screen_output:
+    #     if "(Attached)" in line:
+    #         inside_screen = True
 
-    screen_output = screen_output.splitlines()
-
-    for line in screen_output:
-        if "(Attached)" in line:
-            inside_screen = True
+    if os.environ.get("STY"):
+        inside_screen = True
 
     return inside_screen
 

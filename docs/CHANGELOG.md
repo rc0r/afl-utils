@@ -6,6 +6,7 @@ Version 1.21a
     and afl-vcrash.
   - Added timeout handling to afl-collect, afl-minimize and afl-vcrash to avoid
     infinite/excessive blocking during sample processing.
+  - Unreliable check_screen() fixed in afl-multicore.
 
 Version 1.20a
 
