@@ -7,7 +7,7 @@ before_install:
       - pip install coveralls
 install:
       - python setup.py install
-#script:
-#      - coverage run --source=afl-utils setup.py test
-#after_success:
-#      - coveralls
+script:
+      - coverage run --source=afl_utils setup.py test
+after_success:
+      - coveralls
