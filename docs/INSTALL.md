@@ -39,7 +39,7 @@ Next install exploitable globally or locally according to the instructions in th
 Now get `afl-utils` from the GH repo:
 
     $ git clone https://github.com/rc0r/afl-utils
-    
+
 If you want to stick with the latest development version you're good to go. If you
 prefer to use a release version, run:
 
@@ -72,7 +72,12 @@ inidicated by the `exploitable` installer! Otherwise `gdb` won't recognize
 `exploitable` and the advanced features of `afl-collect` are not going to work
 properly!
 
-Now you're good to start:
+If you like, you can run tests with:
+
+    $ python setup.py test
+
+However, running tests is optional, but might be a good idea when installing
+experimental builds. Now you're good to start:
 
     $ afl-collect --help
 

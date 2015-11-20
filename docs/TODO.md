@@ -2,7 +2,10 @@
 
 If you're missing some feature in afl-utils or like to propose some changes, I'd appreciate
 your contributions. Just send your bug reports, feature ideas, code patches or pull requests
-either via Github or directly to `hlt99 at blinkenshell dot org`!
+either via Github or directly to `hlt99 at blinkenshell dot org`!  
+Make sure that your changes do **not** break any tests before sending your patches! Run
+`python setup.py test` to invoke the test suite after you modified the code! If your patch
+introduces a new feature, please be so kind to provide appropriate test cases for it.
 
 - [x] submit classification data into some sort of database
     - [x] basic sqlite3 database support added
