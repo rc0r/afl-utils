@@ -1,6 +1,7 @@
 from afl_utils import afl_stats
 
 import os
+import socket
 # import subprocess
 import unittest
 
@@ -15,7 +16,6 @@ test_conf_settings = {
     ]
 }
 
-
 test_stats = {
     'pending_total': '0',
     'paths_favored': '25',
@@ -27,6 +27,36 @@ test_stats = {
     'execs_done': '372033733',
     'afl_banner': 'target_000',
     'unique_hangs': '13'
+}
+
+test_sum_stats = {
+    'fuzzers': 2,
+    'pending_total': 0,
+    'paths_favored': 50.0,
+    'pending_favs': 0,
+    'execs_per_sec': 1546.82*2,
+    'fuzzer_pid': 0.0,
+    'paths_total': 840.0,
+    'unique_crashes': 0,
+    'execs_done': 372033733.0*2,
+    'afl_banner': 'target_000',
+    'unique_hangs': 26.0,
+    'host': socket.gethostname()[:10]
+}
+
+test_diff_stats = {
+    'fuzzers': 1,
+    'pending_total': 0,
+    'paths_favored': 25.0,
+    'pending_favs': 0,
+    'execs_per_sec': 1546.82,
+    'fuzzer_pid': 0.0,
+    'paths_total': 420.0,
+    'unique_crashes': 0,
+    'execs_done': 372033733.0,
+    'afl_banner': 'target_000',
+    'unique_hangs': 13.0,
+    'host': socket.gethostname()[:10]
 }
 
 
@@ -66,3 +96,25 @@ class AflStatsTestCase(unittest.TestCase):
     def test_parse_stat_file(self):
         self.assertIsNone(afl_stats.parse_stat_file('invalid-stat-file'))
         self.assertDictEqual(test_stats, afl_stats.parse_stat_file('testdata/sync/fuzz000/fuzzer_stats'))
+
+    def test_load_stats(self):
+        self.assertIsNone(afl_stats.load_stats('invalid-fuzzer-dir'))
+        fuzzer_stats = [
+            test_stats,
+            test_stats
+        ]
+        self.assertEqual(fuzzer_stats, afl_stats.load_stats('testdata/sync'))
+
+    def test_summarize_stats(self):
+        stats = [
+            test_stats,
+            test_stats
+        ]
+        self.assertDictEqual(test_sum_stats, afl_stats.summarize_stats(stats))
+
+    def test_diff_stats(self):
+        self.assertDictEqual(test_diff_stats, afl_stats.diff_stats(test_sum_stats, test_diff_stats))
+
+    def test_prettify_stat(self):
+        # ok, this is somewhat cheating...
+        self.assertIsNotNone(afl_stats.prettify_stat(test_sum_stats, test_diff_stats))
