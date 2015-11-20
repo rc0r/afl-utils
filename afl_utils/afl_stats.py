@@ -24,14 +24,15 @@ import twitter
 from urllib.error import URLError
 
 import afl_utils
-from afl_utils.AflPrettyPrint import *
+from afl_utils.AflPrettyPrint import clr, print_ok, print_warn, print_err
 
 
-config_interval = 30
-config_twitter_consumer_key = None
-config_twitter_consumer_secret = None
-config_twitter_creds_file = ".afl-stats.creds"
-config_fuzz_directories = []
+config_settings = dict()
+config_settings['interval'] = 30
+config_settings['twitter_consumer_key'] = None
+config_settings['twitter_consumer_secret'] = None
+config_settings['twitter_creds_file'] = ".afl-stats.creds"
+config_settings['fuzz_dirs'] = []
 
 
 def show_info():
@@ -41,6 +42,8 @@ def show_info():
 
 
 def read_config(config_file):
+    global config_settings
+
     try:
         config_file = os.path.abspath(os.path.expanduser(config_file))
 
@@ -55,12 +58,10 @@ def read_config(config_file):
         sys.exit(1)
 
     try:
-        global config_interval, config_twitter_consumer_key, config_twitter_consumer_secret, config_twitter_creds_file
-        config_interval = config.get("core", "interval", raw=True)
-        config_twitter_consumer_key = config.get("twitter", "consumer_key", raw=True)
-        config_twitter_consumer_secret = config.get("twitter", "consumer_secret", raw=True)
-        config_twitter_creds_file = config.get("twitter", "credentials_file", raw=True)
-        config_twitter_creds_file = os.path.abspath(os.path.expanduser(config_twitter_creds_file))
+        config_settings['interval'] = config.get("core", "interval", raw=True)
+        config_settings['twitter_consumer_key'] = config.get("twitter", "consumer_key", raw=True)
+        config_settings['twitter_consumer_secret'] = config.get("twitter", "consumer_secret", raw=True)
+        config_settings['twitter_creds_file'] = config.get("twitter", "credentials_file", raw=True)
     except NoOptionError as e:
         print_err("No valid configuration file specified! Option '" + clr.GRA + "%s.%s" % (e.section, e.option) +
                   clr.RST + "' not found!")
@@ -74,22 +75,24 @@ def read_config(config_file):
     i = 0
     while exists:
         try:
-            config_fuzz_directories.append(config.get("fuzzers", str(i), raw=True))
+            config_settings['fuzz_dirs'].append(config.get("fuzzers", str(i), raw=True))
             i += 1
         except NoOptionError:
             exists = False
 
+    return config_settings
+
 
 def twitter_init():
     try:
-        global config_interval, config_twitter_consumer_key, config_twitter_consumer_secret, config_twitter_creds_file
-
-        if not os.path.exists(config_twitter_creds_file):
-            twitter.oauth_dance("fuzzer_stats", config_twitter_consumer_key, config_twitter_consumer_secret,
-                                config_twitter_creds_file)
-        oauth_token, oauth_secret = twitter.read_token_file(config_twitter_creds_file)
-        twitter_instance = twitter.Twitter(auth=twitter.OAuth(oauth_token, oauth_secret, config_twitter_consumer_key,
-                                                              config_twitter_consumer_secret))
+        config_settings['twitter_creds_file'] = os.path.abspath(os.path.expanduser(config_settings['twitter_creds_file']))
+        if not os.path.exists(config_settings['twitter_creds_file']):
+            twitter.oauth_dance("fuzzer_stats", config_settings['twitter_consumer_key'],
+                                config_settings['twitter_consumer_secret'], config_settings['twitter_creds_file'])
+        oauth_token, oauth_secret = twitter.read_token_file(config_settings['twitter_creds_file'])
+        twitter_instance = twitter.Twitter(auth=twitter.OAuth(oauth_token, oauth_secret,
+                                                              config_settings['twitter_consumer_key'],
+                                                              config_settings['twitter_consumer_secret']))
         return twitter_instance
     except (twitter.TwitterHTTPError, URLError):
         print_err("Network error, twitter login failed! Check your connection!")
@@ -117,6 +120,7 @@ def parse_stat_file(stat_file):
     try:
         f = open(stat_file, "r")
         lines = f.readlines()
+        f.close()
 
         stats = {
             'fuzzer_pid': None,
@@ -142,7 +146,7 @@ def parse_stat_file(stat_file):
 
         return stats
     except FileNotFoundError as e:
-        print_warn("Stat file " + clr.GRA + "%s" % e.filename + clr.RST + "not found!")
+        print_warn("Stat file " + clr.GRA + "%s" % e.filename + clr.RST + " not found!")
 
     return None
 
@@ -326,7 +330,7 @@ def main(argv):
 
     args = parser.parse_args(argv[1:])
 
-    read_config(args.config_file)
+    config_settings = read_config(args.config_file)
 
     twitter_inst = twitter_init()
 
@@ -337,7 +341,7 @@ def main(argv):
 
     while not doExit:
         try:
-            for fuzzer in config_fuzz_directories:
+            for fuzzer in config_settings['fuzz_dirs']:
                 stats = load_stats(fuzzer)
 
                 if not stats:
@@ -377,10 +381,10 @@ def main(argv):
                 except Exception as e:
                     print_err("Sending tweet failed (Reason: " + clr.GRA + "%s" % e.__cause__ + clr.RST + ")")
 
-            if float(config_interval) < 0:
+            if float(config_settings['interval']) < 0:
                 doExit = True
             else:
-                time.sleep(float(config_interval)*60)
+                time.sleep(float(config_settings['interval'])*60)
         except KeyboardInterrupt:
                 print("\b\b")
                 print_ok("Aborted by user. Good bye!")

@@ -58,4 +58,4 @@ target/
 test/
 venv/
 scratchpad.md
-*stats.*
+#*stats.*
