@@ -103,6 +103,7 @@ class AflStatsTestCase(unittest.TestCase):
             test_stats,
             test_stats
         ]
+        self.assertEqual([test_stats], afl_stats.load_stats('testdata/sync/fuzz000'))
         self.assertEqual(fuzzer_stats, afl_stats.load_stats('testdata/sync'))
 
     def test_summarize_stats(self):
@@ -114,7 +115,43 @@ class AflStatsTestCase(unittest.TestCase):
 
     def test_diff_stats(self):
         self.assertDictEqual(test_diff_stats, afl_stats.diff_stats(test_sum_stats, test_diff_stats))
+        corrupt_diff_stats = test_diff_stats.copy()
+        corrupt_diff_stats.pop('host')
+        self.assertIsNone(afl_stats.diff_stats(test_sum_stats, corrupt_diff_stats))
 
     def test_prettify_stat(self):
         # ok, this is somewhat cheating...
-        self.assertIsNotNone(afl_stats.prettify_stat(test_sum_stats, test_diff_stats))
+        self.assertIsNotNone(afl_stats.prettify_stat(test_sum_stats, test_diff_stats, True))
+        self.assertIsNotNone(afl_stats.prettify_stat(test_sum_stats, test_diff_stats, False))
+
+        other_diff_stats = {
+            'fuzzers': 0,
+            'pending_total': 1,
+            'paths_favored': 25.0,
+            'pending_favs': 1,
+            'execs_per_sec': 0,
+            'fuzzer_pid': 0.0,
+            'paths_total': 420.0,
+            'unique_crashes': 1,
+            'execs_done': 0,
+            'afl_banner': 'target_000',
+            'unique_hangs': 13.0,
+            'host': socket.gethostname()[:10]
+        }
+        self.assertIsNotNone(afl_stats.prettify_stat(test_sum_stats, other_diff_stats))
+
+        other_diff_stats = {
+            'fuzzers': -1,
+            'pending_total': 1,
+            'paths_favored': 25.0,
+            'pending_favs': 1,
+            'execs_per_sec': -1,
+            'fuzzer_pid': 0.0,
+            'paths_total': 420.0,
+            'unique_crashes': -1,
+            'execs_done': -1,
+            'afl_banner': 'target_000',
+            'unique_hangs': 13.0,
+            'host': socket.gethostname()[:10]
+        }
+        self.assertIsNotNone(afl_stats.prettify_stat(test_sum_stats, other_diff_stats))
