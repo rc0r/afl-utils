@@ -133,7 +133,7 @@ particularly useful when combined with '-r' or '-f'.")
         print_ok("Removing invalid crash samples.")
         remove_samples(invalid_samples, args.quiet)
         print_ok("Removing timeouts.")
-        remvove_samples(timeout_samples, args.quiet)
+        remove_samples(timeout_samples, args.quiet)
     elif not args.quiet:
         for ci in invalid_samples:
             print(ci)
