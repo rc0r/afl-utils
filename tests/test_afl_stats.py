@@ -124,6 +124,9 @@ class AflStatsTestCase(unittest.TestCase):
         self.assertIsNotNone(afl_stats.prettify_stat(test_sum_stats, test_diff_stats, True))
         self.assertIsNotNone(afl_stats.prettify_stat(test_sum_stats, test_diff_stats, False))
 
+        other_sum_stats = test_sum_stats.copy()
+        other_sum_stats['fuzzer_pid'] = 1
+
         other_diff_stats = {
             'fuzzers': 0,
             'pending_total': 1,
@@ -138,7 +141,7 @@ class AflStatsTestCase(unittest.TestCase):
             'unique_hangs': 13.0,
             'host': socket.gethostname()[:10]
         }
-        self.assertIsNotNone(afl_stats.prettify_stat(test_sum_stats, other_diff_stats))
+        self.assertIsNotNone(afl_stats.prettify_stat(other_sum_stats, other_diff_stats))
 
         other_diff_stats = {
             'fuzzers': -1,
@@ -149,7 +152,7 @@ class AflStatsTestCase(unittest.TestCase):
             'fuzzer_pid': 0.0,
             'paths_total': 420.0,
             'unique_crashes': -1,
-            'execs_done': -1,
+            'execs_done': -10,
             'afl_banner': 'target_000',
             'unique_hangs': 13.0,
             'host': socket.gethostname()[:10]
