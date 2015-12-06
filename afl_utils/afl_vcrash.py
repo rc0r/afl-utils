@@ -32,7 +32,7 @@ def show_info():
     print("")
 
 
-def verify_samples(num_threads, samples, target_cmd):
+def verify_samples(num_threads, timeout_secs, samples, target_cmd):
     in_queue_lock = threading.Lock()
     out_queue_lock = threading.Lock()
     in_queue = queue.Queue(len(samples))
@@ -47,7 +47,7 @@ def verify_samples(num_threads, samples, target_cmd):
     thread_list = []
 
     for i in range(0, num_threads, 1):
-        t = AflThread.VerifyThread(i, target_cmd, in_queue, out_queue, in_queue_lock, out_queue_lock)
+        t = AflThread.VerifyThread(i, timeout_secs, target_cmd, in_queue, out_queue, in_queue_lock, out_queue_lock)
         thread_list.append(t)
         t.daemon = True
         t.start()
@@ -89,7 +89,7 @@ def main(argv):
     show_info()
 
     parser = argparse.ArgumentParser(description="afl-vcrash verifies that afl-fuzz crash samples lead to crashes in \
-the target binary.", usage="afl-vcrash [-f LIST_FILENAME] [-h] [-j THREADS] [-q] [-r] collection_dir -- target_command")
+the target binary.", usage="afl-vcrash [-f LIST_FILENAME] [-h] [-j THREADS] [-q] [-r] [-t TIMEOUT] collection_dir -- target_command")
 
     parser.add_argument("collection_dir",
                         help="Directory holding all crash samples that will be verified.")
@@ -105,6 +105,8 @@ will utilize.")
 particularly useful when combined with '-r' or '-f'.")
     parser.add_argument("-r", "--remove", dest="remove", action="store_const", const=True, default=False,
                         help="Remove crash samples that do not lead to crashes.")
+    parser.add_argument("-t", "--timeout", dest="timeout_secs", default=60,
+                        help="Define the timeout in seconds before killing the verification of a crash sample")
 
     args = parser.parse_args(argv[1:])
 
@@ -124,7 +126,7 @@ particularly useful when combined with '-r' or '-f'.")
         return
     args.target_cmd = " ".join(args.target_cmd)
 
-    invalid_samples, timeout_samples = verify_samples(int(args.num_threads), crash_samples, args.target_cmd)
+    invalid_samples, timeout_samples = verify_samples(int(args.num_threads), int(args.timeout_secs), crash_samples, args.target_cmd)
 
     print_warn("Found %d invalid crash samples." % len(invalid_samples))
     print_warn("%d samples caused a timeout." % len(timeout_samples))

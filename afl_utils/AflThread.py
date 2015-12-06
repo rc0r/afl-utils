@@ -23,9 +23,10 @@ import threading
 
 
 class VerifyThread(threading.Thread):
-    def __init__(self, thread_id, target_cmd, in_queue, out_queue, in_queue_lock, out_queue_lock):
+    def __init__(self, thread_id, timeout_secs, target_cmd, in_queue, out_queue, in_queue_lock, out_queue_lock):
         threading.Thread.__init__(self)
         self.id = thread_id
+        self.timeout_secs = timeout_secs
         self.target_cmd = target_cmd
         self.in_queue = in_queue
         self.out_queue = out_queue
@@ -44,10 +45,10 @@ class VerifyThread(threading.Thread):
                 try:
                     if afl_utils.afl_collect.stdin_mode(self.target_cmd):
                         v = subprocess.call(cmd.split(), stdin=open(os.path.abspath(cs)), stderr=subprocess.DEVNULL,
-                                            stdout=subprocess.DEVNULL, timeout=60)
+                                            stdout=subprocess.DEVNULL, timeout=self.timeout_secs)
                     else:
                         v = subprocess.call(cmd.split(), stderr=subprocess.DEVNULL,
-                                            stdout=subprocess.DEVNULL, timeout=60)
+                                            stdout=subprocess.DEVNULL, timeout=self.timeout_secs)
                     # check if process was terminated/stopped by signal
                     if not os.WIFSIGNALED(v) and not os.WIFSTOPPED(v):
                         self.out_queue_lock.acquire()
