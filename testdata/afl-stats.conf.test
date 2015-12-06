@@ -1,0 +1,23 @@
+[core]
+# Polling interval in minutes.
+# Use a negative value to disable polling.
+# afl-stat will then exit immediately after
+# printing and tweeting the stats.
+interval = 30
+
+[twitter]
+# Your Twitter applications' tokens
+consumer_key = your_consumer_key_here
+consumer_secret = your_consumer_secret_here
+# File that will hold your Twitter OAuth
+# credentials once application authorization
+# took place.
+credentials_file = .afl-stats.creds
+
+[fuzzers]
+# Add your fuzzers' output directories here!
+# Make sure to number the keys incrementally
+# beginning from zero!
+0 = /path/to/fuzz/dir/0
+1 = /path/to/fuzz/dir/1
+
