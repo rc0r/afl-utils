@@ -1,5 +1,10 @@
 # afl-utils Changelog
 
+Version 1.22a
+
+  - Typo in afl-vcrash code fixed (by Emanuele Cozzi).
+  - More tests added.
+
 Version 1.21a
 
   - Ineffective subprocess timeout during crash verification fixed for afl-collect
