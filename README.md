@@ -309,7 +309,7 @@ running multiple threads in parallel can significantly improve verification spee
 
 Usage:
 
-    afl-vcrash [-f LIST_FILENAME] [-h] [-j THREADS] [-q] [-r] collection_dir
+    afl-vcrash [-f LIST_FILENAME] [-h] [-j THREADS] [-q] [-r] [-t TIMEOUT] collection_dir
                target_command [target_command_args]
 
     afl-vcrash verifies that afl-fuzz crash samples lead to crashes in the
@@ -334,7 +334,9 @@ Usage:
                             do not lead to crashes. This is particularly
                             useful when combined with '-r' or '-f'.
       -r, --remove          Remove crash samples that do not lead to crashes.
-
+      -t TIMEOUT_SECS, --timeout TIMEOUT_SECS
+                            Define the timeout in seconds before killing the
+                            verification of a crash sample
 
 ## Screenshots
 
