@@ -3,6 +3,8 @@
 Version 1.22a
 
   - Typo in afl-vcrash code fixed (by Emanuele Cozzi).
+  - Added flag for configurable sample processing timeouts for afl-vcrash (by
+    Emanuele Cozzi).
   - More tests added.
 
 Version 1.21a
