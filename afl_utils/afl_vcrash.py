@@ -32,7 +32,7 @@ def show_info():
     print("")
 
 
-def verify_samples(num_threads, timeout_secs, samples, target_cmd):
+def verify_samples(num_threads, samples, target_cmd, timeout_secs=60):
     in_queue_lock = threading.Lock()
     out_queue_lock = threading.Lock()
     in_queue = queue.Queue(len(samples))
@@ -126,7 +126,7 @@ particularly useful when combined with '-r' or '-f'.")
         return
     args.target_cmd = " ".join(args.target_cmd)
 
-    invalid_samples, timeout_samples = verify_samples(int(args.num_threads), int(args.timeout_secs), crash_samples, args.target_cmd)
+    invalid_samples, timeout_samples = verify_samples(int(args.num_threads), crash_samples, args.target_cmd, int(args.timeout_secs))
 
     print_warn("Found %d invalid crash samples." % len(invalid_samples))
     print_warn("%d samples caused a timeout." % len(timeout_samples))
