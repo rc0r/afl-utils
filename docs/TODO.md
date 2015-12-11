@@ -17,6 +17,6 @@ provide appropriate test cases for it!
     - [x] screen mode
     - [ ] tmux mode (only, if requested explicitly)
     - [x] afl-stats for checking fuzzer_stats
-- [ ] implement configurable timeout for afl-collect (like `-t` flag in `afl-vcrash`)
+- [ ] implement configurable timeout for afl-collect, afl-minimize (like `-t` flag in `afl-vcrash`)
 - [ ] increase test coverage
 
