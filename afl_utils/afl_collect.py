@@ -406,14 +406,14 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         if args.gdb_expl_script_file and db_file:
             for sample in invalid_samples:
                 sample_name = sample_index.outputs(input_file=sample)
-                dataset = {'sample': sample_name[0]['output'], 'classification': 'INVALID',
+                dataset = {'sample': sample_name[0], 'classification': 'INVALID',
                            'description': 'Sample does not cause a crash in the target.', 'hash': ''}
                 if not lite_db.dataset_exists(dataset):
                     lite_db.insert_dataset(dataset)
 
             for sample in timeout_samples:
                 sample_name = sample_index.outputs(input_file=sample)
-                dataset = {'sample': sample_name[0]['output'], 'classification': 'TIMEOUT',
+                dataset = {'sample': sample_name[0], 'classification': 'TIMEOUT',
                            'description': 'Sample caused a target execution timeout.', 'hash': ''}
                 if not lite_db.dataset_exists(dataset):
                     lite_db.insert_dataset(dataset)

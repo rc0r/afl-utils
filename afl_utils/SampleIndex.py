@@ -18,9 +18,12 @@ import os
 
 
 class SampleIndex:
-    def __init__(self, output_dir, index=[], min_filename=False):
+    def __init__(self, output_dir, index=None, min_filename=False):
         self.output_dir = os.path.abspath(output_dir)
-        self.index = index
+        if index:
+            self.index = index
+        else:
+            self.index = []
         self.min_filename = min_filename
 
     def __generate_output__(self, fuzzer, input_file):
@@ -65,12 +68,15 @@ class SampleIndex:
         return self.index
 
     def add_output(self, output_file):
-        # we can't generate input filenames, fuzzer from output filenames,
-        # so leave them blank
-        self.index.append({
-            'input': None,
-            'fuzzer': None,
-            'output': os.path.abspath(output_file)})
+        output_file = os.path.abspath(output_file)
+        # avoid to add duplicates to index
+        if output_file not in self.outputs():
+            # we can't generate input filenames, fuzzer from output filenames,
+            # so leave them blank
+            self.index.append({
+                'input': None,
+                'fuzzer': None,
+                'output': output_file})
         return self.index
 
     def remove_inputs(self, input_files):
@@ -94,11 +100,14 @@ class SampleIndex:
                 if i['fuzzer'] == fuzzer and i['input'] == input_file:
                     return [i['output']]
         elif fuzzer is not None:
-            return [i for i in self.index if i['fuzzer'] == fuzzer]
+            return [i['output'] for i in self.index if i['fuzzer'] == fuzzer]
         elif input_file is not None:
-            return [i for i in self.index if i['input'] == input_file]
+            return [i['output'] for i in self.index if i['input'] == input_file]
         else:
             return self.__return_values__("output")
 
     def fuzzers(self):
         return self.__return_values__("fuzzer")
+
+    def size(self):
+        return len(self.index)
