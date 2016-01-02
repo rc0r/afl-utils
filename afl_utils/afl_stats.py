@@ -41,6 +41,16 @@ def show_info():
     print("")
 
 
+def init_config():
+    global config_settings
+    config_settings = dict()
+    config_settings['interval'] = 30
+    config_settings['twitter_consumer_key'] = None
+    config_settings['twitter_consumer_secret'] = None
+    config_settings['twitter_creds_file'] = ".afl-stats.creds"
+    config_settings['fuzz_dirs'] = []
+
+
 def read_config(config_file):
     global config_settings
 
@@ -62,13 +72,13 @@ def read_config(config_file):
         config_settings['twitter_consumer_key'] = config.get("twitter", "consumer_key", raw=True)
         config_settings['twitter_consumer_secret'] = config.get("twitter", "consumer_secret", raw=True)
         config_settings['twitter_creds_file'] = config.get("twitter", "credentials_file", raw=True)
-    except NoOptionError as e:
-        print_err("No valid configuration file specified! Option '" + clr.GRA + "%s.%s" % (e.section, e.option) +
-                  clr.RST + "' not found!")
-        sys.exit(1)
     except NoSectionError as e:
         print_err("No valid configuration file specified! Section '" + clr.GRA + "%s" % e.section + clr.RST +
                   "' not found!")
+        sys.exit(1)
+    except NoOptionError as e:
+        print_err("No valid configuration file specified! Option '" + clr.GRA + "%s.%s" % (e.section, e.option) +
+                  clr.RST + "' not found!")
         sys.exit(1)
 
     exists = True
@@ -246,7 +256,8 @@ def prettify_stat(stat, dstat, console=True):
     else:
         ds_alive = " (%+d/%+d)" % (_dstat['fuzzer_pid'], _dstat['fuzzers'])
 
-    if int(_dstat['execs_done']) == 0:
+    # if int(_dstat['execs_done']) == 0:
+    if _dstat['execs_done'] == 0:
         ds_exec = " "
     else:
         ds_exec = " (%+d) " % _dstat['execs_done']
@@ -287,7 +298,8 @@ def prettify_stat(stat, dstat, console=True):
         else:
             ds_alive = clr.GRN + ds_alive + clr.RST
 
-        if int(_dstat['execs_done']) < 0:
+        # if int(_dstat['execs_done']) < 0:
+        if _dstat['execs_done'] < 0:
             ds_exec = clr.RED + ds_exec + clr.RST
         else:
             ds_exec = clr.GRN + ds_exec + clr.RST
@@ -319,26 +331,10 @@ def prettify_stat(stat, dstat, console=True):
     return pretty_stat
 
 
-def main(argv):
-    show_info()
-
-    parser = argparse.ArgumentParser(description="Post selected contents of fuzzer_stats to Twitter.",
-                                     usage="afl-stats [-h] [-c config]\n")
-
-    parser.add_argument("-c", "--config", dest="config_file",
-                        help="afl-stats config file (Default: afl-stats.conf)!", default="afl-stats.conf")
-
-    args = parser.parse_args(argv[1:])
-
-    config_settings = read_config(args.config_file)
-
-    twitter_inst = twitter_init()
-
+def fetch_stats(config_settings, twitter_inst):
     doExit = False
-
     # { 'fuzzer_dir': (stat, old_stat) }
     stat_dict = dict()
-
     while not doExit:
         try:
             for fuzzer in config_settings['fuzz_dirs']:
@@ -371,7 +367,7 @@ def main(argv):
                 tweet = prettify_stat(sum_stats, stat_change, False)
 
                 l = len(tweet)
-                c = clr.LRD if l>140 else clr.LGN
+                c = clr.LRD if l > 140 else clr.LGN
                 print_ok("Tweeting status (%s%d" % (c, l) + clr.RST + " chars)...")
 
                 try:
@@ -384,11 +380,29 @@ def main(argv):
             if float(config_settings['interval']) < 0:
                 doExit = True
             else:
-                time.sleep(float(config_settings['interval'])*60)
+                time.sleep(float(config_settings['interval']) * 60)
         except KeyboardInterrupt:
-                print("\b\b")
-                print_ok("Aborted by user. Good bye!")
-                doExit = True
+            print("\b\b")
+            print_ok("Aborted by user. Good bye!")
+            doExit = True
+
+
+def main(argv):
+    show_info()
+
+    parser = argparse.ArgumentParser(description="Post selected contents of fuzzer_stats to Twitter.",
+                                     usage="afl-stats [-h] [-c config]\n")
+
+    parser.add_argument("-c", "--config", dest="config_file",
+                        help="afl-stats config file (Default: afl-stats.conf)!", default="afl-stats.conf")
+
+    args = parser.parse_args(argv[1:])
+
+    config_settings = read_config(args.config_file)
+
+    twitter_inst = twitter_init()
+
+    fetch_stats(config_settings, twitter_inst)
 
 
 if __name__ == "__main__":

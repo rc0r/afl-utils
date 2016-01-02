@@ -3,7 +3,7 @@
 # Use a negative value to disable polling.
 # afl-stat will then exit immediately after
 # printing and tweeting the stats.
-interval = -1
+# interval = 30
 
 [twitter]
 # Your Twitter applications' tokens
@@ -20,5 +20,4 @@ credentials_file = .afl-stats.creds
 # beginning from zero!
 0 = /path/to/fuzz/dir/0
 1 = /path/to/fuzz/dir/1
-2 = testdata/sync
 

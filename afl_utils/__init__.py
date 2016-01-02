@@ -1,5 +1,5 @@
 """
-Copyright 2015 @_rc0r <hlt99@blinkenshell.org>
+Copyright 2015-2016 @_rc0r <hlt99@blinkenshell.org>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,4 +17,4 @@ limitations under the License.
 __author__ = 'rc0r <hlt99@blinkenshell.org> # @_rc0r'
 __author_name__ = 'rc0r'
 __author_email__ = 'hlt99@blinkenshell.org'
-__version__ = "1.22a"
+__version__ = "1.23a"

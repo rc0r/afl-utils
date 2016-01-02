@@ -1,5 +1,10 @@
 # afl-utils Changelog
 
+Version 1.23a
+
+  - Minor bug-fixes for SampleIndex.
+  - Testcases for SampleIndex added, for afl_stats completed.
+
 Version 1.22a
 
   - Typo in afl-vcrash code fixed (by Emanuele Cozzi).
