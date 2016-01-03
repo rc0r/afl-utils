@@ -67,8 +67,8 @@ class AflVCrashTestCase(unittest.TestCase):
             afl_vcrash.build_target_cmd(target_cmdline)
         self.assertEqual(2, se.exception.code)
 
-        target_cmdline = ['/usr/bin/ls', '-h', '-l']
-        self.assertEqual('/usr/bin/ls -h -l', afl_vcrash.build_target_cmd(target_cmdline))
+        target_cmdline = ['testdata/dummy_process/dummyproc.py', '-h', '-l']
+        self.assertIn('testdata/dummy_process/dummyproc.py -h -l', afl_vcrash.build_target_cmd(target_cmdline))
 
     def test_main(self):
         # invalid invocation
@@ -86,12 +86,12 @@ class AflVCrashTestCase(unittest.TestCase):
         open('testdata/test_coll/invalid', 'a').close()
 
         self.assertIsNone(afl_vcrash.main(['afl-vcrash', '-f', 'testdata/vcrash_filelist', 'testdata/test_coll',
-                                           '--', '/usr/bin/ls']))
+                                           '--', '/bin/ls']))
         self.assertIs(True, os.path.exists('testdata/vcrash_filelist'))
         self.assertIs(True, os.path.exists('testdata/test_coll/invalid'))
 
         self.assertIsNone(afl_vcrash.main(['afl-vcrash', '-r', '-f', 'testdata/vcrash_filelist', 'testdata/test_coll',
-                                           '--', '/usr/bin/ls']))
+                                           '--', '/bin/ls']))
         self.assertIs(True, os.path.exists('testdata/vcrash_filelist'))
         self.assertIs(False, os.path.exists('testdata/test_coll/invalid'))
 
