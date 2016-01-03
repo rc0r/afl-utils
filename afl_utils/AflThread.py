@@ -42,9 +42,10 @@ class VerifyThread(threading.Thread):
                 self.in_queue_lock.release()
 
                 cmd = self.target_cmd.replace("@@", os.path.abspath(cs))
+                cs_fd = open(os.path.abspath(cs))
                 try:
                     if afl_utils.afl_collect.stdin_mode(self.target_cmd):
-                        v = subprocess.call(cmd.split(), stdin=open(os.path.abspath(cs)), stderr=subprocess.DEVNULL,
+                        v = subprocess.call(cmd.split(), stdin=cs_fd, stderr=subprocess.DEVNULL,
                                             stdout=subprocess.DEVNULL, timeout=self.timeout_secs)
                     else:
                         v = subprocess.call(cmd.split(), stderr=subprocess.DEVNULL,
@@ -74,6 +75,7 @@ class VerifyThread(threading.Thread):
                     self.out_queue_lock.release()
                 except Exception:
                     pass
+                cs_fd.close()
             else:
                 self.in_queue_lock.release()
                 self.exit = True

@@ -3,6 +3,7 @@
 Version 1.23a
 
   - Minor bug-fixes for SampleIndex.
+  - Refactored code to increase testability.
   - Remaining test cases completed and new tests were added.
 
 Version 1.22a

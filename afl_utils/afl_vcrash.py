@@ -1,5 +1,5 @@
 """
-Copyright 2015 @_rc0r <hlt99@blinkenshell.org>
+Copyright 2015-2016 @_rc0r <hlt99@blinkenshell.org>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import os
 import sys
 
 import afl_utils
-from afl_utils import AflThread
+from afl_utils import AflThread, afl_collect
 from afl_utils.AflPrettyPrint import *
 
 import threading
@@ -82,7 +82,14 @@ def remove_samples(crash_samples, quiet=True):
 
     return count
 
-from afl_utils import afl_collect
+
+def build_target_cmd(target_cmdline):
+    target_cmdline = " ".join(target_cmdline).split()
+    target_cmdline[0] = os.path.abspath(os.path.expanduser(target_cmdline[0]))
+    if not os.path.exists(target_cmdline[0]):
+        print_err("Target binary not found!")
+        sys.exit(2)
+    return " ".join(target_cmdline)
 
 
 def main(argv):
@@ -113,18 +120,13 @@ particularly useful when combined with '-r' or '-f'.")
     input_dir = os.path.abspath(os.path.expanduser(args.collection_dir))
     if not os.path.exists(input_dir):
         print_err("No valid directory provided for <collection_dir>!")
-        return
+        sys.exit(1)
 
     num_crashes, crash_samples = afl_collect.get_samples_from_dir(input_dir, True)
 
     print_ok("Verifying %d crash samples..." % num_crashes)
 
-    args.target_cmd = " ".join(args.target_cmd).split()
-    args.target_cmd[0] = os.path.abspath(os.path.expanduser(args.target_cmd[0]))
-    if not os.path.exists(args.target_cmd[0]):
-        print_err("Target binary not found!")
-        return
-    args.target_cmd = " ".join(args.target_cmd)
+    args.target_cmd = build_target_cmd(args.target_cmd)
 
     invalid_samples, timeout_samples = verify_samples(int(args.num_threads), crash_samples, args.target_cmd, int(args.timeout_secs))
 
@@ -147,5 +149,4 @@ particularly useful when combined with '-r' or '-f'.")
 
 
 if __name__ == "__main__":
-    from afl_utils import afl_collect
     main(sys.argv)
