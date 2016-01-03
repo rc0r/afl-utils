@@ -3,7 +3,10 @@
 Version 1.23a
 
   - Minor bug-fixes for SampleIndex.
-  - Testcases for SampleIndex added, for afl_stats completed.
+  - Testcases added/completed for:
+        * afl-stats
+        * SampleIndex
+        * afl-multikill
 
 Version 1.22a
 

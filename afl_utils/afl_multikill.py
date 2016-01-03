@@ -46,6 +46,7 @@ def kill_session(session):
         os.remove("/tmp/afl_multicore.PGID.%s" % session)
     else:
         print_err("PGID file '/tmp/afl_multicore.PGID.%s' not found! Aborting!" % session)
+        sys.exit(1)
 
 
 def main(argv):
@@ -61,6 +62,7 @@ afl-multicore session. Interactive screen sessions are not supported!",
     args = parser.parse_args(argv[1:])
 
     kill_session(args.session)
+    sys.exit(0)
 
 
 if __name__ == "__main__":
