@@ -19,48 +19,19 @@ cmdline = -a -b -c -d
 [afl.ctrl]
 # afl execution control settings
 
-# Location read by the fuzzed program.
-# Valid options are:
-#  * a file name
-#  * @@ (see afl-fuzz manual)
-file = @@
-# Timeout in ms for each run
-timeout = 200+
-# Memory limit in MB for child process
-mem_limit = 150
-# Use QEMU mode?
-qemu = on
-# Additional/misc. arguments for afl-fuzz.
-# Provide additional cmdline arguments for afl.
-# These arguments will directly be passed to afl!
-# This way you may provide new, hacked or
-# experimental cmdline args to afl-fuzz.
-afl_margs = -T banner
-
 [afl.behavior]
 # Optional fuzzing behavior settings
-
-# Skip deterministic steps
-dirty = on
-# Fuzz without instrumentation
-dumb = on
-# Fuzzer dictionary
-dict = dict/target.dict
 
 [job]
 # Fuzzing job settings
 
-# Provide a name for the fuzzing session.
-# Master outputs will be written to
-# 'output/SESSION000'!
-session = SESSION
 # Slave-only mode, do not start a master
 # instance.
-slave_only = off
+slave_only = on
 # Interactive screen mode. Starts every afk
 # instance in a separate screen window. Run
 # from inside screen!
-interactive = on
+interactive = off
 
 [environment]
 # Contains a list of environment variables

@@ -1,0 +1,14 @@
+#########################
+### REQUIRED SETTINGS ###
+#########################
+#[afl.dirs]
+# afl-fuzz directory specifications
+input = ./in
+output = ./out
+
+[target]
+# Required target settings
+# target binary
+target = /usr/bin/target
+# Cmdline options for target
+cmdline = -a -b -c -d

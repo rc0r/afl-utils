@@ -1,5 +1,5 @@
 """
-Copyright 2015 @_rc0r <hlt99@blinkenshell.org>
+Copyright 2015-2016 @_rc0r <hlt99@blinkenshell.org>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -130,13 +130,13 @@ def read_config(config_file):
                 environment.append((env, config.get("environment", env, raw=True)))
         else:
             environment = None
-    except NoOptionError as e:
-        print_err("No valid configuration file specified! Option '" + clr.GRA + "%s.%s" % (e.section, e.option) +
-                  clr.RST + "' not found!")
-        sys.exit(1)
     except NoSectionError as e:
         print_err("No valid configuration file specified! Section '" + clr.GRA + "%s" % e.section + clr.RST +
                   "' not found!")
+        sys.exit(1)
+    except NoOptionError as e:
+        print_err("No valid configuration file specified! Option '" + clr.GRA + "%s.%s" % (e.section, e.option) +
+                  clr.RST + "' not found!")
         sys.exit(1)
 
     return conf_settings, environment
@@ -229,6 +229,67 @@ def sigint_handler(signal, frame):
     sys.exit(0)
 
 
+def build_target_cmd(conf_settings):
+    target_cmd = [conf_settings["target"], conf_settings["cmdline"]]
+    target_cmd = " ".join(target_cmd).split()
+    target_cmd[0] = os.path.abspath(os.path.expanduser(target_cmd[0]))
+    if not os.path.exists(target_cmd[0]):
+        print_err("Target binary not found!")
+        sys.exit(1)
+    target_cmd = " ".join(target_cmd)
+    return target_cmd
+
+
+def build_master_cmd(conf_settings, target_cmd):
+    # compile command-line for master
+    # $ afl-fuzz -i <input_dir> -o <output_dir> -M <session_name>.000 <afl_args> \
+    #   </path/to/target.bin> <target_args>
+    master_cmd = [afl_path] + afl_cmdline_from_config(conf_settings)
+    master_cmd += ["-M", "%s000" % conf_settings["session"], "--", target_cmd]
+    master_cmd = " ".join(master_cmd)
+    return master_cmd
+
+
+def build_slave_cmd(conf_settings, slave_num, target_cmd):
+    # compile command-line for slaves
+    # $ afl-fuzz -i <input_dir> -o <output_dir> -S <session_name>.NNN <afl_args> \
+    #   </path/to/target.bin> <target_args>
+    slave_cmd = [afl_path] + afl_cmdline_from_config(conf_settings)
+    slave_cmd += ["-S", "%s%03d" % (conf_settings["session"], slave_num), "--", target_cmd]
+    slave_cmd = " ".join(slave_cmd)
+    return slave_cmd
+
+
+def write_pgid_file(conf_settings):
+    print("")
+    if not conf_settings["interactive"]:
+        # write/append PGID to file /tmp/afl-multicore.PGID.<SESSION>
+        f = open("/tmp/afl_multicore.PGID.%s" % conf_settings["session"], "a")
+        if f.writable():
+            f.write("%d\n" % os.getpgid(0))
+        f.close()
+        print_ok("For progress info check: %s/%sxxx/fuzzer_stats!" % (conf_settings["output"],
+                                                                      conf_settings["session"]))
+    else:
+        print_ok("Check the newly created screen windows!")
+
+
+def get_slave_count(command, conf_settings):
+    if command == "add":
+        slave_start = 0
+        slave_off = 0
+        dirs = os.listdir(conf_settings["output"])
+        for d in dirs:
+            if os.path.isdir(os.path.abspath(os.path.join(conf_settings["output"], d))) \
+                    and conf_settings["session"] in d:
+                slave_start += 1
+        conf_settings["slave_only"] = True
+    else:
+        slave_start = 1
+        slave_off = 1
+    return slave_off, slave_start
+
+
 def main(argv):
     show_info()
 
@@ -261,46 +322,23 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
         conf_settings["input"] = os.path.abspath(os.path.expanduser(conf_settings["input"]))
         if not os.path.exists(conf_settings["input"]):
             print_err("No valid directory provided for <INPUT_DIR>!")
-            return
+            sys.exit(1)
     else:
         conf_settings["input"] = "-"
 
     conf_settings["output"] = os.path.abspath(os.path.expanduser(conf_settings["output"]))
 
-    if args.cmd == "add":
-        slave_start = 0
-        slave_off = 0
-        dirs = os.listdir(conf_settings["output"])
-        for d in dirs:
-            if os.path.isdir(os.path.abspath(os.path.join(conf_settings["output"], d))) \
-                    and conf_settings["session"] in d:
-                slave_start += 1
-        conf_settings["slave_only"] = True
-    else:
-        slave_start = 1
-        slave_off = 1
-
-    target_cmd = [conf_settings["target"], conf_settings["cmdline"]]
-    target_cmd = " ".join(target_cmd).split()
-    target_cmd[0] = os.path.abspath(os.path.expanduser(target_cmd[0]))
-    if not os.path.exists(target_cmd[0]):
-        print_err("Target binary not found!")
-        return
-    target_cmd = " ".join(target_cmd)
+    slave_off, slave_start = get_slave_count(args.cmd, conf_settings)
 
     if conf_settings["interactive"]:
         if not check_screen():
             print_err("When using screen mode, please run afl-multicore from inside a screen session!")
-            return
+            sys.exit(1)
 
         setup_screen(int(args.jobs), environment)
 
-    # compile command-line for master
-    # $ afl-fuzz -i <input_dir> -o <output_dir> -M <session_name>.000 <afl_args> \
-    #   </path/to/target.bin> <target_args>
-    master_cmd = [afl_path] + afl_cmdline_from_config(conf_settings)
-    master_cmd += ["-M", "%s000" % conf_settings["session"], "--", target_cmd]
-    master_cmd = " ".join(master_cmd)
+    target_cmd = build_target_cmd(conf_settings)
+    master_cmd = build_master_cmd(conf_settings, target_cmd)
 
     if args.test_run:
         with subprocess.Popen(master_cmd.split()) as test_proc:
@@ -322,14 +360,9 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
             subprocess.Popen(screen_cmd)
             print(" Master 000 started inside new screen window")
 
-    # compile command-line for slaves
     print_ok("Starting slave instances...")
     for i in range(slave_start, int(args.jobs)+slave_start-slave_off, 1):
-        # $ afl-fuzz -i <input_dir> -o <output_dir> -S <session_name>.NNN <afl_args> \
-        #   </path/to/target.bin> <target_args>
-        slave_cmd = [afl_path] + afl_cmdline_from_config(conf_settings)
-        slave_cmd += ["-S", "%s%03d" % (conf_settings["session"], i), "--", target_cmd]
-        slave_cmd = " ".join(slave_cmd)
+        slave_cmd = build_slave_cmd(conf_settings, i, target_cmd)
 
         if not conf_settings["interactive"]:
             if not args.verbose:
@@ -344,17 +377,7 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
             subprocess.Popen(screen_cmd)
             print(" Slave %03d started inside new screen window" % i)
 
-    print("")
-    if not conf_settings["interactive"]:
-        # write/append PGID to file /tmp/afl-multicore.PGID.<SESSION>
-        f = open("/tmp/afl_multicore.PGID.%s" % conf_settings["session"], "a")
-        if f.writable():
-            f.write("%d\n" % os.getpgid(0))
-        f.close()
-        print_ok("For progress info check: %s/%sxxx/fuzzer_stats!" % (conf_settings["output"],
-                                                                      conf_settings["session"]))
-    else:
-        print_ok("Check the newly created screen windows!")
+    write_pgid_file(conf_settings)
 
 
 if __name__ == "__main__":
