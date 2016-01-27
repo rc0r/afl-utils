@@ -58,12 +58,35 @@ test_conf_settings2 = {
     'slave_only': False
 }
 
+test_conf_settings3 = {
+    'afl_margs': '-T banner',
+    'dumb': 'on',
+    'timeout': '200+',
+    'dict': 'dict/target.dict',
+    'file': 'sample_file',
+    'interactive': True,
+    'target': '/usr/bin/target',
+    'input': './in',
+    'cmdline': '-a -b -c -d',
+    'session': 'SESSION',
+    'qemu': 'on',
+    'output': './out',
+    'dirty': 'on',
+    'mem_limit': '150',
+    'slave_only': False
+}
+
 test_environment = [
     ('AFL_PERSISTENT', '1')
 ]
 
 test_afl_cmdline = [
     '-f', '@@', '-t', '200+', '-m', '150', '-Q', '-d', '-n', '-x', 'dict/target.dict', '-T banner', '-i',
+    './in', '-o', './out'
+]
+
+test_afl_cmdline2 = [
+    '-f', 'sample_file_027', '-t', '200+', '-m', '150', '-Q', '-d', '-n', '-x', 'dict/target.dict', '-T banner', '-i',
     './in', '-o', './out'
 ]
 
@@ -115,8 +138,11 @@ class AflMulticoreTestCase(unittest.TestCase):
         self.assertEqual(se.exception.code, 1)
 
     def test_afl_cmdline_from_config(self):
-        afl_cmdline = afl_multicore.afl_cmdline_from_config(test_conf_settings)
+        afl_cmdline = afl_multicore.afl_cmdline_from_config(test_conf_settings, 12)
         self.assertEqual(afl_cmdline, test_afl_cmdline)
+
+        afl_cmdline = afl_multicore.afl_cmdline_from_config(test_conf_settings3, 27)
+        self.assertEqual(afl_cmdline, test_afl_cmdline2)
 
     def test_check_screen(self):
         if os.environ.get('STY'):

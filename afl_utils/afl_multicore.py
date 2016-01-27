@@ -142,12 +142,15 @@ def read_config(config_file):
     return conf_settings, environment
 
 
-def afl_cmdline_from_config(config_settings):
+def afl_cmdline_from_config(config_settings, instance_number):
     afl_cmdline = []
 
     if config_settings["file"]:
         afl_cmdline.append("-f")
-        afl_cmdline.append(config_settings["file"])
+        if config_settings["file"] != "@@":
+            afl_cmdline.append(config_settings["file"] + "_%03d" % instance_number)
+        else:
+            afl_cmdline.append(config_settings["file"])
 
     if config_settings["timeout"]:
         afl_cmdline.append("-t")
@@ -244,7 +247,7 @@ def build_master_cmd(conf_settings, target_cmd):
     # compile command-line for master
     # $ afl-fuzz -i <input_dir> -o <output_dir> -M <session_name>.000 <afl_args> \
     #   </path/to/target.bin> <target_args>
-    master_cmd = [afl_path] + afl_cmdline_from_config(conf_settings)
+    master_cmd = [afl_path] + afl_cmdline_from_config(conf_settings, 0)
     master_cmd += ["-M", "%s000" % conf_settings["session"], "--", target_cmd]
     master_cmd = " ".join(master_cmd)
     return master_cmd
@@ -254,7 +257,7 @@ def build_slave_cmd(conf_settings, slave_num, target_cmd):
     # compile command-line for slaves
     # $ afl-fuzz -i <input_dir> -o <output_dir> -S <session_name>.NNN <afl_args> \
     #   </path/to/target.bin> <target_args>
-    slave_cmd = [afl_path] + afl_cmdline_from_config(conf_settings)
+    slave_cmd = [afl_path] + afl_cmdline_from_config(conf_settings, slave_num)
     slave_cmd += ["-S", "%s%03d" % (conf_settings["session"], slave_num), "--", target_cmd]
     slave_cmd = " ".join(slave_cmd)
     return slave_cmd

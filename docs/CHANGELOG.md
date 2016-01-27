@@ -3,6 +3,8 @@
 Version 1.23a
 
   - Minor bug-fixes for SampleIndex.
+  - Bug fixed, that prevented use of afl -f argument when running multiple
+    afl instances.
   - Refactored code to increase testability.
   - Remaining test cases completed and new tests were added.
 
