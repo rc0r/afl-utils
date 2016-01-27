@@ -3,8 +3,10 @@
 Version 1.23a
 
   - Minor bug-fixes for SampleIndex.
-  - Bug fixed, that prevented use of afl -f argument when running multiple
-    afl instances.
+  - Bug fixed, that prevented use of afl -f file argument when running multiple
+    afl instances. For this purpose '%%' was introduced to be used when
+    referencing the desired file in the target's command line option (check
+    README for details).
   - Refactored code to increase testability.
   - Remaining test cases completed and new tests were added.
 

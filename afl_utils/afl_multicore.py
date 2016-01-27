@@ -244,6 +244,10 @@ def build_target_cmd(conf_settings):
 
 
 def build_master_cmd(conf_settings, target_cmd):
+    # If afl -f file switch was used, automatically use correct input
+    # file for master instance.
+    if "%%" in target_cmd:
+        target_cmd = target_cmd.replace("%%", conf_settings["file"] + "_000")
     # compile command-line for master
     # $ afl-fuzz -i <input_dir> -o <output_dir> -M <session_name>.000 <afl_args> \
     #   </path/to/target.bin> <target_args>
@@ -254,6 +258,10 @@ def build_master_cmd(conf_settings, target_cmd):
 
 
 def build_slave_cmd(conf_settings, slave_num, target_cmd):
+    # If afl -f file switch was used, automatically use correct input
+    # file for slave instance.
+    if "%%" in target_cmd:
+        target_cmd = target_cmd.replace("%%", conf_settings["file"] + "_%03d" % slave_num)
     # compile command-line for slaves
     # $ afl-fuzz -i <input_dir> -o <output_dir> -S <session_name>.NNN <afl_args> \
     #   </path/to/target.bin> <target_args>

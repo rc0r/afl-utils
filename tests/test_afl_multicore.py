@@ -209,7 +209,7 @@ class AflMulticoreTestCase(unittest.TestCase):
     def test_build_master_cmd(self):
         conf_settings = {
             'session': 'SESSION',
-            'file': None,
+            'file': 'cur_input',
             'timeout': None,
             'mem_limit': None,
             'qemu': None,
@@ -220,15 +220,15 @@ class AflMulticoreTestCase(unittest.TestCase):
             'input': None,
             'output': None,
         }
-        target_cmd = 'testdata/dummy_process/invalid_proc --some-opt'
-        master_cmd = afl_multicore.afl_path + ' -M SESSION000 -- ' + target_cmd
+        target_cmd = 'testdata/dummy_process/invalid_proc --some-opt %%'
+        master_cmd = afl_multicore.afl_path + ' -f cur_input_000 -M SESSION000 -- ' + target_cmd.replace('%%', conf_settings['file']+'_000')
 
         self.assertEqual(master_cmd, afl_multicore.build_master_cmd(conf_settings, target_cmd))
 
     def test_build_slave_cmd(self):
         conf_settings = {
             'session': 'SESSION',
-            'file': None,
+            'file': 'cur_input',
             'timeout': None,
             'mem_limit': None,
             'qemu': None,
@@ -239,9 +239,9 @@ class AflMulticoreTestCase(unittest.TestCase):
             'input': None,
             'output': None,
         }
-        target_cmd = 'testdata/dummy_process/invalid_proc --some-opt'
+        target_cmd = 'testdata/dummy_process/invalid_proc --some-opt %%'
         slave_num = 3
-        slave_cmd = afl_multicore.afl_path + ' -S SESSION003 -- ' + target_cmd
+        slave_cmd = afl_multicore.afl_path + ' -f cur_input_003 -S SESSION003 -- ' + target_cmd.replace("%%", conf_settings['file']+'_003')
 
         self.assertEqual(slave_cmd, afl_multicore.build_slave_cmd(conf_settings, slave_num, target_cmd))
 
