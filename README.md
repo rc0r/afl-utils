@@ -255,6 +255,32 @@ specific target than were previously started. Obviously `afl-multicore` can
 resume just as many afl instances as it finds output directories for! Use the
 `add` command to start additional afl instances!
 
+`afl-fuzz` can be run using its `-f <file>` argument to specify the location of
+the generated sample. When using multiple `afl-fuzz` instances a single file
+obviously can't do the trick, because multiple fuzzers running in parallel would
+need separate files to store their data. For that reason `afl-multicore` extends
+the provided filename with the instance number similar to the session naming
+scheme: `cur_input` would be extended into `cur_input_000`, `cur_input_001` and
+so on. In order to use these files just use `%%` in the target command line
+specification within the config file. `afl-multicore` will then do all the magic
+and use the correct files for the different instances of `afl-fuzz`.
+
+Example config:
+
+    ...
+    [target]
+    target = /your/app/here
+    cmdline = --some-target-opts --input-file %%
+    # ^- translates to:
+    #    --some-target-opts --input-file /path/to/cur_input_000
+    #    --some-target-opts --input-file /path/to/cur_input_001
+    #    ...
+
+    ...
+
+    [afl.ctrl]
+    file = /path/to/cur_input
+
 
 ## afl-multikill
 
