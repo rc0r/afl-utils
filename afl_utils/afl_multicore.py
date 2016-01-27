@@ -214,6 +214,12 @@ def setup_screen_env(env_list):
             screen_env_cmd = ["screen", "-X", "setenv", env_tuple[0], env_tuple[1]]
             subprocess.Popen(screen_env_cmd)
 
+    # Set working directory for all newly
+    # created screen windows to the directory
+    # afl-multicore was executed from.
+    cwd = os.getcwd()
+    subprocess.Popen(["screen", "-X", "chdir", cwd])
+
 
 def setup_screen(windows, env_list):
     setup_screen_env(env_list)

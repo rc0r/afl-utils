@@ -3,6 +3,8 @@
 Version 1.23a
 
   - Minor bug-fixes for SampleIndex.
+  - Updated afl-multicore to assure that newly created screen windows operate
+    on the same directory afl-multicore was started from.
   - Bug fixed, that prevented use of afl -f file argument when running multiple
     afl instances. For this purpose '%%' was introduced to be used when
     referencing the desired file in the target's command line option (check
