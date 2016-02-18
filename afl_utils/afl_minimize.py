@@ -24,7 +24,7 @@ import threading
 import queue
 
 import afl_utils
-from afl_utils import SampleIndex, afl_collect, afl_vcrash, AflThread
+from afl_utils import afl_collect, afl_vcrash, AflThread
 from afl_utils.AflPrettyPrint import clr, print_ok, print_warn, print_err
 
 
