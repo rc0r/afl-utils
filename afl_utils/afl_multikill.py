@@ -1,5 +1,5 @@
 """
-Copyright 2015 @_rc0r <hlt99@blinkenshell.org>
+Copyright 2015-2016 @_rc0r <hlt99@blinkenshell.org>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
