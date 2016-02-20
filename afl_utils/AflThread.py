@@ -111,7 +111,7 @@ class GdbThread(threading.Thread):
 
 
 class AflTminThread(threading.Thread):
-    def __init__(self, thread_id, target_cmd, output_dir, in_queue, out_queue, in_queue_lock, out_queue_lock):
+    def __init__(self, thread_id, tmin_cmd, target_cmd, output_dir, in_queue, out_queue, in_queue_lock, out_queue_lock):
         threading.Thread.__init__(self)
         self.id = thread_id
         self.target_cmd = target_cmd
@@ -120,6 +120,7 @@ class AflTminThread(threading.Thread):
         self.out_queue = out_queue
         self.in_queue_lock = in_queue_lock
         self.out_queue_lock = out_queue_lock
+        self.tmin_cmd = tmin_cmd
         self.exit = False
 
     def run(self):
@@ -129,8 +130,8 @@ class AflTminThread(threading.Thread):
                 f = self.in_queue.get()
                 self.in_queue_lock.release()
 
-                cmd = "afl-tmin -i %s -o %s -- %s" % (f, os.path.join(self.output_dir, os.path.basename(f)),
-                                                      self.target_cmd)
+                cmd = "%s-i %s -o %s -- %s" % (self.tmin_cmd, f, os.path.join(self.output_dir, os.path.basename(f)),
+                                                self.target_cmd)
                 try:
                     subprocess.call(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, shell=True)
                     self.out_queue_lock.acquire()

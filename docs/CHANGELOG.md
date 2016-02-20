@@ -1,5 +1,10 @@
 # afl-utils Changelog
 
+Version 1.24a
+
+  - afl-minimize now takes timeout and memory limit arguments that are passed
+    to afl-cmin and afl-tmin.
+
 Version 1.23a
 
   - Minor bug-fixes for SampleIndex.

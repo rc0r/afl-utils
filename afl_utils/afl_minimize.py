@@ -35,9 +35,17 @@ def show_info():
     print("")
 
 
-def invoke_cmin(input_dir, output_dir, target_cmd):
+def invoke_cmin(input_dir, output_dir, target_cmd, mem_limit=None, timeout=None):
     success = True
-    cmd = "afl-cmin -i %s -o %s -- %s" % (input_dir, output_dir, target_cmd)
+    cmin_cmd = "afl-cmin "
+
+    if mem_limit is not None:
+        cmin_cmd += "-m %d " % int(mem_limit)
+
+    if timeout is not None:
+        cmin_cmd += "-t %d " % int(timeout)
+
+    cmd = "%s-i %s -o %s -- %s" % (cmin_cmd, input_dir, output_dir, target_cmd)
     try:
         subprocess.check_call(cmd, shell=True)
     except subprocess.CalledProcessError as e:
@@ -46,7 +54,7 @@ def invoke_cmin(input_dir, output_dir, target_cmd):
     return success
 
 
-def invoke_tmin(input_files, output_dir, target_cmd, num_threads=1):
+def invoke_tmin(input_files, output_dir, target_cmd, num_threads=1, mem_limit=None, timeout=None):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
@@ -63,8 +71,16 @@ def invoke_tmin(input_files, output_dir, target_cmd, num_threads=1):
 
     thread_list = []
 
+    tmin_cmd = "afl-tmin "
+
+    if mem_limit is not None:
+        tmin_cmd += "-m %d " % int(mem_limit)
+
+    if timeout is not None:
+        tmin_cmd += "-t %d " % int(timeout)
+
     for i in range(0, num_threads, 1):
-        t = AflThread.AflTminThread(i, target_cmd, output_dir, in_queue, out_queue, in_queue_lock, out_queue_lock)
+        t = AflThread.AflTminThread(i, tmin_cmd, target_cmd, output_dir, in_queue, out_queue, in_queue_lock, out_queue_lock)
         thread_list.append(t)
         print_ok("Starting afl-tmin worker %d." % i)
         t.daemon = True
@@ -120,17 +136,21 @@ def main(argv):
 
     parser = argparse.ArgumentParser(description="afl-minimize performs several optimization steps to reduce the size\n \
 of an afl-fuzz corpus.",
-                                     usage="afl-minimize [-c COLLECTION_DIR [--cmin] [--tmin]] [-d] [-h] [-j] sync_dir \
--- target_cmd\n")
+                                     usage="afl-minimize [-c COLLECTION_DIR [--cmin [opts]] [--tmin [opts]]] [-d] [-h]\n \
+                   [-j] sync_dir -- target_cmd\n")
 
     parser.add_argument("-c", "--collect", dest="collection_dir",
                         help="Collect all samples from the synchronisation dir and store them in the collection dir. \
 Existing files in the collection directory will be overwritten!", default=None)
     parser.add_argument("--cmin", dest="invoke_cmin", action="store_const", const=True,
                         default=False, help="Run afl-cmin on collection dir. Has no effect without '-c'.")
+    parser.add_argument("--cmin-mem-limit", dest="cmin_mem_limit", default=None, help="Set memory limit for afl-cmin.")
+    parser.add_argument("--cmin-timeout", dest="cmin_timeout", default=None, help="Set timeout for afl-cmin.")
     parser.add_argument("--tmin", dest="invoke_tmin", action="store_const", const=True,
                         default=False, help="Run afl-tmin on minimized collection dir if used together with '--cmin'\
 or on unoptimized collection dir otherwise. Has no effect without '-c'.")
+    parser.add_argument("--tmin-mem-limit", dest="tmin_mem_limit", default=None, help="Set memory limit for afl-tmin.")
+    parser.add_argument("--tmin-timeout", dest="tmin_timeout", default=None, help="Set timeout for afl-tmin.")
     parser.add_argument("-d", "--dry-run", dest="dry_run", action="store_const", const=True,
                         default=False, help="Perform dry-run on collection dir, if '-c' is provided or on \
 synchronisation dir otherwise. Dry-run will move intermittent crashes out of the corpus.")
@@ -188,18 +208,21 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         if args.invoke_cmin:
             # invoke cmin on collection
             print_ok("Executing: afl-cmin -i %s -o %s.cmin -- %s" % (out_dir, out_dir, args.target_cmd))
-            invoke_cmin(out_dir, "%s.cmin" % out_dir, args.target_cmd)
+            invoke_cmin(out_dir, "%s.cmin" % out_dir, args.target_cmd, mem_limit=args.cmin_mem_limit,
+                        timeout=args.cmin_timeout)
             if args.invoke_tmin:
                 # invoke tmin on minimized collection
                 print_ok("Executing: afl-tmin -i %s.cmin/* -o %s.cmin.tmin/* -- %s" % (out_dir, out_dir,
                                                                                        args.target_cmd))
                 tmin_num_samples, tmin_samples = afl_collect.get_samples_from_dir("%s.cmin" % out_dir, abs_path=True)
-                invoke_tmin(tmin_samples, "%s.cmin.tmin" % out_dir, args.target_cmd, num_threads=threads)
+                invoke_tmin(tmin_samples, "%s.cmin.tmin" % out_dir, args.target_cmd, num_threads=threads,
+                            mem_limit=args.tmin_mem_limit, timeout=args.tmin_timeout)
         elif args.invoke_tmin:
             # invoke tmin on collection
             print_ok("Executing: afl-tmin -i %s/* -o %s.tmin/* -- %s" % (out_dir, out_dir, args.target_cmd))
             tmin_num_samples, tmin_samples = afl_collect.get_samples_from_dir(out_dir, abs_path=True)
-            invoke_tmin(tmin_samples, "%s.tmin" % out_dir, args.target_cmd, num_threads=threads)
+            invoke_tmin(tmin_samples, "%s.tmin" % out_dir, args.target_cmd, num_threads=threads,
+                        mem_limit=args.tmin_mem_limit, timeout=args.tmin_timeout)
         if args.dry_run:
             # invoke dry-run on collected/minimized corpus
             if args.invoke_cmin and args.invoke_tmin:
