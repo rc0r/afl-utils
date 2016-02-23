@@ -6,6 +6,8 @@ Version 1.24a
     to afl-cmin and afl-tmin.
   - Updated afl-collect to automatically detect whether operating on a single
     instance output directory or a multi instance synchronisation dir.
+  - Fixed a minor bug in afl-collect that occurred when generating output sample
+    names.
   - Scrots updated.
 
 Version 1.23a

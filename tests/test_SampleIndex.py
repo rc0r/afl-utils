@@ -55,6 +55,7 @@ class SampleIndexTestCase(unittest.TestCase):
         self.assertEqual('fuzzer:filename', si.__generate_output__('fuzzer', './filename'))
         self.assertEqual('fuzzer:filename', si.__generate_output__('fuzzer', '~/filename'))
         self.assertEqual('fuzzer:filename', si.__generate_output__('fuzzer', 'filename'))
+        self.assertEqual('fuzzer:filename', si.__generate_output__('/bla/fuzzer', 'filename'))
 
         si = SampleIndex.SampleIndex(test_dir, min_filename=True)
 

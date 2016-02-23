@@ -144,7 +144,6 @@ def build_sample_index(sync_dir, out_dir, fuzzer_instances, db=None, min_filenam
 def copy_samples(sample_index):
     files_collected = []
     for sample in sample_index.index:
-        print(os.path.join(sample_index.output_dir, sample['output']))
         dst_file = shutil.copyfile(sample['input'], os.path.join(sample_index.output_dir, sample['output']))
         files_collected.append(dst_file)
 
