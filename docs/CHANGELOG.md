@@ -4,6 +4,9 @@ Version 1.24a
 
   - afl-minimize now takes timeout and memory limit arguments that are passed
     to afl-cmin and afl-tmin.
+  - Updated afl-collect to automatically detect whether operating on a single
+    instance output directory or a multi instance synchronisation dir.
+  - Scrots updated.
 
 Version 1.23a
 
