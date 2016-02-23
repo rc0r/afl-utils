@@ -35,6 +35,8 @@ global_exclude_files = [
     "README.txt",
 ]
 
+fuzzer_stats_filename = "fuzzer_stats"
+
 # gdb settings
 
 # Path to gdb binary
@@ -53,9 +55,15 @@ def show_info():
 
 def get_fuzzer_instances(sync_dir, crash_dirs=True):
     fuzzer_inst = []
-    for fdir in os.listdir(sync_dir):
-        if os.path.isdir(os.path.join(sync_dir, fdir)):
-            fuzzer_inst.append((fdir, []))
+    fuzzer_stats_file = os.path.join(sync_dir, fuzzer_stats_filename)
+    if os.path.exists(fuzzer_stats_file) and os.path.isfile(fuzzer_stats_file):
+        # we're inside a single instance output dir
+        fuzzer_inst.append((sync_dir, []))
+    else:
+        # we're inside a multi instance sync dir
+        for fdir in os.listdir(sync_dir):
+            if os.path.isdir(os.path.join(sync_dir, fdir)):
+                fuzzer_inst.append((fdir, []))
 
     if crash_dirs:
         fuzzer_inst = get_crash_directories(sync_dir, fuzzer_inst)
@@ -125,11 +133,9 @@ def build_sample_index(sync_dir, out_dir, fuzzer_instances, db=None, min_filenam
             for sample in sample_dir[1]:
                 sample_file = os.path.join(sync_dir, "%s/%s/%s" % (fuzzer[0], sample_dir[0], sample))
                 sample_name = sample_index.__generate_output__(fuzzer[0], sample_file)
-                if db:
-                    if not db.dataset_exists({'sample': sample_name, 'classification': '%', 'description': '%',
-                                              'hash': '%'}):
-                        sample_index.add(fuzzer[0], sample_file)
-                else:
+
+                if not db or not db.dataset_exists({'sample': sample_name, 'classification': '%', 'description': '%',
+                                                    'hash': '%'}):
                     sample_index.add(fuzzer[0], sample_file)
 
     return sample_index
@@ -138,6 +144,7 @@ def build_sample_index(sync_dir, out_dir, fuzzer_instances, db=None, min_filenam
 def copy_samples(sample_index):
     files_collected = []
     for sample in sample_index.index:
+        print(os.path.join(sample_index.output_dir, sample['output']))
         dst_file = shutil.copyfile(sample['input'], os.path.join(sample_index.output_dir, sample['output']))
         files_collected.append(dst_file)
 

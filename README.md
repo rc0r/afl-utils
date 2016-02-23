@@ -135,7 +135,8 @@ corpus from crashes with a 100% success rate!
 
 Usage:
 
-    afl-minimize [-c COLLECTION_DIR [--cmin] [--tmin]] [-d] [-h] [-j] sync_dir -- target_cmd
+    afl-minimize [-c COLLECTION_DIR [--cmin [opts]] [--tmin [opts]]] [-d] [-h]
+                 [-j] sync_dir -- target_cmd
     
     afl-minimize performs several optimization steps to reduce the size of an afl-
     fuzz corpus.
@@ -155,9 +156,17 @@ Usage:
                             the collection directory will be overwritten!
       --cmin                Run afl-cmin on collection dir. Has no effect without
                             '-c'.
+      --cmin-mem-limit CMIN_MEM_LIMIT
+                            Set memory limit for afl-cmin.
+      --cmin-timeout CMIN_TIMEOUT
+                            Set timeout for afl-cmin.
       --tmin                Run afl-tmin on minimized collection dir if used
                             together with '--cmin'or on unoptimized collection dir
                             otherwise. Has no effect without '-c'.
+      --tmin-mem-limit TMIN_MEM_LIMIT
+                            Set memory limit for afl-tmin.
+      --tmin-timeout TMIN_TIMEOUT
+                            Set timeout for afl-tmin.
       -d, --dry-run         Perform dry-run on collection dir, if '-c' is provided
                             or on synchronisation dir otherwise. Dry-run will move
                             intermittent crashes out of the corpus.
