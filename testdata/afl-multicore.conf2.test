@@ -18,6 +18,7 @@ cmdline = -a -b -c -d
 #########################
 [afl.ctrl]
 # afl execution control settings
+cpu_affinity = 0,1 2,3 4,5 6,7
 
 [afl.behavior]
 # Optional fuzzing behavior settings

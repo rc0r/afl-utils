@@ -16,6 +16,7 @@ test_conf_settings = {
     'cmdline': '-a -b -c -d',
     'session': 'SESSION',
     'qemu': 'on',
+    'cpu_affinity': None,
     'output': './out',
     'dirty': 'on',
     'mem_limit': '150',
@@ -34,6 +35,7 @@ test_conf_settings1 = {
     'cmdline': '-a -b -c -d',
     'session': 'SESSION',
     'qemu': None,
+    'cpu_affinity': None,
     'output': './out',
     'dirty': None,
     'mem_limit': None,
@@ -52,6 +54,7 @@ test_conf_settings2 = {
     'cmdline': '-a -b -c -d',
     'session': 'SESSION',
     'qemu': None,
+    'cpu_affinity': ['0,1', '2,3', '4,5', '6,7'],
     'output': './out',
     'dirty': None,
     'mem_limit': None,
@@ -70,6 +73,7 @@ test_conf_settings3 = {
     'cmdline': '-a -b -c -d',
     'session': 'SESSION',
     'qemu': 'on',
+    'cpu_affinity': None,
     'output': './out',
     'dirty': 'on',
     'mem_limit': '150',
@@ -86,6 +90,14 @@ test_afl_cmdline = [
 ]
 
 test_afl_cmdline2 = [
+   '-Z', '2,3', '-i', './in', '-o', './out'
+]
+
+test_afl_cmdline21 = [
+   '-i', './in', '-o', './out'
+]
+
+test_afl_cmdline3 = [
     '-f', 'sample_file_027', '-t', '200+', '-m', '150', '-Q', '-d', '-n', '-x', 'dict/target.dict', '-T banner', '-i',
     './in', '-o', './out'
 ]
@@ -141,8 +153,14 @@ class AflMulticoreTestCase(unittest.TestCase):
         afl_cmdline = afl_multicore.afl_cmdline_from_config(test_conf_settings, 12)
         self.assertEqual(afl_cmdline, test_afl_cmdline)
 
-        afl_cmdline = afl_multicore.afl_cmdline_from_config(test_conf_settings3, 27)
+        afl_cmdline = afl_multicore.afl_cmdline_from_config(test_conf_settings2, 1)
         self.assertEqual(afl_cmdline, test_afl_cmdline2)
+
+        afl_cmdline = afl_multicore.afl_cmdline_from_config(test_conf_settings2, 4)
+        self.assertEqual(afl_cmdline, test_afl_cmdline21)
+
+        afl_cmdline = afl_multicore.afl_cmdline_from_config(test_conf_settings3, 27)
+        self.assertEqual(afl_cmdline, test_afl_cmdline3)
 
     def test_check_screen(self):
         if os.environ.get('STY'):
@@ -213,6 +231,7 @@ class AflMulticoreTestCase(unittest.TestCase):
             'timeout': None,
             'mem_limit': None,
             'qemu': None,
+            'cpu_affinity': None,
             'dirty': None,
             'dumb': None,
             'dict': None,
@@ -232,6 +251,7 @@ class AflMulticoreTestCase(unittest.TestCase):
             'timeout': None,
             'mem_limit': None,
             'qemu': None,
+            'cpu_affinity': None,
             'dirty': None,
             'dumb': None,
             'dict': None,

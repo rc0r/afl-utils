@@ -82,6 +82,11 @@ def read_config(config_file):
         else:
             conf_settings["mem_limit"] = None
 
+        if config.has_option("afl.ctrl", "cpu_affinity"):
+            conf_settings["cpu_affinity"] = config.get("afl.ctrl", "cpu_affinity", raw=True).split()
+        else:
+            conf_settings["cpu_affinity"] = None
+
         if config.has_option("afl.ctrl", "qemu"):
             conf_settings["qemu"] = config.get("afl.ctrl", "qemu", raw=True)
         else:
@@ -159,6 +164,10 @@ def afl_cmdline_from_config(config_settings, instance_number):
     if config_settings["mem_limit"]:
         afl_cmdline.append("-m")
         afl_cmdline.append(config_settings["mem_limit"])
+
+    if config_settings["cpu_affinity"] and instance_number < len(config_settings["cpu_affinity"]):
+        afl_cmdline.append("-Z")
+        afl_cmdline.append(config_settings["cpu_affinity"][instance_number])
 
     if config_settings["qemu"] == "on":
         afl_cmdline.append("-Q")

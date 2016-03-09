@@ -30,6 +30,8 @@ timeout = 200+
 mem_limit = 150
 # Use QEMU mode?
 qemu = on
+# Set CPU affinity for afl-processes
+cpu_affinity = 0,1 2,3 4,5 6,7
 # Additional/misc. arguments for afl-fuzz.
 # Provide additional cmdline arguments for afl.
 # These arguments will directly be passed to afl!

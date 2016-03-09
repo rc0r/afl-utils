@@ -1,5 +1,9 @@
 # afl-utils Changelog
 
+Version 1.25a
+
+  - Added CPU affinity option to afl-multicore.
+
 Version 1.24a
 
   - afl-minimize now takes timeout and memory limit arguments that are passed
