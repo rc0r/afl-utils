@@ -242,7 +242,7 @@ The most simple configuration may look something like:
 
 Of course a lot more settings can be configured, some of these settings are:
 
-* afl options: timeout, memory limit, dictionary, ...
+* afl options: timeout, memory limit, dictionary, CPU affinity, ...
 * job options: session name, interactive mode
 * environment variables for interactive screen mode
 
@@ -263,6 +263,16 @@ Interrupted fuzzing jobs can be resumed the same way using the `resume` command.
 specific target than were previously started. Obviously `afl-multicore` can
 resume just as many afl instances as it finds output directories for! Use the
 `add` command to start additional afl instances!
+
+If you want to use afl's CPU affinity feature use the `cpu_affinity`
+configuration option to provide a whitespace separated list of single (`1`) or
+tuple (`2,3`) CPU ids. For info on when to use single vs. tuple id specifications
+checkout out afl's `docs/perf_tips.txt`. In the `afl-multicore` configuration
+you need to provide a CPU id for **every** afl instance you want to assign to a
+specific CPU core. The first provided id is always used for the master afl
+instance. When starting more afl instances than CPU ids have been specified,
+all additional instances won't be assigned to a specific CPU core.  
+**Note:** Don't use whitespaces in your tuple specifications!
 
 `afl-fuzz` can be run using its `-f <file>` argument to specify the location of
 the generated sample. When using multiple `afl-fuzz` instances a single file
