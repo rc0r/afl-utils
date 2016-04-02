@@ -104,7 +104,7 @@ test_afl_cmdline3 = [
 
 
 class AflMulticoreTestCase(unittest.TestCase):
-    def setup(self):
+    def setUp(self):
         # Use to set up test environment prior to test case
         # invocation
         pass

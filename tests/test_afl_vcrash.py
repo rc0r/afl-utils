@@ -6,7 +6,7 @@ import unittest
 
 
 class AflVCrashTestCase(unittest.TestCase):
-    def setup(self):
+    def setUp(self):
         # Use to set up test environment prior to test case
         # invocation
         pass
