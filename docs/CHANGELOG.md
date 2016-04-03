@@ -1,5 +1,11 @@
 # afl-utils Changelog
 
+Version 1.26a
+
+  - afl-minimize now supports reseeding original afl queues with an optimized
+    corpus.
+  - Typo in test case setup method declaration fixed.
+
 Version 1.25a
 
   - Added CPU affinity option to afl-multicore.

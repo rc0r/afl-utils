@@ -19,8 +19,8 @@ import os
 import shutil
 import subprocess
 import sys
-
 import threading
+import time
 import queue
 
 import afl_utils
@@ -131,21 +131,39 @@ def invoke_dryrun(input_files, crash_dir, timeout_dir, target_cmd, num_threads=1
     return
 
 
+def afl_reseed(sync_dir, coll_dir):
+    fuzzer_queues = afl_collect.get_fuzzer_instances(sync_dir, crash_dirs=False)
+
+    for fuzzer in fuzzer_queues:
+        # move original fuzzer queues out of the way
+        date_time = time.strftime("%Y-%m-%d-%H%:M:%S")
+        queue_dir = os.path.join(sync_dir, fuzzer[0], "queue")
+        shutil.move(queue_dir, "%s.%s" % (queue_dir, date_time))
+
+        # copy newly generated corpus into queues
+        print_ok("Reseeding %s into queue %s" % (coll_dir, queue_dir))
+        shutil.copytree(coll_dir, queue_dir)
+
+    return fuzzer_queues
+
+
 def main(argv):
     show_info()
 
     parser = argparse.ArgumentParser(description="afl-minimize performs several optimization steps to reduce the size\n \
 of an afl-fuzz corpus.",
-                                     usage="afl-minimize [-c COLLECTION_DIR [--cmin [opts]] [--tmin [opts]]] [-d] [-h]\n \
-                   [-j] sync_dir -- target_cmd\n")
+                                     usage="afl-minimize [-c COLLECTION_DIR [--cmin [opts]] [--tmin [opts]]] [--reseed]\n \
+                   [-d] [-h] [-j] sync_dir -- target_cmd\n")
 
     parser.add_argument("-c", "--collect", dest="collection_dir",
-                        help="Collect all samples from the synchronisation dir and store them in the collection dir. \
-Existing files in the collection directory will be overwritten!", default=None)
+                        help="Collect all samples from the synchronisation dir and store them in the collection dir.",
+                        default=None)
     parser.add_argument("--cmin", dest="invoke_cmin", action="store_const", const=True,
                         default=False, help="Run afl-cmin on collection dir. Has no effect without '-c'.")
     parser.add_argument("--cmin-mem-limit", dest="cmin_mem_limit", default=None, help="Set memory limit for afl-cmin.")
     parser.add_argument("--cmin-timeout", dest="cmin_timeout", default=None, help="Set timeout for afl-cmin.")
+    parser.add_argument("--reseed", dest="reseed", default=False, action="store_const", const=True, help="Reseed afl-fuzz with the \
+collected (and optimized) corpus. This replaces all sync_dir queues with the newly generated corpus.")
     parser.add_argument("--tmin", dest="invoke_tmin", action="store_const", const=True,
                         default=False, help="Run afl-tmin on minimized collection dir if used together with '--cmin'\
 or on unoptimized collection dir otherwise. Has no effect without '-c'.")
@@ -252,6 +270,16 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
                 dryrun_num_samples, dryrun_samples = afl_collect.get_samples_from_dir(out_dir, abs_path=True)
                 invoke_dryrun(dryrun_samples, "%s.crashes" % out_dir, "%s.hangs" % out_dir, args.target_cmd,
                               num_threads=threads)
+        elif args.reseed:
+            optimized_corpus = out_dir
+
+            if args.invoke_cmin:
+                optimized_corpus = optimized_corpus + ".cmin"
+
+            if args.invoke_tmin:
+                optimized_corpus = optimized_corpus + ".tmin"
+
+            afl_reseed(sync_dir, optimized_corpus)
     else:
         if args.dry_run:
             print_ok("Looking for fuzzing queues in '%s'." % sync_dir)

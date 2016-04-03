@@ -129,14 +129,27 @@ and worth the effort. You don't want to waste days of CPU time just to reduce yo
 size by a few bytes, don't you?!
 
 Performing the "dry-run" step after running `afl-cmin` might seem pointless, but my
-experience showed that sometimes crashes remain the minimized corpus. So this is just
+experience showed that sometimes crashes remain in the minimized corpus. So this is just
 an additional step to get rid of them. But don't expect "dry-run" to always clear your
 corpus from crashes with a 100% success rate!
 
+Brandon Perry described a common fuzzing workflow in his
+[blog post](http://foxglovesecurity.com/2016/03/15/fuzzing-workflows-a-fuzz-job-from-start-to-finish/).
+It incorporates corpus pruning and reseeding `afl-fuzz` with optimized corpora. The
+collection and minimization steps taken in `afl-minimize` automate the pruning process
+of the presented workflow. To feed the minimized, pruned corpus back into the different
+instances of `afl-fuzz` you may use the `--reseed` option that comes with `afl-minimize`.  
+This effectively moves the original `queue` directories of all fuzzing instances
+out of the way (to `queue.YYYY-MM-DD-HH:MM:SS`). Next, the optimized corpus is copied
+into the `queue` dirs of your fuzzing instances.  
+After reseeding, all fuzzing instances may be resumed on the same, optimized corpus.
+So with `afl-utils` the pruning/reseeding process is just a matter of `afl-multicore`ing,
+`afl-multikill`ing and `afl-minimize`ing.
+
 Usage:
 
-    afl-minimize [-c COLLECTION_DIR [--cmin [opts]] [--tmin [opts]]] [-d] [-h]
-                 [-j] sync_dir -- target_cmd
+    afl-minimize [-c COLLECTION_DIR [--cmin [opts]] [--tmin [opts]]] [--reseed]
+                 [-d] [-h] [-j] sync_dir -- target_cmd
     
     afl-minimize performs several optimization steps to reduce the size of an afl-
     fuzz corpus.
@@ -160,6 +173,9 @@ Usage:
                             Set memory limit for afl-cmin.
       --cmin-timeout CMIN_TIMEOUT
                             Set timeout for afl-cmin.
+      --reseed              Reseed afl-fuzz with the collected (and optimized)
+                            corpus. This replaces all sync_dir queues with the
+                            newly generated corpus.
       --tmin                Run afl-tmin on minimized collection dir if used
                             together with '--cmin'or on unoptimized collection dir
                             otherwise. Has no effect without '-c'.
