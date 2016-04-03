@@ -5,6 +5,10 @@ python:
 before_install:
       - pip install pytest pytest-cov
       - pip install coveralls
+      - git clone https://github.com/rc0r/afl-fuzz
+      - make -C afl-fuzz
+      - make -C afl-fuzz/llvm_mode
+      - sudo make -C afl-fuzz install
 install:
       - python setup.py install
 script:
