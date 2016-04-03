@@ -102,8 +102,9 @@ def invoke_tmin(input_files, output_dir, target_cmd, num_threads=1, mem_limit=No
     return len(files_processed)
 
 
-def invoke_dryrun(input_files, crash_dir, timeout_dir, target_cmd, num_threads=1):
-    invalid_samples, timeout_samples = afl_vcrash.verify_samples(num_threads, input_files, target_cmd)
+def invoke_dryrun(input_files, crash_dir, timeout_dir, target_cmd, timeout=60, num_threads=1):
+    invalid_samples, timeout_samples = afl_vcrash.verify_samples(num_threads, input_files, target_cmd,
+                                                                 timeout_secs=timeout)
 
     invalid_sample_set = set(invalid_samples+timeout_samples)
     input_sample_set = set(input_files)
