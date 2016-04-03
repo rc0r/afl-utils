@@ -2,31 +2,45 @@ from afl_utils import afl_minimize
 
 import os
 import shutil
+import subprocess
 import unittest
 
 test_sync_dir = os.path.abspath('testdata/sync')
+collection_base = os.path.abspath('testdata/collection')
+collection_dir = os.path.abspath('testdata/collection_test')
 
 
 class AflMinimizeTestCase(unittest.TestCase):
+    def init_collection_dir(self):
+        if os.path.exists(collection_dir):
+            shutil.rmtree(collection_dir)
+        shutil.copytree(collection_base, collection_dir)
+
     def setUp(self):
         # Use to set up test environment prior to test case
         # invocation
         os.makedirs(os.path.join(test_sync_dir, 'fuzz000/queue'), exist_ok=True)
         os.makedirs(os.path.join(test_sync_dir, 'fuzz001/queue'), exist_ok=True)
+        self.init_collection_dir()
+        subprocess.call(['make', '-C', 'testdata/crash_process'])
 
     def tearDown(self):
         # Use for clean up after tests have run
         self.del_queue_dirs(os.path.join(test_sync_dir, 'fuzz000'))
         self.del_queue_dirs(os.path.join(test_sync_dir, 'fuzz001'))
 
-        if os.path.exists(os.path.abspath('testdata/collection.cmin')):
-            shutil.rmtree(os.path.abspath('testdata/collection.cmin'))
-        if os.path.exists(os.path.abspath('testdata/collection.tmin')):
-            shutil.rmtree(os.path.abspath('testdata/collection.tmin'))
-        if os.path.exists(os.path.abspath('testdata/collection.crashes')):
-            shutil.rmtree(os.path.abspath('testdata/collection.crashes'))
-        if os.path.exists(os.path.abspath('testdata/collection.timeouts')):
-            shutil.rmtree(os.path.abspath('testdata/collection.timeouts'))
+        if os.path.exists(os.path.abspath('%s.cmin' % collection_dir)):
+            shutil.rmtree(os.path.abspath('%s.cmin' % collection_dir))
+        if os.path.exists(os.path.abspath('%s.tmin' % collection_dir)):
+            shutil.rmtree(os.path.abspath('%s.tmin' % collection_dir))
+        if os.path.exists(os.path.abspath('%s.crashes' % collection_dir)):
+            shutil.rmtree(os.path.abspath('%s.crashes' % collection_dir))
+        if os.path.exists(os.path.abspath('%s.timeouts' % collection_dir)):
+            shutil.rmtree(os.path.abspath('%s.timeouts' % collection_dir))
+        if os.path.exists(os.path.abspath('testdata/crash_process/bin')):
+            shutil.rmtree(os.path.abspath('testdata/crash_process/bin'))
+        if os.path.exists(collection_dir):
+            shutil.rmtree(collection_dir)
 
     def del_queue_dirs(self, base_dir):
         ls = os.listdir(base_dir)
@@ -43,24 +57,28 @@ class AflMinimizeTestCase(unittest.TestCase):
         self.assertIsNone(afl_minimize.show_info())
 
     def test_invoke_cmin(self):
-        self.assertEqual(False, afl_minimize.invoke_cmin('testdata/collection', 'testdata/collection.cmin',
+        self.init_collection_dir()
+        self.assertEqual(False, afl_minimize.invoke_cmin(collection_dir, '%s.cmin' % collection_dir,
                                                          '/bin/echo', mem_limit=100, timeout=100))
 
     def test_invoke_tmin(self):
-        self.assertEqual(19, afl_minimize.invoke_tmin('testdata/collection', 'testdata/collection.tmin',
-                                                      '/bin/echo', mem_limit=100, timeout=100))
+        self.init_collection_dir()
+        self.assertNotEqual(0, afl_minimize.invoke_tmin(collection_dir, '%s.tmin' % collection_dir,
+                                                        '/bin/echo', mem_limit=100, timeout=100))
 
     def test_invoke_dryrun(self):
+        self.init_collection_dir()
         input_files = [
-            'testdata/collection/dummy_sample0',
-            'testdata/collection/dummy_sample1',
-            'testdata/collection/dummy_sample2'
+            '%s/dummy_sample0' % collection_dir,
+            '%s/dummy_sample1' % collection_dir,
+            '%s/dummy_sample2' % collection_dir
         ]
-        self.assertEqual(None, afl_minimize.invoke_dryrun(input_files, 'testdata/collection.crashes',
-                                                          'testdata/collection.timeouts', '/bin/echo'))
+        self.assertEqual(None, afl_minimize.invoke_dryrun(input_files, '%s.crashes' % collection_dir,
+                                                          '%s.timeouts' % collection_dir,
+                                                          'testdata/crash_process/bin/crash', timeout=1))
 
     def test_afl_reseed(self):
-        test_fuzzer_queues = [('fuzz001', ['queue']), ('fuzz000', ['queue'])]
+        test_fuzzer_queues = [('fuzz000', ['queue']), ('fuzz001', ['queue'])]
 
         dir_ls = [
             'fuzzer_stats',
@@ -78,7 +96,7 @@ class AflMinimizeTestCase(unittest.TestCase):
         self.assertListEqual([], os.listdir(os.path.join(test_sync_dir, 'fuzz000/queue')))
         self.assertListEqual([], os.listdir(os.path.join(test_sync_dir, 'fuzz001/queue')))
 
-        self.assertListEqual(test_fuzzer_queues, afl_minimize.afl_reseed('testdata/sync', 'testdata/collection'))
+        self.assertListEqual(test_fuzzer_queues, sorted(afl_minimize.afl_reseed('testdata/sync', collection_dir)))
 
         self.assertListEqual(queue_ls, sorted(os.listdir(os.path.join(test_sync_dir, 'fuzz000/queue'))))
         self.assertListEqual(queue_ls, sorted(os.listdir(os.path.join(test_sync_dir, 'fuzz001/queue'))))
