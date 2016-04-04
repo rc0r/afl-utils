@@ -8,6 +8,9 @@ import unittest
 test_sync_dir = os.path.abspath('testdata/sync')
 collection_base = os.path.abspath('testdata/collection')
 collection_dir = os.path.abspath('testdata/collection_test')
+collection_new = os.path.abspath('testdata/collection_new')
+collection_new_cmin = os.path.abspath('testdata/collection_new.cmin')
+collection_new_tmin = os.path.abspath('testdata/collection_new.tmin')
 queue_base = os.path.abspath('testdata/queue')
 
 
@@ -30,6 +33,8 @@ class AflMinimizeTestCase(unittest.TestCase):
         shutil.copytree(queue_base, queue_dir)
         self.init_collection_dir()
         subprocess.call(['make', '-C', 'testdata/crash_process'])
+        os.makedirs(collection_new_cmin, exist_ok=True)
+        os.makedirs(collection_new_tmin, exist_ok=True)
 
     def tearDown(self):
         # Use for clean up after tests have run
@@ -48,6 +53,12 @@ class AflMinimizeTestCase(unittest.TestCase):
             shutil.rmtree(os.path.abspath('testdata/crash_process/bin'))
         if os.path.exists(collection_dir):
             shutil.rmtree(collection_dir)
+        if os.path.exists(collection_new):
+            shutil.rmtree(collection_new)
+        if os.path.exists(collection_new_cmin):
+            shutil.rmtree(collection_new_cmin)
+        if os.path.exists(collection_new_tmin):
+            shutil.rmtree(collection_new_tmin)
 
     def del_queue_dirs(self, base_dir):
         ls = os.listdir(base_dir)
@@ -131,4 +142,32 @@ class AflMinimizeTestCase(unittest.TestCase):
         self.assertIsNone(afl_minimize.main(argv))
 
         argv = ['afl-minimize', '-c', collection_dir, 'testdata/sync', '--', '/bin/echo']
+        self.assertIsNone(afl_minimize.main(argv))
+
+        argv = ['afl-minimize', '-c', collection_new, 'testdata/sync', '--', '/bin/echo']
+        self.assertIsNone(afl_minimize.main(argv))
+
+        argv = ['afl-minimize', '-c', collection_new, '--cmin', '--tmin', 'testdata/sync', '--', '/bin/echo']
+        self.assertIsNone(afl_minimize.main(argv))
+
+        argv = ['afl-minimize', '-c', collection_new, '--tmin', 'testdata/sync', '--', '/bin/echo']
+        self.assertIsNone(afl_minimize.main(argv))
+
+        argv = ['afl-minimize', '-c', collection_new, '--cmin', '--tmin', '--dry-run', 'testdata/sync', '--', '/bin/echo']
+        self.assertIsNone(afl_minimize.main(argv))
+
+        argv = ['afl-minimize', '-c', collection_new, '--cmin', '--dry-run', 'testdata/sync', '--', '/bin/echo']
+        self.assertIsNone(afl_minimize.main(argv))
+
+        argv = ['afl-minimize', '-c', collection_new, '--tmin', '--dry-run', 'testdata/sync', '--', '/bin/echo']
+        self.assertIsNone(afl_minimize.main(argv))
+
+        argv = ['afl-minimize', '-c', collection_new, '--dry-run', 'testdata/sync', '--', '/bin/echo']
+        self.assertIsNone(afl_minimize.main(argv))
+
+        argv = ['afl-minimize', '-c', collection_new, '--cmin', '--tmin', '--reseed', 'testdata/sync', '--',
+                '/bin/echo']
+        self.assertIsNone(afl_minimize.main(argv))
+
+        argv = ['afl-minimize', '--dry-run', 'testdata/sync', '--', '/bin/echo']
         self.assertIsNone(afl_minimize.main(argv))
