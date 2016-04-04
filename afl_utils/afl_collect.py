@@ -123,10 +123,10 @@ def collect_samples(sync_dir, fuzzer_instances):
     return num_samples, samples
 
 
-def build_sample_index(sync_dir, out_dir, fuzzer_instances, db=None, min_filename=False):
+def build_sample_index(sync_dir, out_dir, fuzzer_instances, db=None, min_filename=False, omit_fuzzer_name=False):
     sample_num, samples = collect_samples(sync_dir, fuzzer_instances)
 
-    sample_index = SampleIndex.SampleIndex(out_dir, min_filename=min_filename)
+    sample_index = SampleIndex.SampleIndex(out_dir, min_filename=min_filename, omit_fuzzer_name=omit_fuzzer_name)
 
     for fuzzer in samples:
         for sample_dir in fuzzer[1]:

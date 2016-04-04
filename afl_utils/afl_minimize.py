@@ -137,13 +137,26 @@ def afl_reseed(sync_dir, coll_dir):
 
     for fuzzer in fuzzer_queues:
         # move original fuzzer queues out of the way
-        date_time = time.strftime("%Y-%m-%d-%H%:M:%S")
+        date_time = time.strftime("%Y-%m-%d-%H:%M:%S")
         queue_dir = os.path.join(sync_dir, fuzzer[0], "queue")
-        shutil.move(queue_dir, "%s.%s" % (queue_dir, date_time))
+        queue_bak = "%s.%s" % (queue_dir, date_time)
+        os.makedirs(queue_bak, exist_ok=True)
+
+        queue_ls = os.listdir(queue_dir)
+
+        for item in queue_ls:
+            abs_item = os.path.join(queue_dir, item)
+            if os.path.isfile(abs_item):
+                shutil.move(abs_item, queue_bak)
 
         # copy newly generated corpus into queues
-        print_ok("Reseeding %s into queue %s" % (coll_dir, queue_dir))
-        shutil.copytree(coll_dir, queue_dir)
+        print_ok("Reseeding %s into queue %s" % (os.path.basename(coll_dir), queue_dir))
+        coll_ls = os.listdir(coll_dir)
+
+        for item in coll_ls:
+            abs_item = os.path.join(coll_dir, item)
+            if os.path.isfile(abs_item):
+                shutil.copy2(abs_item, queue_dir)
 
     return fuzzer_queues
 
@@ -200,10 +213,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         return
     args.target_cmd = " ".join(args.target_cmd)
 
-    if not args.num_threads:
-        threads = 1
-    else:
-        threads = int(args.num_threads)
+    threads = int(args.num_threads)
 
     if args.collection_dir:
         out_dir = os.path.abspath(os.path.expanduser(args.collection_dir))
@@ -215,7 +225,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
             # collect samples from fuzzer queues
             print_ok("Found %d fuzzers, collecting samples." % len(fuzzers))
-            sample_index = afl_collect.build_sample_index(sync_dir, out_dir, fuzzers)
+            sample_index = afl_collect.build_sample_index(sync_dir, out_dir, fuzzers, omit_fuzzer_name=True)
 
             print_ok("Successfully indexed %d samples." % len(sample_index.index))
             print_ok("Copying %d samples into collection directory..." % len(sample_index.index))

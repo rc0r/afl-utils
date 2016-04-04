@@ -18,13 +18,14 @@ import os
 
 
 class SampleIndex:
-    def __init__(self, output_dir, index=None, min_filename=False):
+    def __init__(self, output_dir, index=None, min_filename=False, omit_fuzzer_name=False):
         self.output_dir = os.path.abspath(output_dir)
         if index is not None:
             self.index = index
         else:
             self.index = []
         self.min_filename = min_filename
+        self.omit_fuzzer_name = omit_fuzzer_name
 
     def __generate_output__(self, fuzzer, input_file):
         input_filename = os.path.basename(input_file)
@@ -34,7 +35,10 @@ class SampleIndex:
                 input_filename = input_filename.split(",")[0].split(":")[1]
             except Exception:
                 pass
-        return "%s:%s" % (fuzzer_name, input_filename)
+        if self.omit_fuzzer_name:
+            return input_filename
+        else:
+            return "%s:%s" % (fuzzer_name, input_filename)
 
     def __remove__(self, key, values):
         self.index = [x for x in self.index if x[key] not in values]

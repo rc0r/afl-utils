@@ -65,6 +65,14 @@ class SampleIndexTestCase(unittest.TestCase):
         self.assertEqual('fuzzer:filename', si.__generate_output__('fuzzer', 'id:filename,other_info'))
         self.assertEqual('fuzzer:filename', si.__generate_output__('fuzzer', 'filename'))
 
+        si = SampleIndex.SampleIndex(test_dir, omit_fuzzer_name=True)
+
+        self.assertEqual('filename', si.__generate_output__('fuzzer', '/path/to/filename'))
+        self.assertEqual('filename', si.__generate_output__('fuzzer', './filename'))
+        self.assertEqual('filename', si.__generate_output__('fuzzer', '~/filename'))
+        self.assertEqual('filename', si.__generate_output__('fuzzer', 'filename'))
+        self.assertEqual('filename', si.__generate_output__('/bla/fuzzer', 'filename'))
+
     def test_remove(self):
         test_index_removed = [
             {'input': 1, 'fuzzer': 'fuzz01', 'output': 'fuzz01:file01'},

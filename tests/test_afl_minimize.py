@@ -8,6 +8,7 @@ import unittest
 test_sync_dir = os.path.abspath('testdata/sync')
 collection_base = os.path.abspath('testdata/collection')
 collection_dir = os.path.abspath('testdata/collection_test')
+queue_base = os.path.abspath('testdata/queue')
 
 
 class AflMinimizeTestCase(unittest.TestCase):
@@ -19,8 +20,14 @@ class AflMinimizeTestCase(unittest.TestCase):
     def setUp(self):
         # Use to set up test environment prior to test case
         # invocation
-        os.makedirs(os.path.join(test_sync_dir, 'fuzz000/queue'), exist_ok=True)
-        os.makedirs(os.path.join(test_sync_dir, 'fuzz001/queue'), exist_ok=True)
+        queue_dir = os.path.join(test_sync_dir, 'fuzz000/queue')
+        if os.path.exists(queue_dir):
+            shutil.rmtree(queue_dir)
+        shutil.copytree(queue_base, queue_dir)
+        queue_dir = os.path.join(test_sync_dir, 'fuzz001/queue')
+        if os.path.exists(queue_dir):
+            shutil.rmtree(queue_dir)
+        shutil.copytree(queue_base, queue_dir)
         self.init_collection_dir()
         subprocess.call(['make', '-C', 'testdata/crash_process'])
 
@@ -85,18 +92,43 @@ class AflMinimizeTestCase(unittest.TestCase):
             'queue'
         ]
 
+        pre_queue_ls = [
+            '.state',
+            'sample0',
+            'sample1',
+            'sample2'
+        ]
+
         queue_ls = [
+            '.state',
             'dummy_sample0',
             'dummy_sample1',
             'dummy_sample2'
         ]
 
-        self.assertListEqual(dir_ls, os.listdir(os.path.join(test_sync_dir, 'fuzz000')))
-        self.assertListEqual(dir_ls, os.listdir(os.path.join(test_sync_dir, 'fuzz001')))
-        self.assertListEqual([], os.listdir(os.path.join(test_sync_dir, 'fuzz000/queue')))
-        self.assertListEqual([], os.listdir(os.path.join(test_sync_dir, 'fuzz001/queue')))
+        self.assertListEqual(dir_ls, sorted(os.listdir(os.path.join(test_sync_dir, 'fuzz000'))))
+        self.assertListEqual(dir_ls, sorted(os.listdir(os.path.join(test_sync_dir, 'fuzz001'))))
+        self.assertListEqual(pre_queue_ls, sorted(os.listdir(os.path.join(test_sync_dir, 'fuzz000/queue'))))
+        self.assertListEqual(pre_queue_ls, sorted(os.listdir(os.path.join(test_sync_dir, 'fuzz001/queue'))))
 
         self.assertListEqual(test_fuzzer_queues, sorted(afl_minimize.afl_reseed('testdata/sync', collection_dir)))
 
         self.assertListEqual(queue_ls, sorted(os.listdir(os.path.join(test_sync_dir, 'fuzz000/queue'))))
         self.assertListEqual(queue_ls, sorted(os.listdir(os.path.join(test_sync_dir, 'fuzz001/queue'))))
+
+    def test_main(self):
+        argv = ['afl-minimize', '-h']
+        with self.assertRaises(SystemExit):
+            self.assertIsNone(afl_minimize.main(argv))
+
+        argv = ['afl-minimize', collection_dir, '--', '/bin/echo']
+        self.assertIsNone(afl_minimize.main(argv))
+
+        argv = ['afl-minimize', '-c', collection_dir, 'invalid', '--', '/bin/echo']
+        self.assertIsNone(afl_minimize.main(argv))
+
+        argv = ['afl-minimize', '-c', collection_dir, 'testdata/sync', '--', '/bin/invalid_binary']
+        self.assertIsNone(afl_minimize.main(argv))
+
+        argv = ['afl-minimize', '-c', collection_dir, 'testdata/sync', '--', '/bin/echo']
+        self.assertIsNone(afl_minimize.main(argv))
