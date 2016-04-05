@@ -169,7 +169,7 @@ def stdin_mode(target_cmd):
     return not ("@@" in target_cmd)
 
 
-def generate_gdb_exploitable_script(script_filename, sample_index, target_cmd, script_id, intermediate=False):
+def generate_gdb_exploitable_script(script_filename, sample_index, target_cmd, script_id=0, intermediate=False):
     target_cmd = target_cmd.split()
     gdb_target_binary = target_cmd[0]
     gdb_run_cmd = " ".join(target_cmd[1:])
@@ -402,7 +402,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     if args.remove_invalid:
         from afl_utils import afl_vcrash
         invalid_samples, timeout_samples = afl_vcrash.verify_samples(int(args.num_threads), sample_index.inputs(),
-                                                                     args.target_cmd)
+                                                                     args.target_cmd, timeout_secs=10)
 
         # store invalid samples in db
         print_ok("Saving invalid sample info to database.")

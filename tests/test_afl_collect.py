@@ -3,6 +3,7 @@ from afl_utils.SampleIndex import SampleIndex
 
 import os
 import shutil
+import subprocess
 import unittest
 
 
@@ -16,7 +17,9 @@ class AflCollectTestCase(unittest.TestCase):
         self.init_queue_dir('testdata/sync/fuzz000/queue')
         self.init_queue_dir('testdata/sync/fuzz001/queue')
         self.clean_remove('testdata/read_only')
-        self.clean_remove_dir('testdata/dbfile.db')
+        self.clean_remove('testdata/dbfile.db')
+        self.clean_remove('testdata/gdbscript')
+        subprocess.call(['make', '-C', 'testdata/crash_process'])
 
     def tearDown(self):
         # Use for clean up after tests have run
@@ -28,6 +31,8 @@ class AflCollectTestCase(unittest.TestCase):
         self.clean_remove_dir('testdata/test_collection_dir')
         self.clean_remove('testdata/read_only')
         self.clean_remove('testdata/dbfile.db')
+        self.clean_remove('testdata/gdbscript')
+        self.clean_remove_dir('testdata/crash_process/bin')
 
     def init_crash_dir(self, fuzzer_dir):
         self.init_queue_dir(fuzzer_dir)
@@ -224,4 +229,11 @@ class AflCollectTestCase(unittest.TestCase):
 
         argv = ['afl-collect', '-r', 'testdata/sync', 'testdata/test_collection_dir', '--', '/bin/echo']
         self.assertIsNone(afl_collect.main(argv))
-        
+
+        argv = ['afl-collect', '-d', 'testdata/dbfile.db', '-e', 'gdbscript', '-r', '-rr', 'testdata/sync',
+               'testdata/test_collection_dir', '--', 'testdata/crash_process/bin/crash']
+        self.assertIsNone(afl_collect.main(argv))
+
+        argv = ['afl-collect', '-g', 'gdbscript', '-f', 'testdata/read_only', 'testdata/sync',
+                'testdata/test_collection_dir', '--', '/bin/echo']
+        self.assertIsNone(afl_collect.main(argv))
