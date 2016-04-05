@@ -300,7 +300,7 @@ def execute_gdb_script(out_dir, script_filename, num_samples, num_threads):
                                     'description': grepped_output[g+1], 'hash': grepped_output[g+2]})
         i += 1
 
-    if i < num_samples:
+    if i > 1 and i < num_samples:
         print("%s[%05d]%s %s: %sINVALID SAMPLE (Aborting!)%s" % (clr.GRA, i, clr.RST,
                                                                  grepped_output[-1].ljust(ljust_width, '.'),
                                                                  clr.LRD, clr.RST))
