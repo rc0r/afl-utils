@@ -11,6 +11,7 @@ collection_dir = os.path.abspath('testdata/collection_test')
 collection_new = os.path.abspath('testdata/collection_new')
 collection_new_cmin = os.path.abspath('testdata/collection_new.cmin')
 collection_new_tmin = os.path.abspath('testdata/collection_new.tmin')
+collection_new_cmin_tmin = os.path.abspath('testdata/collection_new.cmin.tmin')
 queue_base = os.path.abspath('testdata/queue')
 
 
@@ -35,6 +36,7 @@ class AflMinimizeTestCase(unittest.TestCase):
         subprocess.call(['make', '-C', 'testdata/crash_process'])
         os.makedirs(collection_new_cmin, exist_ok=True)
         os.makedirs(collection_new_tmin, exist_ok=True)
+        os.makedirs(collection_new_cmin_tmin, exist_ok=True)
 
     def tearDown(self):
         # Use for clean up after tests have run
@@ -59,6 +61,8 @@ class AflMinimizeTestCase(unittest.TestCase):
             shutil.rmtree(collection_new_cmin)
         if os.path.exists(collection_new_tmin):
             shutil.rmtree(collection_new_tmin)
+        if os.path.exists(collection_new_cmin_tmin):
+            shutil.rmtree(collection_new_cmin_tmin)
 
     def del_queue_dirs(self, base_dir):
         ls = os.listdir(base_dir)

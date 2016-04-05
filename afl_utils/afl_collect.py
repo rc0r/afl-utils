@@ -54,6 +54,9 @@ def show_info():
 
 
 def get_fuzzer_instances(sync_dir, crash_dirs=True):
+    if not os.path.isabs(sync_dir):
+        sync_dir = os.path.abspath(sync_dir)
+
     fuzzer_inst = []
     fuzzer_stats_file = os.path.join(sync_dir, fuzzer_stats_filename)
     if os.path.exists(fuzzer_stats_file) and os.path.isfile(fuzzer_stats_file):
@@ -115,7 +118,7 @@ def collect_samples(sync_dir, fuzzer_instances):
 
         for cd in fi[1]:
             tmp_num_samples, tmp_samples = get_samples_from_dir(os.path.join(fuzz_dir, cd))
-            fuzz_samples.append((cd, tmp_samples))
+            fuzz_samples.append((cd, sorted(tmp_samples)))
             num_samples += tmp_num_samples
 
         samples.append((fi[0], fuzz_samples))
@@ -152,17 +155,15 @@ def copy_samples(sample_index):
 
 def generate_sample_list(list_filename, files_collected):
     list_filename = os.path.abspath(os.path.expanduser(list_filename))
-    fd = open(list_filename, "w")
 
-    if not fd:
+    try:
+        fd = open(list_filename, "w")
+        for f in files_collected:
+            fd.writelines("%s\n" % f)
+
+        fd.close()
+    except (FileExistsError, PermissionError):
         print_err("Could not create file list '%s'!" % list_filename)
-        return
-
-    for f in files_collected:
-        fd.writelines("%s\n" % f)
-
-    fd.close()
-
 
 def stdin_mode(target_cmd):
     return not ("@@" in target_cmd)
@@ -182,42 +183,42 @@ def generate_gdb_exploitable_script(script_filename, sample_index, target_cmd, s
         print_ok("Generating intermediate gdb+exploitable script '%s' for %d samples..." %
                  (script_filename, len(sample_index.outputs())))
 
-    fd = open(script_filename, "w")
-    if not fd:
+    try:
+        fd = open(script_filename, "w")
+
+        # <script header>
+        # source exploitable.py if necessary
+        if gdb_exploitable_path:
+            fd.writelines("source %s\n" % gdb_exploitable_path)
+
+        # load executable
+        fd.writelines("file %s\n" % gdb_target_binary)
+        # </script_header>
+
+        # fill script with content
+        for f in sample_index.index:
+            fd.writelines("echo Crash\ sample:\ '%s'\\n\n" % f['output'])
+
+            if not stdin_mode(target_cmd):
+                run_cmd = "run " + gdb_run_cmd + "\n"
+            else:
+                run_cmd = "run " + gdb_run_cmd + "< @@" + "\n"
+
+            if intermediate:
+                run_cmd = run_cmd.replace("@@", f['input'])
+            else:
+                run_cmd = run_cmd.replace("@@", os.path.join(sample_index.output_dir, f['output']))
+
+            fd.writelines(run_cmd)
+            fd.writelines("exploitable\n")
+
+        # <script_footer>
+        fd.writelines("quit")
+        # </script_footer>
+
+        fd.close()
+    except (FileExistsError, PermissionError):
         print_err("Could not open script file '%s' for writing!" % script_filename)
-        return
-
-    # <script header>
-    # source exploitable.py if necessary
-    if gdb_exploitable_path:
-        fd.writelines("source %s\n" % gdb_exploitable_path)
-
-    # load executable
-    fd.writelines("file %s\n" % gdb_target_binary)
-    # </script_header>
-
-    # fill script with content
-    for f in sample_index.index:
-        fd.writelines("echo Crash\ sample:\ '%s'\\n\n" % f['output'])
-
-        if not stdin_mode(target_cmd):
-            run_cmd = "run " + gdb_run_cmd + "\n"
-        else:
-            run_cmd = "run " + gdb_run_cmd + "< @@" + "\n"
-
-        if intermediate:
-            run_cmd = run_cmd.replace("@@", f['input'])
-        else:
-            run_cmd = run_cmd.replace("@@", os.path.join(sample_index.output_dir, f['output']))
-
-        fd.writelines(run_cmd)
-        fd.writelines("exploitable\n")
-
-    # <script_footer>
-    fd.writelines("quit")
-    # </script_footer>
-
-    fd.close()
 
 
 # ok, this needs improvement!!!
@@ -359,13 +360,9 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         print_err("No valid directory provided for <SYNC_DIR>!")
         return
 
-    if args.collection_dir:
-        out_dir = os.path.abspath(os.path.expanduser(args.collection_dir))
-        if not os.path.exists(out_dir):
-            os.makedirs(out_dir, exist_ok=True)
-    else:
-        print_err("No valid directory provided for <OUT_DIR>!")
-        return
+    out_dir = os.path.abspath(os.path.expanduser(args.collection_dir))
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir, exist_ok=True)
 
     args.target_cmd = " ".join(args.target_cmd).split()
     args.target_cmd[0] = os.path.abspath(os.path.expanduser(args.target_cmd[0]))
