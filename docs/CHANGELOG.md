@@ -5,6 +5,7 @@ Version 1.26a
   - afl-minimize now supports reseeding original afl queues with an optimized
     corpus.
   - Typo in test case setup method declaration fixed.
+  - More test cases added.
 
 Version 1.25a
 
