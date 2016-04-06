@@ -20,6 +20,9 @@ class AflCollectTestCase(unittest.TestCase):
         self.clean_remove('testdata/dbfile.db')
         self.clean_remove('testdata/gdbscript')
         subprocess.call(['make', '-C', 'testdata/crash_process'])
+        if not os.path.exists('testdata/read_only_file'):
+            shutil.copy('testdata/collection/dummy_sample0', 'testdata/read_only_file')
+            os.chmod('testdata/read_only_file', 0o0444)
 
     def tearDown(self):
         # Use for clean up after tests have run
@@ -33,6 +36,10 @@ class AflCollectTestCase(unittest.TestCase):
         self.clean_remove('testdata/dbfile.db')
         self.clean_remove('testdata/gdbscript')
         self.clean_remove_dir('testdata/crash_process/bin')
+        os.chmod('testdata/read_only_file', 0o744)
+        self.clean_remove('testdata/read_only_file')
+        self.clean_remove('testdata/gdb_script')
+        self.clean_remove('testdata/gdb_script.0')
 
     def init_crash_dir(self, fuzzer_dir):
         self.init_queue_dir(fuzzer_dir)
@@ -196,11 +203,31 @@ class AflCollectTestCase(unittest.TestCase):
         self.assertFalse(afl_collect.stdin_mode('bla blubb @@'))
 
     def test_generate_gdb_exploitable_script(self):
-        # TODO
-        pass
+        script_filename = 'testdata/read_only_file'
+        index = [
+            {'input': os.path.abspath('testdata/sync/fuzz001/queue/sample2'), 'fuzzer': 'fuzz001',
+             'output': 'fuzz001:sample2'},
+        ]
+        si = SampleIndex('testdata/output', index)
+
+        self.assertIsNone(afl_collect.generate_gdb_exploitable_script(script_filename, si, 'bin/echo'))
+
+        script_filename = 'testdata/gdb_script'
+        self.assertIsNone(afl_collect.generate_gdb_exploitable_script(script_filename, si, '/bin/echo',
+                                                                      intermediate=True))
+        self.assertTrue(os.path.exists('testdata/gdb_script.0'))
+        self.assertIsNone(afl_collect.generate_gdb_exploitable_script(script_filename, si, '/bin/echo'))
+        self.assertTrue(os.path.exists('testdata/gdb_script'))
+
+        afl_collect.gdb_exploitable_path = 'test'
+        self.assertIsNone(afl_collect.generate_gdb_exploitable_script(script_filename, si, '/bin/echo'))
+        self.assertTrue(os.path.exists('testdata/gdb_script'))
+
+        afl_collect.gdb_exploitable_path = None
+        self.assertIsNone(afl_collect.generate_gdb_exploitable_script(script_filename, si, '/bin/echo @@'))
+        self.assertTrue(os.path.exists('testdata/gdb_script'))
 
     def test_execute_gdb_script(self):
-        # TODO
         pass
 
     def test_main(self):
