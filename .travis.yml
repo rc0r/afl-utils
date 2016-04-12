@@ -8,6 +8,6 @@ before_install:
 install:
       - python setup.py install
 script:
-      - coverage run --source=afl_utils setup.py test
+      - coverage run setup.py test
 after_success:
       - coveralls

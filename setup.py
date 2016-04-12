@@ -20,8 +20,8 @@ from setuptools import find_packages
 import afl_utils
 
 dependencies = [
-    'twitter',
-    'exploitable==1.32-rcor'
+    'twitter',                      # needed for afl-stats (twitter access)
+    'exploitable==1.32-rcor'       # needed for gdb script execution
 ]
 
 dependency_links = [
@@ -34,6 +34,7 @@ afl_scripts = [
     'afl-multicore',
     'afl-multikill',
     'afl-stats',
+    'afl-sync',
     'afl-vcrash'
 ]
 
