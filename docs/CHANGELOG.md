@@ -1,5 +1,9 @@
 # afl-utils Changelog
 
+Version 1.27a
+
+  - Basic version of afl-sync added.
+
 Version 1.26a
 
   - afl-minimize now supports reseeding original afl queues with an optimized

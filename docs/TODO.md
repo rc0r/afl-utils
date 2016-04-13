@@ -15,7 +15,7 @@ provide appropriate test cases for it!
 # Feature Ideas / ToDo
 
 - [ ] implement configurable timeout for afl-collect, afl-minimize (like `-t` flag in `afl-vcrash`)
-- [ ] increase test coverage
+- [x] increase test coverage
 - [x] submit classification data into some sort of database
     - [x] basic sqlite3 database support added
     - [ ] want more db connectors? Drop me a line!

@@ -102,19 +102,23 @@ class AflCollectTestCase(unittest.TestCase):
 
     def test_get_samples_from_dir(self):
         sample_dir = 'testdata/queue'
-        expected_result = (3, [
+        expected_result = (5, [
             'sample0',
             'sample1',
-            'sample2'
+            'sample2',
+            'sample3',
+            'sample4'
         ])
         result = afl_collect.get_samples_from_dir(sample_dir)
         self.assertEqual(expected_result[0], result[0])
         self.assertListEqual(expected_result[1], sorted(result[1]))
 
-        expected_result = (3, [
+        expected_result = (5, [
             os.path.join(sample_dir, 'sample0'),
             os.path.join(sample_dir, 'sample1'),
             os.path.join(sample_dir, 'sample2'),
+            os.path.join(sample_dir, 'sample3'),
+            os.path.join(sample_dir, 'sample4'),
         ])
         result = afl_collect.get_samples_from_dir(sample_dir, abs_path=True)
         self.assertEqual(expected_result[0], result[0])
@@ -126,19 +130,23 @@ class AflCollectTestCase(unittest.TestCase):
             ('fuzz000', ['queue']),
             ('fuzz001', ['queue'])
         ]
-        expected_result = (6, [
+        expected_result = (10, [
             ('fuzz000', [
                 ('queue', [
                     'sample0',
                     'sample1',
-                    'sample2'
+                    'sample2',
+                    'sample3',
+                    'sample4'
                     ]
                 )]),
             ('fuzz001', [
                 ('queue', [
                     'sample0',
                     'sample1',
-                    'sample2'
+                    'sample2',
+                    'sample3',
+                    'sample4'
                     ]
                  )])
         ])
@@ -160,12 +168,20 @@ class AflCollectTestCase(unittest.TestCase):
              'output': 'fuzz000:sample1'},
             {'input': os.path.abspath('testdata/sync/fuzz000/queue/sample2'), 'fuzzer': 'fuzz000',
              'output': 'fuzz000:sample2'},
+            {'input': os.path.abspath('testdata/sync/fuzz000/queue/sample3'), 'fuzzer': 'fuzz000',
+             'output': 'fuzz000:sample3'},
+            {'input': os.path.abspath('testdata/sync/fuzz000/queue/sample4'), 'fuzzer': 'fuzz000',
+             'output': 'fuzz000:sample4'},
             {'input': os.path.abspath('testdata/sync/fuzz001/queue/sample0'), 'fuzzer': 'fuzz001',
              'output': 'fuzz001:sample0'},
             {'input': os.path.abspath('testdata/sync/fuzz001/queue/sample1'), 'fuzzer': 'fuzz001',
              'output': 'fuzz001:sample1'},
             {'input': os.path.abspath('testdata/sync/fuzz001/queue/sample2'), 'fuzzer': 'fuzz001',
              'output': 'fuzz001:sample2'},
+            {'input': os.path.abspath('testdata/sync/fuzz001/queue/sample3'), 'fuzzer': 'fuzz001',
+             'output': 'fuzz001:sample3'},
+            {'input': os.path.abspath('testdata/sync/fuzz001/queue/sample4'), 'fuzzer': 'fuzz001',
+             'output': 'fuzz001:sample4'},
         ]
         result = afl_collect.build_sample_index(sync_dir, out_dir, fuzzer_inst)
         self.assertListEqual(expected_index, result.index)

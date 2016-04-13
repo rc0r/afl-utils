@@ -111,14 +111,18 @@ class AflMinimizeTestCase(unittest.TestCase):
             '.state',
             'sample0',
             'sample1',
-            'sample2'
+            'sample2',
+            'sample3',
+            'sample4'
         ]
 
         queue_ls = [
             '.state',
             'dummy_sample0',
             'dummy_sample1',
-            'dummy_sample2'
+            'dummy_sample2',
+            'dummy_sample3',
+            'dummy_sample4'
         ]
 
         self.assertListEqual(dir_ls, sorted(os.listdir(os.path.join(test_sync_dir, 'fuzz000'))))
