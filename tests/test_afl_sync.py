@@ -14,12 +14,39 @@ class AflSyncTestCase(unittest.TestCase):
         os.makedirs('testdata/rsync_tmp_store', exist_ok=True)
         os.makedirs('testdata/sync/fuzz000/crashes', exist_ok=True)
         os.makedirs('testdata/sync/fuzz000/hangs', exist_ok=True)
+        os.makedirs('testdata/sync/fuzz002.sync', exist_ok=True)
+        os.makedirs('testdata/sync/invalid_fuzz000', exist_ok=True)
+        os.makedirs('testdata/sync/invalid_fuzz001', exist_ok=True)
+        # push
+        os.makedirs('testdata/rsync_output_push', exist_ok=True)
+        # pull
+        os.makedirs('testdata/rsync_output_pull/fuzz000.sync', exist_ok=True)
+        os.makedirs('testdata/rsync_output_pull/fuzz001.sync', exist_ok=True)
+        os.makedirs('testdata/rsync_output_pull/other_fuzz000.sync', exist_ok=True)
+        os.makedirs('testdata/rsync_output_pull/other_fuzz001.sync', exist_ok=True)
+        os.makedirs('testdata/rsync_output_pull/other_invalid_fuzz000.sync', exist_ok=True)
+        # sync
+        os.makedirs('testdata/rsync_output_sync/other_fuzz000.sync', exist_ok=True)
+        os.makedirs('testdata/rsync_output_sync/other_fuzz001.sync', exist_ok=True)
+        os.makedirs('testdata/rsync_output_sync/other_invalid_fuzz000.sync', exist_ok=True)
 
     def tearDown(self):
         # Use for clean up after tests have run
         self.clean_remove_dir('testdata/rsync_tmp_store')
         self.clean_remove_dir('testdata/sync/fuzz000/crashes')
         self.clean_remove_dir('testdata/sync/fuzz000/hangs')
+        self.clean_remove_dir('testdata/sync/fuzz002.sync')
+        self.clean_remove_dir('testdata/sync/invalid_fuzz000')
+        self.clean_remove_dir('testdata/sync/invalid_fuzz001')
+        self.clean_remove_dir('testdata/sync/fuzz000.sync')
+        self.clean_remove_dir('testdata/sync/fuzz001.sync')
+        self.clean_remove_dir('testdata/sync/other_fuzz000.sync')
+        self.clean_remove_dir('testdata/sync/other_fuzz001.sync')
+        self.clean_remove_dir('testdata/sync/other_invalid_fuzz000.sync')
+        self.clean_remove_dir('testdata/rsync_output_push')
+        self.clean_remove_dir('testdata/rsync_output_pull')
+        self.clean_remove_dir('testdata/rsync_output_sync')
+        self.clean_remove_dir('testdata/new_sync')
 
     def clean_remove(self, file):
         if os.path.exists(file):
@@ -39,6 +66,7 @@ class AflSyncTestCase(unittest.TestCase):
 
         fuzzer_config = {
             'sync_dir': 'testdata/sync',
+            'session': 'fuzz',
             'exclude_crashes': True,
             'exclude_hangs': True,
         }
@@ -63,7 +91,7 @@ class AflSyncTestCase(unittest.TestCase):
             'rsync',
             '-ra',
             '--exclude=\"exclude\"',
-            'dst/',
+            'dst/*',
             'src/'
         ]
 
@@ -80,6 +108,24 @@ class AflSyncTestCase(unittest.TestCase):
 
         self.assertTrue(afl_rsync._AflRsync__invoke_rsync(rsync_cmdline))
         self.assertFalse(afl_rsync._AflRsync__invoke_rsync(['rsync']))
+
+    def test_afl_rsync_get_fuzzers(self):
+        fuzzer_config = {
+            'sync_dir': 'testdata/sync',
+            'session': 'fuzz',
+            'exclude_crashes': True,
+            'exclude_hangs': True,
+        }
+
+        expected_fuzzers = [
+            'fuzz000',
+            'fuzz001',
+            'invalid_fuzz000',
+            'invalid_fuzz001'
+        ]
+
+        afl_rsync = AflRsync(None, fuzzer_config)
+        self.assertListEqual(sorted(expected_fuzzers), sorted(afl_rsync._AflRsync__get_fuzzers()))
 
     def test_afl_rsync_put(self):
         local_path = 'testdata/sync/fuzz000'
@@ -98,18 +144,183 @@ class AflSyncTestCase(unittest.TestCase):
         excludes = ['crashes*/', 'hangs*/']
 
         afl_rsync = AflRsync(None, None)
-        self.assertTrue(afl_rsync.rsync_get(local_path, remote_path, rsync_excludes=excludes))
+        self.assertTrue(afl_rsync.rsync_get(remote_path, local_path, rsync_excludes=excludes))
         self.assertTrue(os.path.exists(local_path + '/fuzzer_stats'))
         self.assertFalse(os.path.exists(local_path + '/crashes'))
         self.assertFalse(os.path.exists(local_path + '/hangs'))
 
+    def test_afl_rsync_push(self):
+        server_config = {
+            'remote_path': 'testdata/rsync_output_push',
+        }
+
+        fuzzer_config = {
+            'sync_dir': 'testdata/sync',
+            'session': 'fuzz',
+            'exclude_crashes': True,
+            'exclude_hangs': True,
+        }
+
+        afl_rsync = AflRsync(server_config, fuzzer_config)
+        self.assertIsNone(afl_rsync.push())
+        self.assertTrue(os.path.exists('testdata/rsync_output_push/fuzz000.sync'))
+        self.assertTrue(os.path.exists('testdata/rsync_output_push/fuzz001.sync'))
+        self.assertFalse(os.path.exists('testdata/rsync_output_push/fuzz002.sync'))
+        self.assertFalse(os.path.exists('testdata/rsync_output_push/fuzz002.sync.sync'))
+        self.assertFalse(os.path.exists('testdata/rsync_output_push/invalid_fuzz000.sync'))
+        self.assertFalse(os.path.exists('testdata/rsync_output_push/invalid_fuzz001.sync'))
+
+    def test_afl_rsync_pull_session(self):
+        server_config = {
+            'remote_path': 'testdata/rsync_output_pull',
+        }
+
+        fuzzer_config = {
+            'sync_dir': 'testdata/sync',
+            'session': 'other_fuzz',
+            'exclude_crashes': True,
+            'exclude_hangs': True,
+        }
+
+        afl_rsync = AflRsync(server_config, fuzzer_config)
+        self.assertIsNone(afl_rsync.pull())
+        self.assertTrue(os.path.exists('testdata/sync/other_fuzz000.sync'))
+        self.assertTrue(os.path.exists('testdata/sync/other_fuzz001.sync'))
+        self.assertFalse(os.path.exists('testdata/sync/other_invalid_fuzz000.sync'))
+        self.assertFalse(os.path.exists('testdata/sync/fuzz000.sync'))
+        self.assertFalse(os.path.exists('testdata/sync/fuzz001.sync'))
+
+    def test_afl_rsync_pull_all(self):
+        server_config = {
+            'remote_path': 'testdata/rsync_output_pull',
+        }
+
+        fuzzer_config = {
+            'sync_dir': 'testdata/sync',
+            'session': None,
+            'exclude_crashes': True,
+            'exclude_hangs': True,
+        }
+
+        afl_rsync = AflRsync(server_config, fuzzer_config)
+        self.assertIsNone(afl_rsync.pull())
+        self.assertTrue(os.path.exists('testdata/sync/other_fuzz000.sync'))
+        self.assertTrue(os.path.exists('testdata/sync/other_fuzz001.sync'))
+        self.assertTrue(os.path.exists('testdata/sync/other_invalid_fuzz000.sync'))
+        self.assertFalse(os.path.exists('testdata/sync/fuzz000.sync'))
+        self.assertFalse(os.path.exists('testdata/sync/fuzz001.sync'))
+
     def test_afl_rsync_sync(self):
-        afl_rsync = AflRsync(None, None)
+        server_config = {
+            'remote_path': 'testdata/rsync_output_sync',
+        }
+
+        fuzzer_config = {
+            'sync_dir': 'testdata/sync',
+            'session': None,
+            'exclude_crashes': True,
+            'exclude_hangs': True,
+        }
+
+        afl_rsync = AflRsync(server_config, fuzzer_config)
         self.assertIsNone(afl_rsync.sync())
+
+        # pull assertions
+        self.assertTrue(os.path.exists('testdata/sync/other_fuzz000.sync'))
+        self.assertTrue(os.path.exists('testdata/sync/other_fuzz001.sync'))
+        self.assertTrue(os.path.exists('testdata/sync/other_invalid_fuzz000.sync'))
+        self.assertFalse(os.path.exists('testdata/sync/fuzz000.sync'))
+        self.assertFalse(os.path.exists('testdata/sync/fuzz001.sync'))
+
+        # push assertions
+        self.assertTrue(os.path.exists('testdata/rsync_output_sync/fuzz000.sync'))
+        self.assertTrue(os.path.exists('testdata/rsync_output_sync/fuzz001.sync'))
+        self.assertFalse(os.path.exists('testdata/rsync_output_sync/fuzz002.sync'))
+        self.assertFalse(os.path.exists('testdata/rsync_output_sync/fuzz002.sync.sync'))
+        self.assertTrue(os.path.exists('testdata/rsync_output_sync/invalid_fuzz000.sync'))
+        self.assertTrue(os.path.exists('testdata/rsync_output_sync/invalid_fuzz001.sync'))
 
     def test_main(self):
         argv = [
             'afl-sync'
         ]
 
+        with self.assertRaises(SystemExit):
+            self.assertIsNone(afl_sync.main(argv))
+
+        argv = [
+            'afl-sync',
+            'put',
+            'src',
+            'dst'
+        ]
+        with self.assertRaises(SystemExit) as e:
+            afl_sync.main(argv)
+        self.assertEqual(1, e.exception.code)
+
+        argv = [
+            'afl-sync',
+            'push',
+            'testdata/new_sync',
+            'testdata/rsync_output_push'
+        ]
+        with self.assertRaises(SystemExit) as e:
+            afl_sync.main(argv)
+        self.assertEqual(1, e.exception.code)
+
+        argv = [
+            'afl-sync',
+            'pull',
+            'testdata/new_sync',
+            'testdata/rsync_output_pull'
+        ]
         self.assertIsNone(afl_sync.main(argv))
+
+        argv = [
+            'afl-sync',
+            'push',
+            'testdata/sync',
+            'testdata/rsync_output_push'
+        ]
+        self.assertIsNone(afl_sync.main(argv))
+        self.assertTrue(os.path.exists('testdata/rsync_output_push/fuzz000.sync'))
+        self.assertTrue(os.path.exists('testdata/rsync_output_push/fuzz001.sync'))
+        self.assertFalse(os.path.exists('testdata/rsync_output_push/fuzz002.sync'))
+        self.assertFalse(os.path.exists('testdata/rsync_output_push/fuzz002.sync.sync'))
+        self.assertTrue(os.path.exists('testdata/rsync_output_push/invalid_fuzz000.sync'))
+        self.assertTrue(os.path.exists('testdata/rsync_output_push/invalid_fuzz001.sync'))
+
+        argv = [
+            'afl-sync',
+            'pull',
+            'testdata/sync',
+            'testdata/rsync_output_pull'
+        ]
+        self.assertIsNone(afl_sync.main(argv))
+        self.assertTrue(os.path.exists('testdata/sync/other_fuzz000.sync'))
+        self.assertTrue(os.path.exists('testdata/sync/other_fuzz001.sync'))
+        self.assertTrue(os.path.exists('testdata/sync/other_invalid_fuzz000.sync'))
+        self.assertFalse(os.path.exists('testdata/sync/fuzz000.sync'))
+        self.assertFalse(os.path.exists('testdata/sync/fuzz001.sync'))
+
+        argv = [
+            'afl-sync',
+            'sync',
+            'testdata/sync',
+            'testdata/rsync_output_sync'
+        ]
+        self.assertIsNone(afl_sync.main(argv))
+        # pull assertions
+        self.assertTrue(os.path.exists('testdata/sync/other_fuzz000.sync'))
+        self.assertTrue(os.path.exists('testdata/sync/other_fuzz001.sync'))
+        self.assertTrue(os.path.exists('testdata/sync/other_invalid_fuzz000.sync'))
+        self.assertFalse(os.path.exists('testdata/sync/fuzz000.sync'))
+        self.assertFalse(os.path.exists('testdata/sync/fuzz001.sync'))
+
+        # push assertions
+        self.assertTrue(os.path.exists('testdata/rsync_output_sync/fuzz000.sync'))
+        self.assertTrue(os.path.exists('testdata/rsync_output_sync/fuzz001.sync'))
+        self.assertFalse(os.path.exists('testdata/rsync_output_sync/fuzz002.sync'))
+        self.assertFalse(os.path.exists('testdata/rsync_output_sync/fuzz002.sync.sync'))
+        self.assertTrue(os.path.exists('testdata/rsync_output_sync/invalid_fuzz000.sync'))
+        self.assertTrue(os.path.exists('testdata/rsync_output_sync/invalid_fuzz001.sync'))
