@@ -22,6 +22,8 @@ import os
 import sys
 import subprocess
 
+_rsync_default_options = ['-racz']
+
 
 class AflBaseSync(object):
     def __init__(self, server_config, fuzzer_config):
@@ -30,7 +32,7 @@ class AflBaseSync(object):
 
 
 class AflRsync(AflBaseSync):
-    def __prepare_rsync_commandline(self, local_path, remote_path, rsync_options=list(['-ra']),
+    def __prepare_rsync_commandline(self, local_path, remote_path, rsync_options=list(_rsync_default_options),
                                     rsync_excludes=list([]), rsync_get=False):
         cmd = ['rsync']
 
@@ -59,11 +61,11 @@ class AflRsync(AflBaseSync):
         fuzzers = (fuzzer for fuzzer in fuzzers if not fuzzer.endswith('.sync'))
         return fuzzers
 
-    def rsync_put(self, local_path, remote_path, rsync_options=list(['-raz']), rsync_excludes=list([])):
+    def rsync_put(self, local_path, remote_path, rsync_options=list(_rsync_default_options), rsync_excludes=list([])):
         cmd = self.__prepare_rsync_commandline(local_path, remote_path, rsync_options, rsync_excludes)
         return self.__invoke_rsync(cmd)
 
-    def rsync_get(self, remote_path, local_path, rsync_options=list(['-raz']), rsync_excludes=list([])):
+    def rsync_get(self, remote_path, local_path, rsync_options=list(_rsync_default_options), rsync_excludes=list([])):
         cmd = self.__prepare_rsync_commandline(local_path, remote_path, rsync_options, rsync_excludes, True)
         return self.__invoke_rsync(cmd)
 
@@ -85,7 +87,7 @@ class AflRsync(AflBaseSync):
         for f in fuzzers:
             local_path = os.path.join(self.fuzzer_config['sync_dir'], f)
             remote_path = os.path.join(self.server_config['remote_path'], f)
-            # print('{} -> {}'.format(local_path, remote_path))
+            print_ok('Pushing {} -> {}.sync'.format(local_path, remote_path))
             self.rsync_put(local_path, remote_path, rsync_excludes=excludes)
 
     def pull(self):
@@ -94,7 +96,7 @@ class AflRsync(AflBaseSync):
         local_path = self.fuzzer_config['sync_dir']
         remote_path = self.server_config['remote_path']
 
-        options = ['-raz']
+        options = list(_rsync_default_options)
         excludes = []
 
         # exclude our previously pushed fuzzer states from being pulled again
@@ -106,6 +108,7 @@ class AflRsync(AflBaseSync):
             options += ['--include=\"/{}*/\"'.format(self.fuzzer_config['session'])]
             excludes += ['*']
 
+        print_ok('Pulling {}/* <- {}/'.format(local_path, remote_path))
         self.rsync_get(remote_path, local_path, rsync_options=options, rsync_excludes=excludes)
 
     def sync(self):
@@ -124,17 +127,17 @@ def main(argv):
 
     parser = argparse.ArgumentParser(description='afl-sync synchronizes fuzzer state directories between different \
 locations. Supported are remote transfers through rsync that may use transport compression.', 
-                                     usage='afl-sync [-S SESSION] <cmd> <src_sync_dir> <dst_sync_dir>')
+                                     usage='afl-sync [-S SESSION] <cmd> <src_sync_dir> <dst_storage_dir>')
 
     parser.add_argument('cmd',
                         help='Command to perform: push, pull or sync. Push transmits the local state from '
-                             '<src_sync_dir> to the destination <dst_sync_dir>. Pull fetches remote state(s) into '
+                             '<src_sync_dir> to the destination <dst_storage_dir>. Pull fetches remote state(s) into '
                              'the local synchronization dir appending the \'.sync\' extension. Sync performs a '
                              'pull operation followed by a push.')
     parser.add_argument('src_sync_dir',
                         help='Source afl synchronisation directory containing state directories of afl instances.')
-    parser.add_argument('dst_sync_dir',
-                        help='Destination directory used for synchronization. This doesn\'t need to be an afl sync dir.')
+    parser.add_argument('dst_storage_dir',
+                        help='Destination directory used as fuzzer state storage. This shouldn\'t be an afl sync dir!')
     parser.add_argument('-S', '--session', dest='session', default=None,
                         help='Name of an afl-multicore session. If provided, only fuzzers belonging to '
                              'the specified session will be synced with the destination. Otherwise state '
@@ -157,7 +160,7 @@ locations. Supported are remote transfers through rsync that may use transport c
             sys.exit(1)
 
     server_config = {
-        'remote_path':      args.dst_sync_dir,
+        'remote_path':      args.dst_storage_dir,
     }
 
     fuzzer_config = {

@@ -81,7 +81,7 @@ class AflSyncTestCase(unittest.TestCase):
 
         expected_put_cmdline = [
             'rsync',
-            '-ra',
+            afl_sync._rsync_default_options[0],
             '--exclude=\"exclude\"',
             'src/',
             'dst.sync/'
@@ -89,7 +89,7 @@ class AflSyncTestCase(unittest.TestCase):
 
         expected_get_cmdline = [
             'rsync',
-            '-ra',
+             afl_sync._rsync_default_options[0],
             '--exclude=\"exclude\"',
             'dst/*',
             'src/'
