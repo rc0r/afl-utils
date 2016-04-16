@@ -65,7 +65,7 @@ class AflCronDaemon(object):
                 if float(self.config['interval']) < 0:
                     doExit = True
                 else:
-                    time.sleep(float(self.config['interval'])) # TODO: * 60
+                    time.sleep(float(self.config['interval']) * 60)
             except KeyboardInterrupt:
                 print('\b\b')
                 print_ok('Aborted by user. Good bye!')
