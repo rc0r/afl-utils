@@ -7,7 +7,6 @@ import unittest
 
 test_conf_settings = {
     'twitter_creds_file': '.afl-stats.creds',
-    'interval': '-1',
     'twitter_consumer_key': 'your_consumer_key_here',
     'twitter_consumer_secret': 'your_consumer_secret_here',
     'fuzz_dirs': [

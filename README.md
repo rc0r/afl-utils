@@ -61,6 +61,11 @@ here:
             -j 8 -- /path/to/target --target-opts
 
 
+## afl-cron
+
+TODO
+
+
 ## afl-minimize
 
 Helps to create a minimized corpus from samples of a parallel fuzzing job. It

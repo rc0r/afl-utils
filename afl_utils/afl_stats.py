@@ -19,7 +19,6 @@ from configparser import ConfigParser, NoOptionError, NoSectionError, MissingSec
 import os
 import sys
 import socket
-import time
 import twitter
 from urllib.error import URLError
 
@@ -28,7 +27,6 @@ from afl_utils.AflPrettyPrint import clr, print_ok, print_warn, print_err
 
 
 config_settings = dict()
-config_settings['interval'] = 30
 config_settings['twitter_consumer_key'] = None
 config_settings['twitter_consumer_secret'] = None
 config_settings['twitter_creds_file'] = ".afl-stats.creds"
@@ -44,7 +42,6 @@ def show_info():
 def init_config():
     global config_settings
     config_settings = dict()
-    config_settings['interval'] = 30
     config_settings['twitter_consumer_key'] = None
     config_settings['twitter_consumer_secret'] = None
     config_settings['twitter_creds_file'] = ".afl-stats.creds"
@@ -68,7 +65,6 @@ def read_config(config_file):
         sys.exit(1)
 
     try:
-        config_settings['interval'] = config.get("core", "interval", raw=True)
         config_settings['twitter_consumer_key'] = config.get("twitter", "consumer_key", raw=True)
         config_settings['twitter_consumer_secret'] = config.get("twitter", "consumer_secret", raw=True)
         config_settings['twitter_creds_file'] = config.get("twitter", "credentials_file", raw=True)
@@ -83,6 +79,7 @@ def read_config(config_file):
 
     exists = True
     i = 0
+    config_settings['fuzz_dirs'] = []
     while exists:
         try:
             config_settings['fuzz_dirs'].append(config.get("fuzzers", str(i), raw=True))
@@ -332,71 +329,61 @@ def prettify_stat(stat, dstat, console=True):
 
 
 def fetch_stats(config_settings, twitter_inst):
-    doExit = False
-    # { 'fuzzer_dir': (stat, old_stat) }
     stat_dict = dict()
-    while not doExit:
+    for fuzzer in config_settings['fuzz_dirs']:
+        stats = load_stats(fuzzer)
+
+        if not stats:
+            continue
+
+        sum_stats = summarize_stats(stats)
+
         try:
-            for fuzzer in config_settings['fuzz_dirs']:
-                stats = load_stats(fuzzer)
+            # stat_dict has already been initialized for fuzzer
+            #  old_stat <- last_stat
+            old_stats = stat_dict[fuzzer][0].copy()
+        except KeyError:
+            # stat_dict has not yet been initialized for fuzzer
+            #  old_stat <- cur_stat
+            old_stats = sum_stats.copy()
 
-                if not stats:
-                    continue
+        # initialize/update stat_dict
+        stat_dict[fuzzer] = (sum_stats, old_stats)
 
-                sum_stats = summarize_stats(stats)
+        stat_change = diff_stats(sum_stats, old_stats)
 
-                try:
-                    # stat_dict has already been initialized for fuzzer
-                    #  old_stat <- last_stat
-                    old_stats = stat_dict[fuzzer][0].copy()
-                except KeyError:
-                    # stat_dict has not yet been initialized for fuzzer
-                    #  old_stat <- cur_stat
-                    old_stats = sum_stats.copy()
+        if not diff_stats:
+            continue
 
-                # initialize/update stat_dict
-                stat_dict[fuzzer] = (sum_stats, old_stats)
+        print(prettify_stat(sum_stats, stat_change, True))
 
-                stat_change = diff_stats(sum_stats, old_stats)
+        tweet = prettify_stat(sum_stats, stat_change, False)
 
-                if not diff_stats:
-                    continue
+        l = len(tweet)
+        c = clr.LRD if l > 140 else clr.LGN
+        print_ok("Tweeting status (%s%d" % (c, l) + clr.RST + " chars)...")
 
-                print(prettify_stat(sum_stats, stat_change, True))
-
-                tweet = prettify_stat(sum_stats, stat_change, False)
-
-                l = len(tweet)
-                c = clr.LRD if l > 140 else clr.LGN
-                print_ok("Tweeting status (%s%d" % (c, l) + clr.RST + " chars)...")
-
-                try:
-                    twitter_inst.statuses.update(status=shorten_tweet(tweet))
-                except (twitter.TwitterHTTPError, URLError):
-                    print_warn("Problem connecting to Twitter! Tweet not sent!")
-                except Exception as e:
-                    print_err("Sending tweet failed (Reason: " + clr.GRA + "%s" % e.__cause__ + clr.RST + ")")
-
-            if float(config_settings['interval']) < 0:
-                doExit = True
-            else:
-                time.sleep(float(config_settings['interval']) * 60)
-        except KeyboardInterrupt:
-            print("\b\b")
-            print_ok("Aborted by user. Good bye!")
-            doExit = True
+        try:
+            twitter_inst.statuses.update(status=shorten_tweet(tweet))
+        except (twitter.TwitterHTTPError, URLError):
+            print_warn("Problem connecting to Twitter! Tweet not sent!")
+        except Exception as e:
+            print_err("Sending tweet failed (Reason: " + clr.GRA + "%s" % e.__cause__ + clr.RST + ")")
 
 
 def main(argv):
-    show_info()
-
     parser = argparse.ArgumentParser(description="Post selected contents of fuzzer_stats to Twitter.",
                                      usage="afl-stats [-h] [-c config]\n")
 
     parser.add_argument("-c", "--config", dest="config_file",
                         help="afl-stats config file (Default: afl-stats.conf)!", default="afl-stats.conf")
+    parser.add_argument('-q', '--quiet', dest='quiet', action='store_const', const=True,
+                        help='Suppress any output', default=False)
 
     args = parser.parse_args(argv[1:])
+
+    if not args.quiet:
+        show_info()
 
     config_settings = read_config(args.config_file)
 

@@ -7,7 +7,7 @@
 
 [twitter]
 # Your Twitter applications' tokens
-consumer_key = your_consumer_key_here
+# consumer_key = your_consumer_key_here
 consumer_secret = your_consumer_secret_here
 # File that will hold your Twitter OAuth
 # credentials once application authorization
