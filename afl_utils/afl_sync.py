@@ -100,8 +100,9 @@ class AflRsync(AflBaseSync):
         excludes = []
 
         # exclude our previously pushed fuzzer states from being pulled again
+        # and avoid to overwrite our local fuzz data
         for fuzzer in fuzzers:
-            excludes += ['{}.sync'.format(fuzzer)]
+            excludes += ['{}.sync'.format(fuzzer), fuzzer]
 
         # restrict to certain session, if requested
         if self.fuzzer_config['session'] is not None:

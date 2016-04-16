@@ -45,58 +45,20 @@ have a database entry during sample processing. This will work also when `-e` is
 This makes subsequent `afl-collect` runs more efficient, since only unseen samples are
 processed (and added to the database).  
 
-Usage:
+Usage examples:
 
-    afl-collect [-d DATABASE] [-e|-g GDB_EXPL_SCRIPT_FILE] [-f LIST_FILENAME]
-                [-h] [-j THREADS] [-m] [-r] [-rr] sync_dir collection_dir target_cmd
+Simply collect all crashes from `./afl_sync_dir` into a collection directory removing
+non-crashing samples:
 
-    afl-collect copies all crash sample files from an afl sync dir used by multiple
-    fuzzers when fuzzing in parallel into a single location providing easy access
-    for further crash analysis.
+    $ afl-collect -r ./afl_sync_dir ./collection_dir -- /path/to/target --target-opts
 
-    positional arguments:
-      sync_dir              afl synchronisation directory crash samples will be
-                            collected from.
-      collection_dir        Output directory that will hold a copy of all crash
-                            samples and other generated files. Existing files in the
-                            collection directory will be overwritten!
-      target_cmd            Path to the target binary and its command line arguments.
-                            Use '@@' to specify crash sample input file position
-                            (see afl-fuzz usage).
+Collect crashes, execute `exploitable` on them and remove uninteresting crashes. Info
+for all processed samples will be stored in an SQLite DB. The `gdb` script used to run
+`exploitable` on all samples will be saved in `gdb_script`. We're using eight threads
+here:
 
-    optional arguments:
-      -h, --help            show this help message and exit
-      -d DATABASE_FILE, --database DATABASE_FILE
-                            Submit sample data into an sqlite3 database (only when
-                            used together with '-e'). afl-collect skips processing
-                            of samples already found in existing database.
-      -e GDB_EXPL_SCRIPT_FILE, --execute-gdb-script GDB_EXPL_SCRIPT_FILE
-                            Generate and execute a gdb+exploitable script after crash
-                            sample collection for crash classification. (Like option
-                            '-g', plus script execution.)
-      -f LIST_FILENAME, --filelist LIST_FILENAME
-                            Writes all collected crash sample filenames into a file
-                            in the collection directory.
-      -g GDB_SCRIPT_FILE, --generate-gdb-script GDB_SCRIPT_FILE
-                            Generate gdb script to run 'exploitable.py' on all
-                            collected crash samples. Generated script will be placed
-                            into collection directory.
-      -j NUM_THREADS, --threads NUM_THREADS
-                            Enable parallel analysis by specifying the number of
-                            threads afl-collect will utilize.
-      -m, --minimize-filenames
-                            Minimize crash sample file names by only keeping fuzzer
-                            name and ID.
-      -r, --remove-invalid  Verify collected crash samples and remove samples that
-                            do not lead to crashes or cause timeouts (runs
-                            'afl-vcrash -r' on collection directory). This step is
-                            done prior to any script file execution or file list
-                            generation.
-      -rr, --remove-unexploitable
-                            Remove crash samples that have an exploitable
-                            classification of 'NOT_EXPLOITABLE', 'PROBABLY_NOT_EXPLOITABLE'
-                            or 'UNKNOWN'. Sample file removal will take place after
-                            gdb+exploitable script execution. Has no effect without '-e'.
+    $ afl-collect -d crashes.db -e gdb_script -r -rr ./afl_sync_dir ./collection_dir \
+            -j 8 -- /path/to/target --target-opts
 
 
 ## afl-minimize
@@ -146,50 +108,18 @@ After reseeding, all fuzzing instances may be resumed on the same, optimized cor
 So with `afl-utils` the pruning/reseeding process is just a matter of `afl-multicore`ing,
 `afl-multikill`ing and `afl-minimize`ing.
 
-Usage:
+Usage examples:
 
-    afl-minimize [-c COLLECTION_DIR [--cmin [opts]] [--tmin [opts]]] [--reseed]
-                 [-d] [-h] [-j] sync_dir -- target_cmd
-    
-    afl-minimize performs several optimization steps to reduce the size of an afl-
-    fuzz corpus.
-    
-    positional arguments:
-      sync_dir              afl synchronisation directory containing multiple
-                            fuzzers and their queues.
-      target_cmd            Path to the target binary and its command line
-                            arguments. Use '@@' to specify crash sample input file
-                            position (see afl-fuzz usage).
-    
-    optional arguments:
-      -h, --help            show this help message and exit
-      -c COLLECTION_DIR, --collect COLLECTION_DIR
-                            Collect all samples from the synchronisation dir and
-                            store them in the collection dir. Existing files in
-                            the collection directory will be overwritten!
-      --cmin                Run afl-cmin on collection dir. Has no effect without
-                            '-c'.
-      --cmin-mem-limit CMIN_MEM_LIMIT
-                            Set memory limit for afl-cmin.
-      --cmin-timeout CMIN_TIMEOUT
-                            Set timeout for afl-cmin.
-      --reseed              Reseed afl-fuzz with the collected (and optimized)
-                            corpus. This replaces all sync_dir queues with the
-                            newly generated corpus.
-      --tmin                Run afl-tmin on minimized collection dir if used
-                            together with '--cmin'or on unoptimized collection dir
-                            otherwise. Has no effect without '-c'.
-      --tmin-mem-limit TMIN_MEM_LIMIT
-                            Set memory limit for afl-tmin.
-      --tmin-timeout TMIN_TIMEOUT
-                            Set timeout for afl-tmin.
-      -d, --dry-run         Perform dry-run on collection dir, if '-c' is provided
-                            or on synchronisation dir otherwise. Dry-run will move
-                            intermittent crashes out of the corpus.
-      -j NUM_THREADS, --threads NUM_THREADS
-                            Enable parallel dry-run and t-minimization step by
-                            specifying the number of threads afl-minimize will
-                            utilize.
+Minimize the entire corpus of all fuzzers in `./afl_sync_dir` using `afl-cmin` and
+`afl-cmin` utilizing eight threads:
+
+    $ afl-minimize -c new_corpus --cmin --cmin-mem-limit=500 --tmin --tmin-mem-limit=500 \
+                -j 8 ./afl_sync_dir -- /path/to/target --target-opts
+
+Minimize the entire corpus using `afl-cmin` and reseed the fuzzers:
+
+    $ afl-minimize -c new_corpus --cmin --cmin-mem-limit=500 --reseed ./afl_sync_dir \
+                -- /path/to/target --target-opts
 
 
 ## afl-multicore
@@ -223,27 +153,11 @@ not supported by `afl-multikill`.
 `screen -X setenv <var_name> <var_value>` from inside `screen` before running `afl-multicore`.
 Both ways the environment is inherited by all subsequently created screen windows.
 
-Usage:
+Usage examples:
 
-    afl-multicore [-c config] [-h] [-t] [-v] <cmd> <jobs>
-
-    afl-multicore starts several parallel fuzzing jobs, that are run in the
-    background. For fuzzer stats see 'out_dir/SESSION###/fuzzer_stats'!
-
-    positional arguments:
-      cmd                   afl-multicore command to execute: start, resume, add.
-      jobs                  Number of instances to start/resume/add.
-
-    optional arguments:
-      -h, --help            show this help message and exit
-      -c CONFIG_FILE, --config CONFIG_FILE
-                            afl-multicore config file (Default: afl-
-                            multicore.conf)!
-      -t, --test            Perform a test run by starting a single afl instance
-                            in interactive mode using a test output directory.
-      -v, --verbose         For debugging purposes do not redirect stderr/stdout
-                            of the created subprocesses to /dev/null (Default:
-                            off). Check 'nohup.out' for further outputs.
+    afl-multicore -c target-multicore.conf start 16
+    afl-multicore -c target-multicore.conf add 4
+    afl-multicore -c target-multicore.conf resume 20
 
 Target settings and afl options are configured in an INI-like configuration file.
 The most simple configuration may look something like:
@@ -322,18 +236,9 @@ Example config:
 Aborts all `afl-fuzz` instances belonging to an active non-interactive `afl-multicore`
 session. `afl-multicore` sessions that were started in `screen` mode can not be aborted!
 
-Usage:
+Usage example:
 
-    afl-multikill [-S SESSION]
-
-    afl-multikill aborts all afl-fuzz instances belonging to an active
-    afl-multicore session. Interactive screen sessions are not supported!
-
-    optional arguments:
-      -h, --help            show this help message and exit
-      -S SESSION, --session SESSION
-                            afl-multicore session to abort
-                            (Default='SESSION').
+    $ afl-multikill -S target_session
 
 
 ## afl-stats
@@ -345,16 +250,32 @@ For setup instructions, please see
 [docs/INSTALL.md](https://github.com/rc0r/afl-utils/blob/master/docs/INSTALL.md)!
 Screenshots of sample tweets can be found in the final section of this document.
 
-Usage:
+Usage example:
 
-    afl-stats [-c]
+    $ afl-stats -c target-stats.conf
 
-    Post selected contents of fuzzer_stats to Twitter.
 
-    optional arguments:
-      -h, --help            show this help message and exit
-      -c CONFIG_FILE, --config CONFIG_FILE
-                            afl-stats config file (Default: afl-stats.conf)!
+## afl-sync
+
+Using `afl-sync` you may distribute fuzzing corpora of multiple `afl-fuzz` instances
+across node boundaries. It allows to backup, restore or synchronise `afl-fuzz` instance
+directories to, from or with a remote destination. Under the hood `afl-sync` uses
+`rsync` with enabled compression and tries to avoid unnecessary data transfers. During
+a push operation `afl-sync` takes an `afl-fuzz` synchronisation directory and transfers
+all contained fuzzer directories to a remote location appending the `.sync` extension.
+When pulling `afl-sync` downloads all fuzzer directories from the remote location to
+the synchronisation dir. Fuzzer instances already located in the local sync dir that
+previously were used for pushing will not be downloaded! In order to download these
+fuzzer directories provide a clean sync dir.
+The synchronisation operation simply issues a pull followed by push command.
+Specific fuzzing jobs may be selected from a sync dir by providing their respective
+session name (`-S session`). See `afl-multicore` for more info about session naming.
+
+Usage examples:
+
+    $ afl-sync push ./afl_sync_dir rc0r@remote.fuzzer_instance_repo.com:/repo/target/
+    $ afl-sync pull ./afl_sync_dir rc0r@remote.fuzzer_instance_repo.com:/repo/target/
+    $ afl-sync sync ./afl_sync_dir rc0r@remote.fuzzer_instance_repo.com:/repo/target/
 
 
 ## afl-vcrash
@@ -368,36 +289,10 @@ To enable parallel crash sample verification provide `-j` followed by the desire
 of threads `afl-vcrash` will utilize. Depending on the target process you're fuzzing,
 running multiple threads in parallel can significantly improve verification speeds.
 
-Usage:
+Usage example:
 
-    afl-vcrash [-f LIST_FILENAME] [-h] [-j THREADS] [-q] [-r] [-t TIMEOUT] collection_dir
-               target_command [target_command_args]
+    $ afl-vcrash -r -j 8 ./dir_with_crashes -- /path/to/target --target-opt
 
-    afl-vcrash verifies that afl-fuzz crash samples lead to crashes in the
-    target binary.
-
-    positional arguments:
-      collection_dir        Directory holding all crash samples that will
-                            be verified.
-      target_command        Target binary including command line options.
-                            Use '@@' to specify crash sample input file
-                            position (see afl-fuzz usage).
-
-    optional arguments:
-      -h, --help            show this help message and exit
-      -f LIST_FILENAME, --filelist LIST_FILENAME
-                            Writes all crash sample file names that do not
-                            lead to crashes into a file.
-      -j NUM_THREADS, --threads NUM_THREADS
-                            Enable parallel verification by specifying the
-                            number of threads afl-vcrash will utilize.
-      -q, --quiet           Suppress output of crash sample file names that
-                            do not lead to crashes. This is particularly
-                            useful when combined with '-r' or '-f'.
-      -r, --remove          Remove crash samples that do not lead to crashes.
-      -t TIMEOUT_SECS, --timeout TIMEOUT_SECS
-                            Define the timeout in seconds before killing the
-                            verification of a crash sample
 
 ## Screenshots
 
