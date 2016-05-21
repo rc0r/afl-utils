@@ -2,7 +2,7 @@ from afl_utils import afl_stats
 
 import os
 import socket
-# import subprocess
+import json
 import unittest
 
 test_conf_settings = {
@@ -74,22 +74,13 @@ class AflStatsTestCase(unittest.TestCase):
         self.assertIsNone(afl_stats.show_info())
 
     def test_read_config(self):
-        afl_stats.init_config()
         conf_settings = afl_stats.read_config('testdata/afl-stats.conf.test')
 
         self.assertDictEqual(conf_settings, test_conf_settings)
 
         with self.assertRaises(SystemExit):
-            afl_stats.init_config()
             afl_stats.read_config('/config-file-not-found')
-        with self.assertRaises(SystemExit):
-            afl_stats.init_config()
-            afl_stats.read_config('testdata/afl-stats.conf.invalid00.test')
-        with self.assertRaises(SystemExit):
-            afl_stats.init_config()
-            afl_stats.read_config('testdata/afl-stats.conf.invalid01.test')
-        with self.assertRaises(SystemExit):
-            afl_stats.init_config()
+        with self.assertRaises(json.decoder.JSONDecodeError):
             afl_stats.read_config('testdata/afl-stats.conf.invalid02.test')
 
     def test_shorten_tweet(self):
@@ -174,13 +165,11 @@ class AflStatsTestCase(unittest.TestCase):
         self.assertIsNotNone(afl_stats.prettify_stat(test_sum_stats, other_diff_stats))
 
     def test_fetch_stats(self):
-        afl_stats.init_config()
         config_settings = afl_stats.read_config('testdata/afl-stats.conf.test')
         twitter_inst = None
 
         self.assertIsNone(afl_stats.fetch_stats(config_settings, twitter_inst))
 
     def test_main(self):
-        afl_stats.init_config()
         with self.assertRaises(SystemExit):
             afl_stats.main(['afl-stats', '--config', './testdata/afl-stats.conf.test'])

@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 import argparse
-from configparser import ConfigParser, NoOptionError, NoSectionError, MissingSectionHeaderError
+import json
 import os
 import sys
 import socket
@@ -26,80 +26,34 @@ import afl_utils
 from afl_utils.AflPrettyPrint import clr, print_ok, print_warn, print_err
 
 
-config_settings = dict()
-config_settings['twitter_consumer_key'] = None
-config_settings['twitter_consumer_secret'] = None
-config_settings['twitter_creds_file'] = ".afl-stats.creds"
-config_settings['fuzz_dirs'] = []
-
-
 def show_info():
     print(clr.CYA + "afl-stats " + clr.BRI + "%s" % afl_utils.__version__ + clr.RST + " by %s" % afl_utils.__author__)
     print("Send stats of afl-fuzz jobs to Twitter.")
     print("")
 
 
-def init_config():
-    global config_settings
-    config_settings = dict()
-    config_settings['twitter_consumer_key'] = None
-    config_settings['twitter_consumer_secret'] = None
-    config_settings['twitter_creds_file'] = ".afl-stats.creds"
-    config_settings['fuzz_dirs'] = []
-
-
 def read_config(config_file):
-    global config_settings
+    config_file = os.path.abspath(os.path.expanduser(config_file))
 
-    try:
-        config_file = os.path.abspath(os.path.expanduser(config_file))
-
-        if not os.path.isfile(config_file):
-            print_err("Config file not found!")
-            sys.exit(1)
-
-        config = ConfigParser()
-        config.read(config_file)
-    except (MissingSectionHeaderError, UnicodeDecodeError):
-        print_err("No valid configuration file specified!")
+    if not os.path.isfile(config_file):
+        print_err("Config file not found!")
         sys.exit(1)
 
+    with open(config_file, 'r') as raw_config:
+        config = json.load(raw_config)
+        return config
+
+
+def twitter_init(config):
     try:
-        config_settings['twitter_consumer_key'] = config.get("twitter", "consumer_key", raw=True)
-        config_settings['twitter_consumer_secret'] = config.get("twitter", "consumer_secret", raw=True)
-        config_settings['twitter_creds_file'] = config.get("twitter", "credentials_file", raw=True)
-    except NoSectionError as e:
-        print_err("No valid configuration file specified! Section '" + clr.GRA + "%s" % e.section + clr.RST +
-                  "' not found!")
-        sys.exit(1)
-    except NoOptionError as e:
-        print_err("No valid configuration file specified! Option '" + clr.GRA + "%s.%s" % (e.section, e.option) +
-                  clr.RST + "' not found!")
-        sys.exit(1)
-
-    exists = True
-    i = 0
-    config_settings['fuzz_dirs'] = []
-    while exists:
-        try:
-            config_settings['fuzz_dirs'].append(config.get("fuzzers", str(i), raw=True))
-            i += 1
-        except NoOptionError:
-            exists = False
-
-    return config_settings
-
-
-def twitter_init():
-    try:
-        config_settings['twitter_creds_file'] = os.path.abspath(os.path.expanduser(config_settings['twitter_creds_file']))
-        if not os.path.exists(config_settings['twitter_creds_file']):
-            twitter.oauth_dance("fuzzer_stats", config_settings['twitter_consumer_key'],
-                                config_settings['twitter_consumer_secret'], config_settings['twitter_creds_file'])
-        oauth_token, oauth_secret = twitter.read_token_file(config_settings['twitter_creds_file'])
+        config['twitter_creds_file'] = os.path.abspath(os.path.expanduser(config['twitter_creds_file']))
+        if not os.path.exists(config['twitter_creds_file']):
+            twitter.oauth_dance("fuzzer_stats", config['twitter_consumer_key'],
+                                config['twitter_consumer_secret'], config['twitter_creds_file'])
+        oauth_token, oauth_secret = twitter.read_token_file(config['twitter_creds_file'])
         twitter_instance = twitter.Twitter(auth=twitter.OAuth(oauth_token, oauth_secret,
-                                                              config_settings['twitter_consumer_key'],
-                                                              config_settings['twitter_consumer_secret']))
+                                                              config['twitter_consumer_key'],
+                                                              config['twitter_consumer_secret']))
         return twitter_instance
     except (twitter.TwitterHTTPError, URLError):
         print_err("Network error, twitter login failed! Check your connection!")
@@ -387,7 +341,7 @@ def main(argv):
 
     config_settings = read_config(args.config_file)
 
-    twitter_inst = twitter_init()
+    twitter_inst = twitter_init(config_settings)
 
     fetch_stats(config_settings, twitter_inst)
 

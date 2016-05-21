@@ -1,5 +1,10 @@
 # afl-utils Changelog
 
+Version 1.28a
+
+  - afl-cron added.
+  - Changed afl-utils to use JSON config files.
+
 Version 1.27a
 
   - Basic version of afl-sync added.
