@@ -1,27 +1,12 @@
-#########################
-### REQUIRED SETTINGS ###
-#########################
-[afl.dirs]
-# afl-fuzz directory specifications
-input = ./in
-output = ./out
-
-[target]
-# Required target settings
-# target binary
-target = /usr/bin/target
-# Cmdline options for target
-cmdline = -a -b -c -d
-
-#########################
-#   OPTIONAL SETTINGS   #
-#########################
-[afl.ctrl]
-# afl execution control settings
-cpu_affinity = 0,1 2,3 4,5 6,7
-
-[afl.behavior]
-# Optional fuzzing behavior settings
-
-[job]
-# Fuzzing job settings
+{
+    "target": "/usr/bin/target",
+    "input": "./in",
+    "cmdline": "-a -b -c -d",
+    "cpu_affinity": [
+        "0,1",
+        "2,3",
+        "4,5",
+        "6,7"
+    ],
+    "output": "./out"
+}

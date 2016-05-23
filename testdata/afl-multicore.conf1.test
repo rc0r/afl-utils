@@ -1,41 +1,12 @@
-#########################
-### REQUIRED SETTINGS ###
-#########################
-[afl.dirs]
-# afl-fuzz directory specifications
-input = ./in
-output = ./out
-
-[target]
-# Required target settings
-# target binary
-target = /usr/bin/target
-# Cmdline options for target
-cmdline = -a -b -c -d
-
-#########################
-#   OPTIONAL SETTINGS   #
-#########################
-[afl.ctrl]
-# afl execution control settings
-
-[afl.behavior]
-# Optional fuzzing behavior settings
-
-[job]
-# Fuzzing job settings
-
-# Slave-only mode, do not start a master
-# instance.
-slave_only = on
-# Interactive screen mode. Starts every afk
-# instance in a separate screen window. Run
-# from inside screen!
-interactive = off
-
-[environment]
-# Contains a list of environment variables
-# afl-multicore will set when using inter-
-# active screen mode.
-AFL_PERSISTENT=1
-# LD_PRELOAD=desock.so
+{
+    "target": "/usr/bin/target",
+    "input": "./in",
+    "cmdline": "-a -b -c -d",
+    "session": "SESSION",
+    "output": "./out",
+    "interactive": false,
+    "slave_only": true,
+    "environment": [
+        "AFL_PERSISTENT=1"
+    ]
+}

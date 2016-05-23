@@ -1,12 +1,12 @@
 from afl_utils import afl_multicore
 
+import json
 import os
-# import subprocess
 import unittest
 
 test_conf_settings = {
     'afl_margs': '-T banner',
-    'dumb': 'on',
+    'dumb': True,
     'timeout': '200+',
     'dict': 'dict/target.dict',
     'file': '@@',
@@ -15,55 +15,40 @@ test_conf_settings = {
     'input': './in',
     'cmdline': '-a -b -c -d',
     'session': 'SESSION',
-    'qemu': 'on',
-    'cpu_affinity': None,
+    'qemu': True,
     'output': './out',
-    'dirty': 'on',
+    'dirty': True,
     'mem_limit': '150',
-    'slave_only': False
+    'slave_only': False,
+    'environment': [
+        'AFL_PERSISTENT=1'
+    ]
 }
 
 test_conf_settings1 = {
-    'afl_margs': None,
-    'dumb': None,
-    'timeout': None,
-    'dict': None,
-    'file': None,
     'interactive': False,
     'target': '/usr/bin/target',
     'input': './in',
     'cmdline': '-a -b -c -d',
     'session': 'SESSION',
-    'qemu': None,
-    'cpu_affinity': None,
     'output': './out',
-    'dirty': None,
-    'mem_limit': None,
-    'slave_only': True
+    'slave_only': True,
+    'environment': [
+        'AFL_PERSISTENT=1'
+    ]
 }
 
 test_conf_settings2 = {
-    'afl_margs': None,
-    'dumb': None,
-    'timeout': None,
-    'dict': None,
-    'file': None,
-    'interactive': False,
     'target': '/usr/bin/target',
     'input': './in',
     'cmdline': '-a -b -c -d',
-    'session': 'SESSION',
-    'qemu': None,
     'cpu_affinity': ['0,1', '2,3', '4,5', '6,7'],
-    'output': './out',
-    'dirty': None,
-    'mem_limit': None,
-    'slave_only': False
+    'output': './out'
 }
 
 test_conf_settings3 = {
     'afl_margs': '-T banner',
-    'dumb': 'on',
+    'dumb': True,
     'timeout': '200+',
     'dict': 'dict/target.dict',
     'file': 'sample_file',
@@ -72,17 +57,11 @@ test_conf_settings3 = {
     'input': './in',
     'cmdline': '-a -b -c -d',
     'session': 'SESSION',
-    'qemu': 'on',
-    'cpu_affinity': None,
+    'qemu': True,
     'output': './out',
     'dirty': 'on',
-    'mem_limit': '150',
-    'slave_only': False
+    'mem_limit': '150'
 }
-
-test_environment = [
-    ('AFL_PERSISTENT', '1')
-]
 
 test_afl_cmdline = [
     '-f', '@@', '-t', '200+', '-m', '150', '-Q', '-d', '-n', '-x', 'dict/target.dict', '-T banner', '-i',
@@ -118,36 +97,23 @@ class AflMulticoreTestCase(unittest.TestCase):
         self.assertIsNone(afl_multicore.show_info())
 
     def test_read_config(self):
-        conf_settings, environment = afl_multicore.read_config('testdata/afl-multicore.conf.test')
+        conf_settings = afl_multicore.read_config('testdata/afl-multicore.conf.test')
         self.assertDictEqual(test_conf_settings, conf_settings)
-        self.assertEqual(test_environment, environment)
 
-        conf_settings, environment = afl_multicore.read_config('testdata/afl-multicore.conf1.test')
+        conf_settings = afl_multicore.read_config('testdata/afl-multicore.conf1.test')
         self.assertDictEqual(test_conf_settings1, conf_settings)
-        self.assertEqual(test_environment, environment)
 
-        conf_settings, environment = afl_multicore.read_config('testdata/afl-multicore.conf2.test')
+        conf_settings = afl_multicore.read_config('testdata/afl-multicore.conf2.test')
         self.assertDictEqual(test_conf_settings2, conf_settings)
-        self.assertEqual(None, environment)
 
+        # Config file not found
         with self.assertRaises(SystemExit) as se:
             afl_multicore.read_config('invalid-config-file')
         self.assertEqual(se.exception.code, 1)
 
-        # No SectionHeader path
-        with self.assertRaises(SystemExit) as se:
+        # JSON decode error
+        with self.assertRaises(json.decoder.JSONDecodeError):
             afl_multicore.read_config('testdata/afl-multicore.conf.invalid00.test')
-        self.assertEqual(se.exception.code, 1)
-
-        # No OptionError path
-        with self.assertRaises(SystemExit) as se:
-            afl_multicore.read_config('testdata/afl-multicore.conf.invalid01.test')
-        self.assertEqual(se.exception.code, 1)
-
-        # No NoSectionError path
-        with self.assertRaises(SystemExit) as se:
-            afl_multicore.read_config('testdata/afl-multicore.conf.invalid02.test')
-        self.assertEqual(se.exception.code, 1)
 
     def test_afl_cmdline_from_config(self):
         afl_cmdline = afl_multicore.afl_cmdline_from_config(test_conf_settings, 12)
@@ -185,11 +151,11 @@ class AflMulticoreTestCase(unittest.TestCase):
         pass
     #     if afl_multicore.check_screen():
     #         env_list = [
-    #             ('test_env_var1', '1'),
-    #             ('test_env_var2', '2'),
-    #             ('test_env_var3', '3'),
-    #             ('test_env_var4', '4'),
-    #             ('test_env_var5', '5')
+    #             'test_env_var1=1',
+    #             'test_env_var2=2',
+    #             'test_env_var3=3',
+    #             'test_env_var4=4',
+    #             'test_env_var5=5'
     #         ]
     #         afl_multicore.setup_screen(1, env_list)
     #
@@ -227,17 +193,7 @@ class AflMulticoreTestCase(unittest.TestCase):
     def test_build_master_cmd(self):
         conf_settings = {
             'session': 'SESSION',
-            'file': 'cur_input',
-            'timeout': None,
-            'mem_limit': None,
-            'qemu': None,
-            'cpu_affinity': None,
-            'dirty': None,
-            'dumb': None,
-            'dict': None,
-            'afl_margs': None,
-            'input': None,
-            'output': None,
+            'file': 'cur_input'
         }
         target_cmd = 'testdata/dummy_process/invalid_proc --some-opt %%'
         master_cmd = afl_multicore.afl_path + ' -f cur_input_000 -M SESSION000 -- ' + target_cmd.replace('%%', conf_settings['file']+'_000')
@@ -247,17 +203,7 @@ class AflMulticoreTestCase(unittest.TestCase):
     def test_build_slave_cmd(self):
         conf_settings = {
             'session': 'SESSION',
-            'file': 'cur_input',
-            'timeout': None,
-            'mem_limit': None,
-            'qemu': None,
-            'cpu_affinity': None,
-            'dirty': None,
-            'dumb': None,
-            'dict': None,
-            'afl_margs': None,
-            'input': None,
-            'output': None,
+            'file': 'cur_input'
         }
         target_cmd = 'testdata/dummy_process/invalid_proc --some-opt %%'
         slave_num = 3

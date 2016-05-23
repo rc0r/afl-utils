@@ -149,12 +149,12 @@ An `afl-multicore` session can (and should!) easily be aborted with the help of
 `afl-multikill` (see below).
 
 If you prefer to work with afl's UI instead of background processes and stat files, screen
-mode is for you. "Interactive" screen mode can be enabled using the `interactive = on` directive
+mode is for you. "Interactive" screen mode can be enabled using the `interactive` setting
 in the config file (see below). In order to use it, start `afl-multicore` from **inside** a
 `screen` session. A new screen window is created for every afl instance. Though screen mode is
 not supported by `afl-multikill`.  
-**Attention:** When using screen mode be sure to set necessary environment variables in the
-`[environment]` section of your `afl-multicore` configuration! Alternatively run
+**Attention:** When using screen mode be sure to set necessary environment variables in your
+`afl-multicore` configuration! Alternatively run
 `screen -X setenv <var_name> <var_value>` from inside `screen` before running `afl-multicore`.
 Both ways the environment is inherited by all subsequently created screen windows.
 
@@ -164,16 +164,15 @@ Usage examples:
     afl-multicore -c target-multicore.conf add 4
     afl-multicore -c target-multicore.conf resume 20
 
-Target settings and afl options are configured in an INI-like configuration file.
+Target settings and afl options are configured in a JSON configuration file.
 The most simple configuration may look something like:
 
-    [afl.dirs]
-    input = ./in
-    output = ./out
-
-    [target]
-    target = ~/bin/target
-    cmdline = --target-opt
+    {
+        "input": "./in",
+        "output": "./out",
+        "target": "~/bin/target",
+        "cmdline": "--target-opt"
+    }
 
 Of course a lot more settings can be configured, some of these settings are:
 
@@ -181,8 +180,8 @@ Of course a lot more settings can be configured, some of these settings are:
 * job options: session name, interactive mode
 * environment variables for interactive screen mode
 
-For a complete list of options and their descriptions see the included sample
-configuration file `afl-multicore.conf.sample`.
+For a complete list of options see `afl-multicore.conf.sample`. Their descriptions
+are documented in section `Configuration Settings` below.
 
 To start four fuzzing instances simply do:
 
@@ -221,19 +220,97 @@ and use the correct files for the different instances of `afl-fuzz`.
 
 Example config:
 
-    ...
-    [target]
-    target = /your/app/here
-    cmdline = --some-target-opts --input-file %%
-    # ^- translates to:
-    #    --some-target-opts --input-file /path/to/cur_input_000
-    #    --some-target-opts --input-file /path/to/cur_input_001
-    #    ...
+    {
+        "target": "/your/app/here",
+        "cmdline": "--some-target-opts --input-file %%",
+          "#": "^- translates to:",
+          "#": "--some-target-opts --input-file /path/to/cur_input_000",
+          "#": "--some-target-opts --input-file /path/to/cur_input_001",
+          "#": "...",
+        "file": "/path/to/cur_input"
+    }
 
-    ...
+### Configuration settings
 
-    [afl.ctrl]
-    file = /path/to/cur_input
+As already noted there are only four settings that are required in every config
+file. These are `afl-fuzz` directory specifications `input` and `output`, the
+path to the target binary `target` and target command line arguments `cmdline`:
+
+afl-fuzz directory specifications:
+
+    "input": "./in",
+    "output": "./out"
+
+Target binary and command line settings:
+
+    "target": "/usr/bin/target",
+    "cmdline": "-a -b -c -d"
+
+Location read by the fuzzed program. Valid options are:
+
+  * a file name
+  * `@@` (see afl-fuzz manual)
+
+
+    "file": "@@"
+
+Timeout in ms for each fuzzing run:
+
+    "timeout": "200+"
+
+Memory limit in MB for target processes. To avoid hiccups make sure to provide
+the desired memory limit value as a string!
+
+    "mem_limit": "150"
+
+Use afl QEMU mode?
+
+    "qemu": true
+
+CPU affinity settings for afl-processes. Provide single or tuple CPU ids.
+
+    "cpu_affinity": [
+        "0,1", "2,3", "4,5", "6,7"
+    ]
+
+Use `afl_margs` to provide additional cmdline arguments for afl. These
+arguments will directly be passed to afl! This way you may provide new,
+hacked or experimental cmdline args to `afl-fuzz`.
+
+    "afl_margs": "-T banner"
+
+Skip afl deterministic steps:
+
+    "dirty": true
+
+Fuzz without instrumentation:
+
+    "dumb": true
+
+Specify a fuzzing dictionary:
+
+    "dict": "dict/target.dict"
+
+Provide a name for the fuzzing session. Master outputs
+will be written to `output/SESSION000`!
+
+    "session": "SESSION"
+
+Slave-only mode, do not start an afl master instance.
+
+    "slave_only": true
+
+Interactive screen mode. Starts every afl instance in a separate
+screen window. Run `afl-multicore` from inside screen!
+
+    "interactive": true
+
+Environment variables `afl-multicore` will set when using interactive screen mode.
+
+    "environment": [
+        "AFL_PERSISTENT=1",
+        "LD_PRELOAD=desock.so"
+    ]
 
 
 ## afl-multikill

@@ -15,11 +15,11 @@ limitations under the License.
 """
 
 import argparse
+import json
 import os
 import signal
 import subprocess
 import sys
-from configparser import ConfigParser, NoOptionError, NoSectionError, MissingSectionHeaderError
 
 import afl_utils
 from afl_utils.AflPrettyPrint import print_err, print_ok, clr
@@ -36,160 +36,60 @@ def show_info():
 
 
 def read_config(config_file):
-    try:
-        config_file = os.path.abspath(os.path.expanduser(config_file))
+    config_file = os.path.abspath(os.path.expanduser(config_file))
 
-        if not os.path.isfile(config_file):
-            print_err("Config file not found!")
-            sys.exit(1)
-
-        config = ConfigParser()
-        # overwrite optionxform to not convert config file items to lower case
-        config.optionxform = str
-        config.read(config_file)
-    except (MissingSectionHeaderError, UnicodeDecodeError):
-        print_err("No valid configuration file specified!")
+    if not os.path.isfile(config_file):
+        print_err("Config file not found!")
         sys.exit(1)
 
-    try:
-        conf_settings = dict()
-
-        # Get required settings
-        conf_settings["input"] = config.get("afl.dirs", "input", raw=True)
-        conf_settings["output"] = config.get("afl.dirs", "output", raw=True)
-
-        conf_settings["target"] = config.get("target", "target", raw=True)
-        conf_settings["cmdline"] = config.get("target", "cmdline", raw=True)
-
-        # Get optional settings
-        if config.has_option("afl.ctrl", "file"):
-            conf_settings["file"] = config.get("afl.ctrl", "file", raw=True)
-        else:
-            conf_settings["file"] = None
-
-        if config.has_option("afl.ctrl", "timeout"):
-            conf_settings["timeout"] = config.get("afl.ctrl", "timeout", raw=True)
-        else:
-            conf_settings["timeout"] = None
-
-        if config.has_option("afl.ctrl", "afl_margs"):
-            conf_settings["afl_margs"] = config.get("afl.ctrl", "afl_margs", raw=True)
-        else:
-            conf_settings["afl_margs"] = None
-
-        if config.has_option("afl.ctrl", "mem_limit"):
-            conf_settings["mem_limit"] = config.get("afl.ctrl", "mem_limit", raw=True)
-        else:
-            conf_settings["mem_limit"] = None
-
-        if config.has_option("afl.ctrl", "cpu_affinity"):
-            conf_settings["cpu_affinity"] = config.get("afl.ctrl", "cpu_affinity", raw=True).split()
-        else:
-            conf_settings["cpu_affinity"] = None
-
-        if config.has_option("afl.ctrl", "qemu"):
-            conf_settings["qemu"] = config.get("afl.ctrl", "qemu", raw=True)
-        else:
-            conf_settings["qemu"] = None
-
-        if config.has_option("afl.behavior", "dirty"):
-            conf_settings["dirty"] = config.get("afl.behavior", "dirty", raw=True)
-        else:
-            conf_settings["dirty"] = None
-
-        if config.has_option("afl.behavior", "dumb"):
-            conf_settings["dumb"] = config.get("afl.behavior", "dumb", raw=True)
-        else:
-            conf_settings["dumb"] = None
-
-        if config.has_option("afl.behavior", "dict"):
-            conf_settings["dict"] = config.get("afl.behavior", "dict", raw=True)
-        else:
-            conf_settings["dict"] = None
-
-        if config.has_option("job", "session"):
-            conf_settings["session"] = config.get("job", "session", raw=True)
-        else:
-            conf_settings["session"] = "SESSION"
-
-        if config.has_option("job", "slave_only"):
-            if config.get("job", "slave_only", raw=True) == "on":
-                conf_settings["slave_only"] = True
-            else:
-                conf_settings["slave_only"] = False
-        else:
-            conf_settings["slave_only"] = False
-
-        if config.has_option("job", "interactive"):
-            if config.get("job", "interactive", raw=True) == "on":
-                conf_settings["interactive"] = True
-            else:
-                conf_settings["interactive"] = False
-        else:
-            conf_settings["interactive"] = False
-
-        if config.has_section("environment"):
-            environment = []
-            env_list = config.options("environment")
-            for env in env_list:
-                environment.append((env, config.get("environment", env, raw=True)))
-        else:
-            environment = None
-    except NoSectionError as e:
-        print_err("No valid configuration file specified! Section '" + clr.GRA + "%s" % e.section + clr.RST +
-                  "' not found!")
-        sys.exit(1)
-    except NoOptionError as e:
-        print_err("No valid configuration file specified! Option '" + clr.GRA + "%s.%s" % (e.section, e.option) +
-                  clr.RST + "' not found!")
-        sys.exit(1)
-
-    return conf_settings, environment
+    with open(config_file, "r") as f:
+        config = json.load(f)
+        return config
 
 
 def afl_cmdline_from_config(config_settings, instance_number):
     afl_cmdline = []
 
-    if config_settings["file"]:
+    if "file" in config_settings:
         afl_cmdline.append("-f")
         if config_settings["file"] != "@@":
             afl_cmdline.append(config_settings["file"] + "_%03d" % instance_number)
         else:
             afl_cmdline.append(config_settings["file"])
 
-    if config_settings["timeout"]:
+    if "timeout" in config_settings:
         afl_cmdline.append("-t")
         afl_cmdline.append(config_settings["timeout"])
 
-    if config_settings["mem_limit"]:
+    if "mem_limit" in config_settings:
         afl_cmdline.append("-m")
         afl_cmdline.append(config_settings["mem_limit"])
 
-    if config_settings["cpu_affinity"] and instance_number < len(config_settings["cpu_affinity"]):
+    if "cpu_affinity" in config_settings and instance_number < len(config_settings["cpu_affinity"]):
         afl_cmdline.append("-Z")
         afl_cmdline.append(config_settings["cpu_affinity"][instance_number])
 
-    if config_settings["qemu"] == "on":
+    if "qemu" in config_settings and config_settings["qemu"]:
         afl_cmdline.append("-Q")
 
-    if config_settings["dirty"] == "on":
+    if "dirty" in config_settings and config_settings["dirty"]:
         afl_cmdline.append("-d")
 
-    if config_settings["dumb"] == "on":
+    if "dumb" in config_settings and config_settings["dumb"]:
         afl_cmdline.append("-n")
 
-    if config_settings["dict"]:
+    if "dict" in config_settings:
         afl_cmdline.append("-x")
         afl_cmdline.append(config_settings["dict"])
 
-    if config_settings["afl_margs"]:
+    if "afl_margs" in config_settings:
         afl_cmdline.append(config_settings["afl_margs"])
 
-    if config_settings["input"]:
+    if "input" in config_settings:
         afl_cmdline.append("-i")
         afl_cmdline.append(config_settings["input"])
 
-    if config_settings["output"]:
+    if "output" in config_settings:
         afl_cmdline.append("-o")
         afl_cmdline.append(config_settings["output"])
 
@@ -217,9 +117,10 @@ def check_screen():
 
 
 def setup_screen_env(env_list):
-    if env_list:
+    if len(env_list) > 0:
         # set environment variables in initializer window
-        for env_tuple in env_list:
+        for env in env_list:
+            env_tuple = env.split("=")
             screen_env_cmd = ["screen", "-X", "setenv", env_tuple[0], env_tuple[1]]
             subprocess.Popen(screen_env_cmd)
 
@@ -335,7 +236,7 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
 
     args = parser.parse_args(argv[1:])
 
-    conf_settings, environment = read_config(os.path.abspath(os.path.expanduser(args.config_file)))
+    conf_settings = read_config(os.path.abspath(os.path.expanduser(args.config_file)))
 
     if args.test_run:
         signal.signal(signal.SIGINT, sigint_handler)
@@ -356,12 +257,15 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
 
     slave_off, slave_start = get_slave_count(args.cmd, conf_settings)
 
-    if conf_settings["interactive"]:
+    if "interactive" in conf_settings and conf_settings["interactive"]:
         if not check_screen():
             print_err("When using screen mode, please run afl-multicore from inside a screen session!")
             sys.exit(1)
 
-        setup_screen(int(args.jobs), environment)
+        if "environment" in conf_settings:
+            setup_screen(int(args.jobs), conf_settings["environment"])
+        else:
+            setup_screen(int(args.jobs), [])
 
     target_cmd = build_target_cmd(conf_settings)
     master_cmd = build_master_cmd(conf_settings, target_cmd)
@@ -370,38 +274,38 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
         with subprocess.Popen(master_cmd.split()) as test_proc:
             print_ok("Test instance started (PID: %d)" % test_proc.pid)
 
-    if not conf_settings["slave_only"]:
+    if "slave_only" not in conf_settings or ("slave_only" in conf_settings and not conf_settings["slave_only"]):
         print_ok("Starting master instance...")
 
-        if not conf_settings["interactive"]:
+        if "interactive" in conf_settings and conf_settings["interactive"]:
+            subprocess.Popen("screen -X select 1".split())
+            screen_cmd = ["screen", "-X", "eval", "exec %s" % master_cmd, "next"]
+            subprocess.Popen(screen_cmd)
+            print(" Master 000 started inside new screen window")
+        else:
             if not args.verbose:
                 master = subprocess.Popen(" ".join(['nohup', master_cmd]).split(), stdout=subprocess.DEVNULL,
                                           stderr=subprocess.DEVNULL)
             else:
                 master = subprocess.Popen(" ".join(['nohup', master_cmd]).split())
             print(" Master 000 started (PID: %d)" % master.pid)
-        else:
-            subprocess.Popen("screen -X select 1".split())
-            screen_cmd = ["screen", "-X", "eval", "exec %s" % master_cmd, "next"]
-            subprocess.Popen(screen_cmd)
-            print(" Master 000 started inside new screen window")
 
     print_ok("Starting slave instances...")
     for i in range(slave_start, int(args.jobs)+slave_start-slave_off, 1):
         slave_cmd = build_slave_cmd(conf_settings, i, target_cmd)
 
-        if not conf_settings["interactive"]:
+        if "interactive" in conf_settings and conf_settings["interactive"]:
+            subprocess.Popen(["screen", "-X", "select", "%d" % (i + 1)])
+            screen_cmd = ["screen", "-X", "eval", "exec %s" % slave_cmd, "next"]
+            subprocess.Popen(screen_cmd)
+            print(" Slave %03d started inside new screen window" % i)
+        else:
             if not args.verbose:
                 slave = subprocess.Popen(" ".join(['nohup', slave_cmd]).split(), stdout=subprocess.DEVNULL,
                                          stderr=subprocess.DEVNULL)
             else:
                 slave = subprocess.Popen(" ".join(['nohup', slave_cmd]).split())
             print(" Slave %03d started (PID: %d)" % (i, slave.pid))
-        else:
-            subprocess.Popen(["screen", "-X", "select", "%d" % (i+1)])
-            screen_cmd = ["screen", "-X", "eval", "exec %s" % slave_cmd, "next"]
-            subprocess.Popen(screen_cmd)
-            print(" Slave %03d started inside new screen window" % i)
 
     write_pgid_file(conf_settings)
 
