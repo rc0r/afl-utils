@@ -63,7 +63,30 @@ here:
 
 ## afl-cron
 
-TODO
+The purpose of `afl-cron` is to run different `afl-utils` tasks periodically. Example
+use cases include grabbing `afl-stats` or syncing fuzzing queues using `afl-sync`
+repeatedly. `afl-cron` is not limited to run top-level tools from the `afl-utils`
+collection. For a much finer granularity you may specify an arbitrary function from
+any `afl-utils` module to be executed once the timer runs out.
+
+Running `afl-cron` with the following configuration will execute `afl-stats.main()`
+every 60 minutes in quiet mode using the provided sample config:
+
+    {
+        "interval": 60,
+        "jobs": [
+            {
+                "name": "afl-stats",
+                "description": "Job description here",
+                "module": "afl_utils.afl_stats",
+                "function": "main",
+                "params": "--quiet -c config/afl-stats.conf.sample"
+            }
+        ]
+    }
+
+You may have multiple job definitions in your configuration. Once the interval timer is up,
+all jobs are executed sequentially.
 
 
 ## afl-minimize

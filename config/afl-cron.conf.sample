@@ -5,7 +5,8 @@
             "name": "afl-stats",
             "description": "Job description here",
             "module": "afl_utils.afl_stats",
-            "params": "--help"
+            "function": "main",
+            "params": "--quiet -c config/afl-stats.conf.sample"
         }
     ]
 }

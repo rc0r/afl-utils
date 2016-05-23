@@ -41,19 +41,20 @@ class AflCronDaemon(object):
             raise ValueError('Module \'{}\' could not be imported' .format(module_path,))
         return module
 
-    def get_class(self, module, class_name):
+    def get_member(self, module, member_name):
         try:
-            cls = getattr(module, class_name)
+            cls = getattr(module, member_name)
         except AttributeError:
-            raise ValueError('Module \'{}\' has no class \'{}\''.format(module, class_name,))
+            raise ValueError('Module \'{}\' has no member \'{}\''.format(module, member_name, ))
         return cls
 
     def run_job(self, job):
         job_module = self.get_module(job['module'])
+        job_func = self.get_member(job_module, job['function'])
         job_args = [job['module'].rsplit('.', 1)[1]] + job['params'].split()
         if not self.quiet:
-            print_ok('Executing \'{}\' ({})'.format(job['name'], job['module']))
-        job_module.main(job_args)
+            print_ok('Executing \'{}\' ({}.{})'.format(job['name'], job['module'], job['function']))
+        job_func(job_args)
 
     def run(self):
         doExit = False

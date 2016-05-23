@@ -33,7 +33,8 @@ class AflSyncTestCase(unittest.TestCase):
                     "name": "afl-stats",
                     "description": "Job description here",
                     "module": "afl_utils.afl_stats",
-                    "params": "--help"
+                    "function": "main",
+                    "params": "--quiet -c config/afl-stats.conf.sample"
                 }
             ]
         }
@@ -52,17 +53,24 @@ class AflSyncTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             cron.get_module('invalid_module.path')
 
-    def test_get_class(self):
+    def test_get_member(self):
         module = afl_sync
         cls = afl_sync.AflBaseSync
         cls_name = 'AflBaseSync'
+        fcn = afl_sync.main
+        fcn_name = 'main'
 
+        # get class
         cron = AflCronDaemon(g_config_file)
-        self.assertEqual(cls, cron.get_class(module, cls_name))
+        self.assertEqual(cls, cron.get_member(module, cls_name))
+
+        # get func
+        cron = AflCronDaemon(g_config_file)
+        self.assertEqual(fcn, cron.get_member(module, fcn_name))
 
         # error case
         with self.assertRaises(ValueError):
-            cron.get_class(module, 'invalid_class')
+            cron.get_member(module, 'invalid_class')
 
     def test_run_job(self):
         # TODO
