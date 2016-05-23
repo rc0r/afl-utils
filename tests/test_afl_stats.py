@@ -1,8 +1,11 @@
 from afl_utils import afl_stats
 
+try:
+    import simplejson as json
+except ImportError:
+    import json
 import os
 import socket
-import json
 import unittest
 
 test_conf_settings = {

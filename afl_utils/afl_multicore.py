@@ -15,7 +15,10 @@ limitations under the License.
 """
 
 import argparse
-import json
+try:
+    import simplejson as json
+except ImportError:
+    import json
 import os
 import signal
 import subprocess

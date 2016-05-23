@@ -1,6 +1,9 @@
 from afl_utils import afl_multicore
 
-import json
+try:
+    import simplejson as json
+except ImportError:
+    import json
 import os
 import unittest
 
