@@ -68,7 +68,10 @@ class AflStatsTestCase(unittest.TestCase):
 
     def tearDown(self):
         # Use for clean up after tests have run
-        pass
+        try:
+            os.remove('.afl_stats.sync')
+        except FileNotFoundError:
+            pass
 
     def test_show_info(self):
         self.assertIsNone(afl_stats.show_info())
@@ -168,6 +171,8 @@ class AflStatsTestCase(unittest.TestCase):
         config_settings = afl_stats.read_config('testdata/afl-stats.conf.test')
         twitter_inst = None
 
+        self.assertIsNone(afl_stats.fetch_stats(config_settings, twitter_inst))
+        #os.remove('.afl_stats.sync')
         self.assertIsNone(afl_stats.fetch_stats(config_settings, twitter_inst))
 
     def test_main(self):

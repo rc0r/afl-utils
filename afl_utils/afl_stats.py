@@ -293,12 +293,9 @@ def fetch_stats(config_settings, twitter_inst):
         sum_stats = summarize_stats(stats)
 
         try:
-            # stat_dict has already been initialized for fuzzer
-            #  old_stat <- last_stat
-            old_stats = stat_dict[fuzzer][0].copy()
-        except KeyError:
-            # stat_dict has not yet been initialized for fuzzer
-            #  old_stat <- cur_stat
+            with open('.afl_stats.{}'.format(os.path.basename(fuzzer)), 'r') as f:
+                old_stats = json.load(f)
+        except FileNotFoundError:
             old_stats = sum_stats.copy()
 
         # initialize/update stat_dict
@@ -306,8 +303,8 @@ def fetch_stats(config_settings, twitter_inst):
 
         stat_change = diff_stats(sum_stats, old_stats)
 
-        if not diff_stats:
-            continue
+        with open('.afl_stats.{}'.format(os.path.basename(fuzzer)), 'w') as f:
+            json.dump(sum_stats, f)
 
         print(prettify_stat(sum_stats, stat_change, True))
 
