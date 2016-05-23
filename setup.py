@@ -21,6 +21,7 @@ import afl_utils
 
 dependencies = [
     'exploitable==1.32-rcor',       # needed for gdb script execution
+    'simplejson',                   # needed for config files
     'twitter',                      # needed for afl-stats (twitter access)
 ]
 
