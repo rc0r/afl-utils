@@ -8,10 +8,14 @@ afl-utils includes tools for:
 * easy management of parallel (multi-core) fuzzing jobs (`afl-multicore`, `afl-multikill`)
 * corpus optimization (`afl-minimize`)
 * fuzzer stats supervision (`afl-stats`)
+* fuzzer queue synchronisation (`afl-sync`)
+* autonomous utility execution (`afl-cron`)
 
 ![afl-stats_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_stats_sample.png)
 
 ![afl-collect_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_collect_sample.png)
+
+![afl-sync_diagram](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl-sync-diagram.png)
 
 **For installation instructions see [docs/INSTALL.md](https://github.com/rc0r/afl-utils/blob/master/docs/INSTALL.md).**
 
