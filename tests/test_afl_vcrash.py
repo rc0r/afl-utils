@@ -1,7 +1,6 @@
 from afl_utils import afl_vcrash
 
 import os
-# import subprocess
 import unittest
 
 

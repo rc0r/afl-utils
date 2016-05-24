@@ -2,7 +2,9 @@
 
 Version 1.28a
 
-  - afl-cron added.
+  - afl-cron for periodic task execution added.
+  - Main execution loop removed from afl-stats. afl-cron may be used for
+    repeated executions of afl-stats!
   - Changed afl-utils to use JSON config files.
 
 Version 1.27a
