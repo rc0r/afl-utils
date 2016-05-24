@@ -76,18 +76,20 @@ any `afl-utils` module to be executed once the timer runs out.
 Running `afl-cron` with the following configuration will execute `afl-stats.main()`
 every 60 minutes in quiet mode using the provided sample config:
 
-    {
-        "interval": 60,
-        "jobs": [
-            {
-                "name": "afl-stats",
-                "description": "Job description here",
-                "module": "afl_utils.afl_stats",
-                "function": "main",
-                "params": "--quiet -c config/afl-stats.conf.sample"
-            }
-        ]
-    }
+```json
+{
+    "interval": 60,
+    "jobs": [
+        {
+            "name": "afl-stats",
+            "description": "Job description here",
+            "module": "afl_utils.afl_stats",
+            "function": "main",
+            "params": "--quiet -c config/afl-stats.conf.sample"
+        }
+    ]
+}
+```
 
 You may have multiple job definitions in your configuration. Once the interval timer is up,
 all jobs are executed sequentially.
@@ -194,12 +196,14 @@ Usage examples:
 Target settings and afl options are configured in a JSON configuration file.
 The most simple configuration may look something like:
 
-    {
-        "input": "./in",
-        "output": "./out",
-        "target": "~/bin/target",
-        "cmdline": "--target-opt"
-    }
+```json
+{
+    "input": "./in",
+    "output": "./out",
+    "target": "~/bin/target",
+    "cmdline": "--target-opt"
+}
+```
 
 Of course a lot more settings can be configured, some of these settings are:
 
@@ -247,15 +251,17 @@ and use the correct files for the different instances of `afl-fuzz`.
 
 Example config:
 
-    {
-        "target": "/your/app/here",
-        "cmdline": "--some-target-opts --input-file %%",
-          "#": "^- translates to:",
-          "#": "--some-target-opts --input-file /path/to/cur_input_000",
-          "#": "--some-target-opts --input-file /path/to/cur_input_001",
-          "#": "...",
-        "file": "/path/to/cur_input"
-    }
+```json
+{
+    "target": "/your/app/here",
+    "cmdline": "--some-target-opts --input-file %%",
+      "#": "^- translates to:",
+      "#": "--some-target-opts --input-file /path/to/cur_input_000",
+      "#": "--some-target-opts --input-file /path/to/cur_input_001",
+      "#": "...",
+    "file": "/path/to/cur_input"
+}
+```
 
 ### Configuration settings
 
@@ -265,80 +271,108 @@ path to the target binary `target` and target command line arguments `cmdline`:
 
 afl-fuzz directory specifications:
 
-    "input": "./in",
-    "output": "./out"
+```json
+"input": "./in",
+"output": "./out"
+```
 
 Target binary and command line settings:
 
-    "target": "/usr/bin/target",
-    "cmdline": "-a -b -c -d"
+```json
+"target": "/usr/bin/target",
+"cmdline": "-a -b -c -d"
+```
 
 Location read by the fuzzed program. Valid options are:
 
   * a file name
   * `@@` (see afl-fuzz manual)
 
-
-    "file": "@@"
+```json
+"file": "@@"
+```
 
 Timeout in ms for each fuzzing run:
 
-    "timeout": "200+"
+```json
+"timeout": "200+"
+```
 
 Memory limit in MB for target processes. To avoid hiccups make sure to provide
 the desired memory limit value as a string!
 
-    "mem_limit": "150"
+```json
+"mem_limit": "150"
+```
 
 Use afl QEMU mode?
 
-    "qemu": true
+```json
+"qemu": true
+```
 
 CPU affinity settings for afl-processes. Provide single or tuple CPU ids.
 
-    "cpu_affinity": [
-        "0,1", "2,3", "4,5", "6,7"
-    ]
+```json
+"cpu_affinity": [
+    "0,1", "2,3", "4,5", "6,7"
+]
+```
 
 Use `afl_margs` to provide additional cmdline arguments for afl. These
 arguments will directly be passed to afl! This way you may provide new,
 hacked or experimental cmdline args to `afl-fuzz`.
 
-    "afl_margs": "-T banner"
+```json
+"afl_margs": "-T banner"
+```
 
 Skip afl deterministic steps:
 
-    "dirty": true
+```json
+"dirty": true
+```
 
 Fuzz without instrumentation:
 
-    "dumb": true
+```json
+"dumb": true
+```
 
 Specify a fuzzing dictionary:
 
-    "dict": "dict/target.dict"
+```json
+"dict": "dict/target.dict"
+```
 
 Provide a name for the fuzzing session. Master outputs
 will be written to `output/SESSION000`!
 
-    "session": "SESSION"
+```json
+"session": "SESSION"
+```
 
 Slave-only mode, do not start an afl master instance.
 
-    "slave_only": true
+```json
+"slave_only": true
+```
 
 Interactive screen mode. Starts every afl instance in a separate
 screen window. Run `afl-multicore` from inside screen!
 
-    "interactive": true
+```json
+"interactive": true
+```
 
 Environment variables `afl-multicore` will set when using interactive screen mode.
 
-    "environment": [
-        "AFL_PERSISTENT=1",
-        "LD_PRELOAD=desock.so"
-    ]
-
+```json
+"environment": [
+    "AFL_PERSISTENT=1",
+    "LD_PRELOAD=desock.so"
+]
+```
 
 ## afl-multikill
 
