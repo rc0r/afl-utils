@@ -1,5 +1,10 @@
 # afl-utils Changelog
 
+Version 1.29a
+
+  - afl-collect updated to not use a hard-coded path to the gdb binary
+    (suggested by Martin Lindhe).
+
 Version 1.28a
 
   - afl-cron for periodic task execution added.

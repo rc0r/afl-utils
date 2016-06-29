@@ -40,7 +40,10 @@ fuzzer_stats_filename = "fuzzer_stats"
 # gdb settings
 
 # Path to gdb binary
-gdb_binary = "/usr/bin/gdb"
+gdb_binary = shutil.which("gdb")
+if gdb_binary is None:
+    print_err("gdb binary not found!")
+    sys.exit(1)
 
 # Path to 'exploitable.py' (https://github.com/rc0r/exploitable)
 # Set to None if you already source exploitable.py in your .gdbinit file!
