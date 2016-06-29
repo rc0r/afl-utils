@@ -4,6 +4,9 @@ Version 1.29a
 
   - afl-collect updated to not use a hard-coded path to the gdb binary
     (suggested by Martin Lindhe).
+  - Fixed #30: CPU affinity settings removed from afl-multicore. (The
+    option for explicitly setting CPU affinity in afl was dropped in
+    afl-2.17b.)
 
 Version 1.28a
 

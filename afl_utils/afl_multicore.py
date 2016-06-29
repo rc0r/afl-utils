@@ -68,10 +68,6 @@ def afl_cmdline_from_config(config_settings, instance_number):
         afl_cmdline.append("-m")
         afl_cmdline.append(config_settings["mem_limit"])
 
-    if "cpu_affinity" in config_settings and instance_number < len(config_settings["cpu_affinity"]):
-        afl_cmdline.append("-Z")
-        afl_cmdline.append(config_settings["cpu_affinity"][instance_number])
-
     if "qemu" in config_settings and config_settings["qemu"]:
         afl_cmdline.append("-Q")
 

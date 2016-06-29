@@ -8,12 +8,6 @@
     "timeout": "200+",
     "mem_limit": "150",
     "qemu": false,
-    "cpu_affinity": [
-        "0,1",
-        "2,3",
-        "4,5",
-        "6,7"
-    ],
     "afl_margs": "-T banner",
     "dirty": false,
     "dumb": false,
