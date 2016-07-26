@@ -4,6 +4,7 @@ Version 1.30a
 
   - Parsing of slightly different modified 'fuzzer_stats' file fixed
     in afl-stats.
+  - Delayed startup added to afl-multicore.
 
 Version 1.29a
 

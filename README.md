@@ -253,6 +253,18 @@ Example config:
 }
 ```
 
+Real life fuzzing experience showed that starting or resuming many afl-fuzz
+instances at once can be problematic. Especially during initialization these
+fuzzers may heavily interfere with each other causing intermittent afl-fuzz
+aborts. In case you are facing such a scenario you might want to give the delayed
+startup feature (`-s <delay>` option) a try! Chose the startup delay with caution
+depending on your corpus size. For small corpora a few seconds should work well,
+for corpora containing tens or hundreds of thousands of files much greater delays
+(minutes, hours or even days) are needed to have an effect.
+
+    $ afl-multicore -c target.conf -s 120 resume 64
+
+
 ### Configuration settings
 
 As already noted there are only four settings that are required in every config

@@ -23,6 +23,7 @@ import os
 import signal
 import subprocess
 import sys
+import time
 
 import afl_utils
 from afl_utils.AflPrettyPrint import print_err, print_ok, clr
@@ -221,10 +222,13 @@ def main(argv):
 
     parser = argparse.ArgumentParser(description="afl-multicore starts several parallel fuzzing jobs, that are run \
 in the background. For fuzzer stats see 'out_dir/SESSION###/fuzzer_stats'!",
-                                     usage="afl-multicore [-c config] [-h] [-t] [-v] <cmd> <jobs>")
+                                     usage="afl-multicore [-c config] [-h] [-s secs] [-t] [-v] <cmd> <jobs>")
 
     parser.add_argument("-c", "--config", dest="config_file",
                         help="afl-multicore config file (Default: afl-multicore.conf)!", default="afl-multicore.conf")
+    parser.add_argument("-s", "--startup-delay", dest="startup_delay", default=None, help="Wait a configurable  amount \
+of time after starting/resuming each afl instance to avoid interference during fuzzer startup. Provide wait time in \
+seconds.")
     parser.add_argument("-t", "--test", dest="test_run", action="store_const", const=True, default=False, help="Perform \
 a test run by starting a single afl instance in interactive mode using a test output directory.")
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_const", const=True,
@@ -289,8 +293,12 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
                 master = subprocess.Popen(" ".join(['nohup', master_cmd]).split())
             print(" Master 000 started (PID: %d)" % master.pid)
 
+        if args.startup_delay is not None:
+            time.sleep(int(args.startup_delay))
+
     print_ok("Starting slave instances...")
-    for i in range(slave_start, int(args.jobs)+slave_start-slave_off, 1):
+    num_slaves = int(args.jobs)+slave_start-slave_off
+    for i in range(slave_start, num_slaves, 1):
         slave_cmd = build_slave_cmd(conf_settings, i, target_cmd)
 
         if "interactive" in conf_settings and conf_settings["interactive"]:
@@ -305,6 +313,9 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
             else:
                 slave = subprocess.Popen(" ".join(['nohup', slave_cmd]).split())
             print(" Slave %03d started (PID: %d)" % (i, slave.pid))
+
+        if args.startup_delay is not None and i < (num_slaves-1):
+            time.sleep(int(args.startup_delay))
 
     write_pgid_file(conf_settings)
 

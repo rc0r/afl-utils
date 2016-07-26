@@ -3,7 +3,6 @@ from afl_utils.afl_sync import AflRsync
 
 import os
 import shutil
-import subprocess
 import unittest
 
 
