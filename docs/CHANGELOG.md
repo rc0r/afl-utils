@@ -1,5 +1,10 @@
 # afl-utils Changelog
 
+Version 1.30a
+
+  - Parsing of slightly different modified 'fuzzer_stats' file fixed
+    in afl-stats.
+
 Version 1.29a
 
   - afl-collect updated to not use a hard-coded path to the gdb binary
