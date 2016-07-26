@@ -103,10 +103,10 @@ def parse_stat_file(stat_file):
             for k in stats.keys():
                 if k != "fuzzer_pid":
                     if k in l:
-                        stats[k] = l[16:].strip(" \r\n")
+                        stats[k] = l[16:].strip(": \r\n")
                 else:
                     if k in l:
-                        stats[k] = fuzzer_alive(int(l[16:].strip(" \r\n")))
+                        stats[k] = fuzzer_alive(int(l[16:].strip(": \r\n")))
 
         return stats
     except FileNotFoundError as e:
