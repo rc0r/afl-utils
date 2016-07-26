@@ -45,7 +45,6 @@ test_conf_settings2 = {
     'target': '/usr/bin/target',
     'input': './in',
     'cmdline': '-a -b -c -d',
-    'cpu_affinity': ['0,1', '2,3', '4,5', '6,7'],
     'output': './out'
 }
 
@@ -72,7 +71,7 @@ test_afl_cmdline = [
 ]
 
 test_afl_cmdline2 = [
-   '-Z', '2,3', '-i', './in', '-o', './out'
+    '-i', './in', '-o', './out'
 ]
 
 test_afl_cmdline21 = [

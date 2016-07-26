@@ -2,11 +2,5 @@
     "target": "/usr/bin/target",
     "input": "./in",
     "cmdline": "-a -b -c -d",
-    "cpu_affinity": [
-        "0,1",
-        "2,3",
-        "4,5",
-        "6,7"
-    ],
     "output": "./out"
 }
