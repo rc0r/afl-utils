@@ -32,6 +32,11 @@ class AflBaseSync(object):
 
 
 class AflRsync(AflBaseSync):
+    def __init__(self, server_config, fuzzer_config):
+        # default excludes
+        self.__excludes = ['*.cur_input']
+        super(AflRsync, self).__init__(server_config, fuzzer_config)
+
     def __prepare_rsync_commandline(self, local_path, remote_path, rsync_options=list(_rsync_default_options),
                                     rsync_excludes=list([]), rsync_get=False):
         cmd = ['rsync']
@@ -76,7 +81,7 @@ class AflRsync(AflBaseSync):
         if self.fuzzer_config['session'] is not None:
             fuzzers = (fuzzer for fuzzer in fuzzers if fuzzer.startswith(self.fuzzer_config['session']))
 
-        excludes = []
+        excludes = self.__excludes
 
         if self.fuzzer_config['exclude_crashes']:
             excludes += ['crashes*/']
@@ -97,7 +102,7 @@ class AflRsync(AflBaseSync):
         remote_path = self.server_config['remote_path']
 
         options = list(_rsync_default_options)
-        excludes = []
+        excludes = self.__excludes
 
         # exclude our previously pushed fuzzer states from being pulled again
         # and avoid to overwrite our local fuzz data
@@ -106,7 +111,13 @@ class AflRsync(AflBaseSync):
 
         # restrict to certain session, if requested
         if self.fuzzer_config['session'] is not None:
+            # make sure defaults are excluded from explicitly included locations
+            for exclude_rule in self.__excludes:
+                options += ['--exclude=\"/{}*/{}\"'.format(self.fuzzer_config['session'], exclude_rule)]
+            # recursively include everything that does match the session name
             options += ['--include=\"/{}*/\"'.format(self.fuzzer_config['session'])]
+            options += ['--include=\"/{}*/*\"'.format(self.fuzzer_config['session'])]
+            # exclude everything else
             excludes += ['*']
 
         print_ok('Pulling {}/* <- {}/'.format(local_path, remote_path))

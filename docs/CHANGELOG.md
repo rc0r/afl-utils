@@ -5,6 +5,9 @@ Version 1.30a
   - Parsing of slightly different modified 'fuzzer_stats' file fixed
     in afl-stats.
   - Delayed startup added to afl-multicore.
+  - Fixed a bug in afl-sync that caused some directories to not be pulled
+    from the remote location when a session name was specified.
+  - Added afl's .cur_input to the rsync exclude list in afl-sync.
 
 Version 1.29a
 
