@@ -4,7 +4,9 @@ python:
       - "3.5"
 before_install:
       - sudo apt-get -qq update
-      - sudo apt-get install -y gdb afl
+      - sudo apt-get install -y gdb
+      - touch ./afl-fuzz
+      - chmod +x ./afl-fuzz
       - pip install pytest pytest-cov
       - pip install coveralls
 install:
