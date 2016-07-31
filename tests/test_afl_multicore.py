@@ -243,10 +243,47 @@ class AflMulticoreTestCase(unittest.TestCase):
         conf_settings = {
             'session': 'fuzz',
             'output': 'testdata/sync',
-            'slave-only': False,
+            'slave_only': False,
         }
         command = 'add'
         self.assertEqual((0, 2), afl_multicore.get_slave_count(command, conf_settings))
+
+    def test_get_job_counts(self):
+        jobs_arg = "23"
+        expected = (23, 0)
+        self.assertEqual(afl_multicore.get_job_counts(jobs_arg), expected)
+
+        jobs_arg = "23,0"
+        expected = (23, 0)
+        self.assertEqual(afl_multicore.get_job_counts(jobs_arg), expected)
+
+        jobs_arg = "12,5"
+        expected = (12, 5)
+        self.assertEqual(afl_multicore.get_job_counts(jobs_arg), expected)
+
+    def test_has_master(self):
+        # positive test
+        conf_settings = {
+        }
+        self.assertTrue(afl_multicore.has_master(conf_settings, 0))
+
+        conf_settings = {
+            'session': 'fuzz',
+            'output': 'testdata/sync',
+            'slave_only': False,
+        }
+        self.assertTrue(afl_multicore.has_master(conf_settings, 0))
+
+        # negative test
+        self.assertFalse(afl_multicore.has_master(conf_settings, 1))
+
+        conf_settings = {
+            'session': 'fuzz',
+            'output': 'testdata/sync',
+            'slave_only': True,
+        }
+        self.assertFalse(afl_multicore.has_master(conf_settings, 0))
+        self.assertFalse(afl_multicore.has_master(conf_settings, 2))
 
     def test_main(self):
         # we're only going to test some error cases

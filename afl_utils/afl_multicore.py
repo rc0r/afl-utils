@@ -20,6 +20,7 @@ try:
 except ImportError:
     import json
 import os
+import shutil
 import signal
 import subprocess
 import sys
@@ -28,8 +29,10 @@ import time
 import afl_utils
 from afl_utils.AflPrettyPrint import print_err, print_ok, clr
 
-# afl-multicore global settings
-afl_path = "afl-fuzz"   # in PATH
+afl_path = shutil.which("afl-fuzz")
+if afl_path is None:
+    print_err("afl-fuzz binary not found!")
+    sys.exit(1)
 
 
 def show_info():
@@ -217,12 +220,30 @@ def get_slave_count(command, conf_settings):
     return slave_off, slave_start
 
 
+def get_job_counts(jobs_arg):
+    if isinstance(jobs_arg, str) and "," in jobs_arg:
+        jobs_arg = jobs_arg.split(",")
+        num_jobs = int(jobs_arg[0])
+        jobs_offset = int(jobs_arg[1])
+    else:
+        num_jobs = int(jobs_arg)
+        jobs_offset = 0
+    return (num_jobs, jobs_offset)
+
+
+def has_master(conf_settings, jobs_offset):
+    if jobs_offset <= 0:
+        return "slave_only" not in conf_settings or ("slave_only" in conf_settings and not conf_settings["slave_only"])
+    else:
+        return False
+
+
 def main(argv):
     show_info()
 
     parser = argparse.ArgumentParser(description="afl-multicore starts several parallel fuzzing jobs, that are run \
 in the background. For fuzzer stats see 'out_dir/SESSION###/fuzzer_stats'!",
-                                     usage="afl-multicore [-c config] [-h] [-s secs] [-t] [-v] <cmd> <jobs>")
+                                     usage="afl-multicore [-c config] [-h] [-s secs] [-t] [-v] <cmd> <jobs[,offset]>")
 
     parser.add_argument("-c", "--config", dest="config_file",
                         help="afl-multicore config file (Default: afl-multicore.conf)!", default="afl-multicore.conf")
@@ -235,7 +256,8 @@ a test run by starting a single afl instance in interactive mode using a test ou
                         default=False, help="For debugging purposes do not redirect stderr/stdout of the created \
 subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.")
     parser.add_argument("cmd", help="afl-multicore command to execute: start, resume, add.")
-    parser.add_argument("jobs", help="Number of instances to start/resume/add.")
+    parser.add_argument("jobs", help="Number of instances to start/resume/add. For resumes you may specify an optional \
+job offset that allows to resume specific (ranges of) afl-instances.")
 
     args = parser.parse_args(argv[1:])
 
@@ -248,11 +270,13 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
         args.jobs = 1
         args.cmd = "start"
 
+    jobs_count, jobs_offset = get_job_counts(args.jobs)
     if args.cmd != "resume":
         conf_settings["input"] = os.path.abspath(os.path.expanduser(conf_settings["input"]))
         if not os.path.exists(conf_settings["input"]):
             print_err("No valid directory provided for <INPUT_DIR>!")
             sys.exit(1)
+        jobs_offset = 0
     else:
         conf_settings["input"] = "-"
 
@@ -266,9 +290,9 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
             sys.exit(1)
 
         if "environment" in conf_settings:
-            setup_screen(int(args.jobs), conf_settings["environment"])
+            setup_screen(jobs_count, conf_settings["environment"])
         else:
-            setup_screen(int(args.jobs), [])
+            setup_screen(jobs_count, [])
 
     target_cmd = build_target_cmd(conf_settings)
     master_cmd = build_master_cmd(conf_settings, target_cmd)
@@ -277,7 +301,7 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
         with subprocess.Popen(master_cmd.split()) as test_proc:
             print_ok("Test instance started (PID: %d)" % test_proc.pid)
 
-    if "slave_only" not in conf_settings or ("slave_only" in conf_settings and not conf_settings["slave_only"]):
+    if has_master(conf_settings, jobs_offset):
         print_ok("Starting master instance...")
 
         if "interactive" in conf_settings and conf_settings["interactive"]:
@@ -297,7 +321,9 @@ subprocesses to /dev/null (Default: off). Check 'nohup.out' for further outputs.
             time.sleep(int(args.startup_delay))
 
     print_ok("Starting slave instances...")
-    num_slaves = int(args.jobs)+slave_start-slave_off
+    num_slaves = jobs_count+slave_start-slave_off
+    slave_start += (jobs_offset-1)
+    num_slaves += jobs_offset
     for i in range(slave_start, num_slaves, 1):
         slave_cmd = build_slave_cmd(conf_settings, i, target_cmd)
 

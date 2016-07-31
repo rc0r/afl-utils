@@ -189,9 +189,20 @@ Both ways the environment is inherited by all subsequently created screen window
 
 Usage examples:
 
-    afl-multicore -c target-multicore.conf start 16
-    afl-multicore -c target-multicore.conf add 4
-    afl-multicore -c target-multicore.conf resume 20
+    $ afl-multicore -c target-multicore.conf start 16
+    $ afl-multicore -c target-multicore.conf add 4
+    $ afl-multicore -c target-multicore.conf resume 20
+
+In case you want to resume just a few fuzzers you may use selective resume. Let's say
+you've had 20 afl instances running, killed all but the first one (the master instance) and now
+you want to resume all slave instances without interrupting master:
+
+    $ afl-multicore -c target-multicore.conf resume number_of_jobs_to_resume,job_offset
+    $ afl-multicore -c target-multicore.conf resume 19,1
+
+This `afl-multicore` invocation will resume 19 instances starting at offset 1 (the first slave;
+the master instance is always at offset 0). Of course other ranges are possible too. However, when
+using an offset greater than zero only slave instances will be resumed!
 
 Target settings and afl options are configured in a JSON configuration file.
 The most simple configuration may look something like:

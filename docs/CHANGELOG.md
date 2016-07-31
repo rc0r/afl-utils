@@ -1,5 +1,11 @@
 # afl-utils Changelog
 
+Version 1.31a
+
+  - Selective resumes added to afl-multicore.
+  - afl-multicore updated to not use a hard-coded path to the
+    afl-fuzz binary.
+
 Version 1.30a
 
   - Parsing of slightly different modified 'fuzzer_stats' file fixed
