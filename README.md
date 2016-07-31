@@ -271,9 +271,14 @@ aborts. In case you are facing such a scenario you might want to give the delaye
 startup feature (`-s <delay>` option) a try! Chose the startup delay with caution
 depending on your corpus size. For small corpora a few seconds should work well,
 for corpora containing tens or hundreds of thousands of files much greater delays
-(minutes, hours or even days) are needed to have an effect.
+(minutes, hours or even days) are needed to have an effect.  
+If you have no clue what to chose or you're simply lazy, try `auto`. This will
+estimate a delay based on the chosen afl timeout and the number of samples in the
+input dir (for initial start ups) or in the queue dirs of the individual fuzzers
+(for resumes).
 
     $ afl-multicore -c target.conf -s 120 resume 64
+    $ afl-multicore -c target.conf -s auto resume 64
 
 
 ### Configuration settings

@@ -3,6 +3,8 @@
 Version 1.31a
 
   - Selective resumes added to afl-multicore.
+  - Automatic calculation of delay values for afl-multicore startup
+    implemented (use `-s auto`).
   - afl-multicore updated to not use a hard-coded path to the
     afl-fuzz binary.
 

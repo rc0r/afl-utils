@@ -51,6 +51,10 @@ def read_config(config_file):
 
     with open(config_file, "r") as f:
         config = json.load(f)
+
+        if "session" not in config:
+            config["session"] = "SESSION"
+
         return config
 
 
@@ -238,6 +242,41 @@ def has_master(conf_settings, jobs_offset):
         return False
 
 
+def startup_delay(conf_settings, instance_num, command, startup_delay):
+    if startup_delay is not None:
+        if startup_delay == "auto":
+            if command == "resume":
+                delay = auto_startup_delay(conf_settings, instance_num)
+            else:
+                delay = auto_startup_delay(conf_settings, 0, resume=False)
+        else:
+            delay = int(startup_delay)
+
+        time.sleep(delay)
+        return delay
+
+
+def auto_startup_delay(config_settings, instance_num, resume=True):
+    # Worst case startup time (t_sw) per fuzzer (N - number of samples, T - max. timeout):
+    #   t_sw = N * T
+    # Optimized case startup time (t_sa) per fuzzer (O - optimization factor):
+    #   t_sa = O * t_sw = O * N * T
+    # Educated guess for some O:
+    #    O = 1 / sqrt(N)
+    # This might need some tuning!
+    if resume:
+        instance_dir = os.path.join(config_settings["output"], "{}{:03d}".format(config_settings["session"], instance_num),
+                                    "queue")
+    else:
+        instance_dir = config_settings["input"]
+    sample_list = os.listdir(instance_dir)
+    N = len(sample_list)
+    T = float(config_settings["timeout"].strip(" +")) if "timeout" in config_settings else 1000.0
+    O = N**(-1/2)
+
+    return O * T * N / 1000
+
+
 def main(argv):
     show_info()
 
@@ -317,8 +356,7 @@ job offset that allows to resume specific (ranges of) afl-instances.")
                 master = subprocess.Popen(" ".join(['nohup', master_cmd]).split())
             print(" Master 000 started (PID: %d)" % master.pid)
 
-        if args.startup_delay is not None:
-            time.sleep(int(args.startup_delay))
+        startup_delay(conf_settings, 0, args.cmd, args.startup_delay)
 
     print_ok("Starting slave instances...")
     num_slaves = jobs_count+slave_start-slave_off
@@ -340,8 +378,8 @@ job offset that allows to resume specific (ranges of) afl-instances.")
                 slave = subprocess.Popen(" ".join(['nohup', slave_cmd]).split())
             print(" Slave %03d started (PID: %d)" % (i, slave.pid))
 
-        if args.startup_delay is not None and i < (num_slaves-1):
-            time.sleep(int(args.startup_delay))
+        if i < (num_slaves-1):
+            startup_delay(conf_settings, i, args.cmd, args.startup_delay)
 
     write_pgid_file(conf_settings)
 

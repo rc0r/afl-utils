@@ -4,6 +4,7 @@ try:
     import simplejson as json
 except ImportError:
     import json
+import shutil
 import os
 import unittest
 
@@ -45,7 +46,8 @@ test_conf_settings2 = {
     'target': '/usr/bin/target',
     'input': './in',
     'cmdline': '-a -b -c -d',
-    'output': './out'
+    'output': './out',
+    'session': 'SESSION'
 }
 
 test_conf_settings3 = {
@@ -88,12 +90,26 @@ class AflMulticoreTestCase(unittest.TestCase):
     def setUp(self):
         # Use to set up test environment prior to test case
         # invocation
-        pass
+
+        os.makedirs('testdata/auto_delay_sync', exist_ok=True)
+        os.makedirs('testdata/auto_delay_sync/fuzz000', exist_ok=True)
+        os.makedirs('testdata/auto_delay_sync/fuzz000/queue', exist_ok=True)
+        os.makedirs('testdata/auto_delay_sync/fuzz000/queue/sample0', exist_ok=True)
+        os.makedirs('testdata/auto_delay_sync/fuzz000/queue/sample1', exist_ok=True)
+        os.makedirs('testdata/auto_delay_sync/fuzz000/queue/sample2', exist_ok=True)
 
     def tearDown(self):
         # Use for clean up after tests have run
-        if os.path.exists('/tmp/afl_multicore.PGID.unittest_sess_01'):
-            os.remove('/tmp/afl_multicore.PGID.unittest_sess_01')
+        self.clean_remove('/tmp/afl_multicore.PGID.unittest_sess_01')
+        self.clean_remove_dir('testdata/auto_delay_sync')
+
+    def clean_remove(self, file):
+        if os.path.exists(file):
+            os.remove(file)
+
+    def clean_remove_dir(self, dir):
+        if os.path.exists(dir):
+            shutil.rmtree(dir)
 
     def test_show_info(self):
         self.assertIsNone(afl_multicore.show_info())
@@ -301,3 +317,32 @@ class AflMulticoreTestCase(unittest.TestCase):
         with self.assertRaises(SystemExit) as se:
             afl_multicore.main(['afl-multicore', '-c', 'testdata/afl-multicore.conf.test', 'resume', '4'])
         self.assertEqual(1, se.exception.code)
+
+    def test_startup_delay(self):
+        conf_settings = {
+            'input': './testdata/queue',
+            'output': './testdata/auto_delay_sync',
+            'session': 'fuzz',
+            'timeout': '2000+'
+        }
+        self.assertEqual(afl_multicore.startup_delay(conf_settings, 0, 'start', '3'), 3)
+        self.assertAlmostEqual(afl_multicore.startup_delay(conf_settings, 0, 'start', 'auto'), 2 * 2.449489743)
+        self.assertAlmostEqual(afl_multicore.startup_delay(conf_settings, 0, 'resume', 'auto'), 2 * 1.732050808)
+
+    def test_auto_startup_delay(self):
+        conf_settings = {
+            'input': './testdata/queue',
+            'output': './testdata/auto_delay_sync',
+            'session': 'fuzz'
+        }
+        self.assertAlmostEqual(afl_multicore.auto_startup_delay(conf_settings, 0), 1.732050808)
+        self.assertAlmostEqual(afl_multicore.auto_startup_delay(conf_settings, 37, resume=False), 2.449489743)
+
+        conf_settings = {
+            'input': './testdata/queue',
+            'output': './testdata/auto_delay_sync',
+            'session': 'fuzz',
+            'timeout': '2000+'
+        }
+        self.assertAlmostEqual(afl_multicore.auto_startup_delay(conf_settings, 0), 2*1.732050808)
+        self.assertAlmostEqual(afl_multicore.auto_startup_delay(conf_settings, 37, resume=False), 2*2.449489743)
