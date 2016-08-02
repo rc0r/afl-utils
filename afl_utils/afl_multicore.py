@@ -357,6 +357,8 @@ job offset that allows to resume specific (ranges of) afl-instances.")
             print(" Master 000 started (PID: %d)" % master.pid)
 
         startup_delay(conf_settings, 0, args.cmd, args.startup_delay)
+        jobs_count -= 1
+        jobs_offset += 1
 
     print_ok("Starting slave instances...")
     num_slaves = jobs_count+slave_start-slave_off
