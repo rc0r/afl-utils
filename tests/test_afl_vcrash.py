@@ -93,4 +93,3 @@ class AflVCrashTestCase(unittest.TestCase):
                                            '--', '/bin/ls']))
         self.assertIs(True, os.path.exists('testdata/vcrash_filelist'))
         self.assertIs(False, os.path.exists('testdata/test_coll/invalid'))
-

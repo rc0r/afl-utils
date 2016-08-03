@@ -15,6 +15,7 @@ limitations under the License.
 """
 
 import argparse
+import datetime
 try:
     import simplejson as json
 except ImportError:
@@ -63,8 +64,11 @@ class AflCronDaemon(object):
         doExit = False
         while not doExit:
             try:
+                time_start = datetime.datetime.now()
                 for job in self.config['jobs']:
                     self.run_job(job)
+
+                print_ok('All jobs done [{}]'.format(datetime.datetime.now()-time_start))
 
                 if float(self.config['interval']) < 0:
                     doExit = True

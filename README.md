@@ -329,14 +329,6 @@ Use afl QEMU mode?
 "qemu": true
 ```
 
-CPU affinity settings for afl-processes. Provide single or tuple CPU ids.
-
-```json
-"cpu_affinity": [
-    "0,1", "2,3", "4,5", "6,7"
-]
-```
-
 Use `afl_margs` to provide additional cmdline arguments for afl. These
 arguments will directly be passed to afl! This way you may provide new,
 hacked or experimental cmdline args to `afl-fuzz`.
