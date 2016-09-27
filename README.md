@@ -11,20 +11,9 @@ afl-utils includes tools for:
 * fuzzer queue synchronisation (`afl-sync`)
 * autonomous utility execution (`afl-cron`)
 
-![afl-stats_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_stats_sample.png)
-
-![afl-collect_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_collect_sample.png)
-
-![afl-sync_diagram](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl-sync-diagram.png)
+Various [screenshots](#Screenshots) of the tools in action can be found at the end of this file.  
 
 **For installation instructions see [docs/INSTALL.md](https://github.com/rc0r/afl-utils/blob/master/docs/INSTALL.md).**
-
-In versions 1.03a and 1.04a multi-threading capabilities have been introduced to speed up things.
-However if you observe some strange behaviour in one of these (or later) versions, please file a
-bug report (either open an issue here on GH or send it in directly to `hlt99 at blinkenshell dot org`).
-The latest non-multi-threading release that comes with all features is 1.02a. So if running the
-multi-threaded version is somehow troubling for you, you can always `git checkout v1.02a` after cloning.
-I might be adding a separate branch for multi-threaded afl-utils releases in the future.
 
 
 ## afl-collect
@@ -455,6 +444,10 @@ Sample output:
 
 ![afl-collect_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_collect_sample.png)
 
+### afl-sync
+
+![afl-sync_diagram](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl-sync-diagram.png)
+
 ### afl-multicore
 
 Sample output (normal mode):
@@ -466,3 +459,4 @@ Sample output (normal mode):
 ![afl-stats_sample](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_stats_sample.png)
 
 ![afl-stats_tweet](https://raw.githubusercontent.com/rc0r/afl-utils/master/.scrots/afl_stats_tweet.png)
+
