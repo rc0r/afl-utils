@@ -408,8 +408,8 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
                                                                      args.target_cmd, timeout_secs=10)
 
         # store invalid samples in db
-        print_ok("Saving invalid sample info to database.")
         if args.gdb_expl_script_file and db_file:
+            print_ok("Saving invalid sample info to database.")
             for sample in invalid_samples:
                 sample_name = sample_index.outputs(input_file=sample)
                 dataset = {'sample': sample_name[0], 'classification': 'INVALID',
@@ -442,8 +442,8 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
                                                  int(args.num_threads))
 
         # Submit crash classification data into database
-        print_ok("Saving sample classification info to database.")
         if db_file:
+            print_ok("Saving sample classification info to database.")
             for dataset in classification_data:
                 if not lite_db.dataset_exists(dataset):
                     lite_db.insert_dataset(dataset)
