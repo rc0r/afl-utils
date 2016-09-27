@@ -1,5 +1,10 @@
 # afl-utils Changelog
 
+Version 1.32a
+
+  - Changed afl-collect to print database related outputs only if
+    a database is used.
+
 Version 1.31a
 
   - Selective resumes added to afl-multicore.
