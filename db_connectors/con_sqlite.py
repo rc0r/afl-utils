@@ -22,12 +22,13 @@ from afl_utils.AflPrettyPrint import *
 
 class sqliteConnector:
 
-    def __init__(self, database_path):
+    def __init__(self, database_path, verbose=True):
         self.database_path = database_path
         self.dbcon = lite.connect(database_path, isolation_level='Exclusive')
         self.dbcur = self.dbcon.cursor()
         self.dbcur.execute('PRAGMA synchronous = 0')
         # self.dbcur.execute('PRAGMA journal_mode = OFF')
+        self.verbose = verbose
 
     def init_database(self, table, table_spec):
         """
@@ -46,14 +47,17 @@ class sqliteConnector:
         if os.path.isfile(self.database_path):
             try:
                 self.dbcur.execute("SELECT Count(*) FROM {}".format(table))
-                print_warn("Using existing database to store results, %s entries in this database so far." %
-                      str(self.dbcur.fetchone()[0]))
+                if self.verbose:
+                    print_warn("Using existing database to store results, %s entries in this database so far." %
+                          str(self.dbcur.fetchone()[0]))
                 table_data_exists = True
             except lite.OperationalError:
-                print_warn("Table \'{}\' not found in existing database!".format(table))
+                if self.verbose:
+                    print_warn("Table \'{}\' not found in existing database!".format(table))
 
         if not table_data_exists:   # If the database doesn't exist, we'll create it.
-            print_ok("Creating new table \'{}\' in database \'{}\' to store data!".format(table, self.database_path))
+            if self.verbose:
+                print_ok("Creating new table \'{}\' in database \'{}\' to store data!".format(table, self.database_path))
             self.dbcur.execute("CREATE TABLE `{}` ({})".format(table, table_spec))
 
     def dataset_exists(self, table, dataset, compare_field):

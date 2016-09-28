@@ -27,6 +27,19 @@ from urllib.error import URLError
 
 import afl_utils
 from afl_utils.AflPrettyPrint import clr, print_ok, print_warn, print_err
+from db_connectors import con_sqlite
+
+
+db_table_spec = """`last_update` INTEGER PRIMARY KEY NOT NULL UNIQUE, `start_time`INTEGER NOT NULL,
+`fuzzer_pid` INTEGER NOT NULL, `cycles_done` INTEGER NOT NULL, `execs_done` INTEGER NOT NULL,
+`execs_per_sec` NUMERIC NOT NULL, `paths_total` INTEGER NOT NULL, `paths_favored` INTEGER NOT NULL,
+`paths_found` INTEGER NOT NULL, `paths_imported` INTEGER NOT NULL, `max_depth` INTEGER NOT NULL,
+`cur_path` INTEGER NOT NULL, `pending_favs` INTEGER NOT NULL, `pending_total` INTEGER NOT NULL,
+`variable_paths` INTEGER NOT NULL, `stability` NUMERIC, `bitmap_cvg` NUMERIC NOT NULL,
+`unique_crashes` INTEGER NOT NULL, `unique_hangs` INTEGER NOT NULL, `last_path` INTEGER NOT NULL,
+`last_crash` INTEGER NOT NULL, `last_hang` INTEGER NOT NULL, `execs_since_crash` INTEGER NOT NULL,
+`exec_timeout` INTEGER NOT NULL, `afl_banner` TEXT NOT NULL, `afl_version` TEXT NOT NULL,
+`command_line` TEXT"""
 
 
 def show_info():
@@ -75,18 +88,18 @@ def shorten_tweet(tweet):
 def fuzzer_alive(pid):
     try:
         os.kill(pid, 0)
-    except OSError:
+    except (OSError, ProcessLookupError):
         return 0
     return 1
 
 
-def parse_stat_file(stat_file):
+def parse_stat_file(stat_file, summary=True):
     try:
         f = open(stat_file, "r")
         lines = f.readlines()
         f.close()
 
-        stats = {
+        summary_stats = {
             'fuzzer_pid': None,
             'execs_done': None,
             'execs_per_sec': None,
@@ -99,14 +112,50 @@ def parse_stat_file(stat_file):
             'afl_banner': None
         }
 
+        complete_stats = {
+            'last_update': '',
+            'start_time': '',
+            'fuzzer_pid': '',
+            'cycles_done': '',
+            'execs_done': '',
+            'execs_per_sec': '',
+            'paths_total': '',
+            'paths_favored': '',
+            'paths_found': '',
+            'paths_imported': '',
+            'max_depth': '',
+            'cur_path': '',
+            'pending_favs': '',
+            'pending_total': '',
+            'variable_paths': '',
+            'stability': '',
+            'bitmap_cvg': '',
+            'unique_crashes': '',
+            'unique_hangs': '',
+            'last_path': '',
+            'last_crash': '',
+            'last_hang': '',
+            'execs_since_crash': '',
+            'exec_timeout': '',
+            'afl_banner': '',
+            'afl_version': ''
+        }
+        
         for l in lines:
-            for k in stats.keys():
-                if k != "fuzzer_pid":
+            if summary:
+                stats = summary_stats
+                for k in stats.keys():
+                    if k != "fuzzer_pid":
+                        if k in l:
+                            stats[k] = l[19:].strip(": \r\n")
+                    else:
+                        if k in l:
+                            stats[k] = fuzzer_alive(int(l[19:].strip(": \r\n")))
+            else:
+                stats = complete_stats
+                for k in stats.keys():
                     if k in l:
-                        stats[k] = l[16:].strip(": \r\n")
-                else:
-                    if k in l:
-                        stats[k] = fuzzer_alive(int(l[16:].strip(": \r\n")))
+                        stats[k] = l[19:].strip(": %\r\n")
 
         return stats
     except FileNotFoundError as e:
@@ -115,7 +164,7 @@ def parse_stat_file(stat_file):
     return None
 
 
-def load_stats(fuzzer_dir):
+def load_stats(fuzzer_dir, summary=True):
     fuzzer_dir = os.path.abspath(os.path.expanduser(fuzzer_dir))
 
     if not os.path.isdir(fuzzer_dir):
@@ -126,7 +175,7 @@ def load_stats(fuzzer_dir):
 
     if os.path.isfile(os.path.join(fuzzer_dir, "fuzzer_stats")):
         # single afl-fuzz job
-        stats = parse_stat_file(os.path.join(fuzzer_dir, "fuzzer_stats"))
+        stats = parse_stat_file(os.path.join(fuzzer_dir, "fuzzer_stats"), summary)
         if stats:
             fuzzer_stats.append(stats)
     else:
@@ -136,7 +185,7 @@ def load_stats(fuzzer_dir):
                 fuzzer_inst.append(os.path.join(fuzzer_dir, fdir, "fuzzer_stats"))
 
         for stat_file in fuzzer_inst:
-            stats = parse_stat_file(stat_file)
+            stats = parse_stat_file(stat_file, summary)
             if stats:
                 fuzzer_stats.append(stats)
 
@@ -285,6 +334,16 @@ def prettify_stat(stat, dstat, console=True):
     return pretty_stat
 
 
+def dump_stats(config_settings, database):
+    for sync_dir in config_settings['fuzz_dirs']:
+        fuzzer_stats = load_stats(sync_dir, summary=False)
+        for fuzzer in fuzzer_stats:
+            table = 'fuzzer_stats_{}'.format(fuzzer['afl_banner'])
+            database.init_database(table, db_table_spec)
+            if not database.dataset_exists(table, fuzzer, 'last_update'):
+                database.insert_dataset(table, fuzzer)
+
+
 def fetch_stats(config_settings, twitter_inst):
     stat_dict = dict()
     for fuzzer in config_settings['fuzz_dirs']:
@@ -331,6 +390,8 @@ def main(argv):
 
     parser.add_argument("-c", "--config", dest="config_file",
                         help="afl-stats config file (Default: afl-stats.conf)!", default="afl-stats.conf")
+    parser.add_argument("-d", "--database", dest="database_file",
+                        help="Dump stats history into database.")
     parser.add_argument('-q', '--quiet', dest='quiet', action='store_const', const=True,
                         help='Suppress any output', default=False)
 
@@ -339,7 +400,21 @@ def main(argv):
     if not args.quiet:
         show_info()
 
+    if args.database_file:
+        db_file = os.path.abspath(os.path.expanduser(args.database_file))
+    else:
+        db_file = None
+
+    if db_file:
+        lite_db = con_sqlite.sqliteConnector(db_file, verbose=False)
+    else:
+        lite_db = None
+
     config_settings = read_config(args.config_file)
+
+    if lite_db:
+        dump_stats(config_settings, lite_db)
+        lite_db.commit_close()
 
     twitter_inst = twitter_init(config_settings)
 
