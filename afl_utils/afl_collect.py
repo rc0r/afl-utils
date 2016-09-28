@@ -50,6 +50,11 @@ if gdb_binary is None:
 gdb_exploitable_path = None
 
 
+# afl-collect database table spec
+db_table_spec = """`Sample` TEXT PRIMARY KEY NOT NULL, `Classification` TEXT NOT NULL,
+`Classification_Description` TEXT NOT NULL, `Hash` TEXT, `User_Comment` TEXT"""
+
+
 def show_info():
     print(clr.CYA + "afl-collect " + clr.BRI + "%s" % afl_utils.__version__ + clr.RST + " by %s" % afl_utils.__author__)
     print("Crash sample collection and processing utility for afl-fuzz.")
@@ -140,8 +145,9 @@ def build_sample_index(sync_dir, out_dir, fuzzer_instances, db=None, min_filenam
                 sample_file = os.path.join(sync_dir, "%s/%s/%s" % (fuzzer[0], sample_dir[0], sample))
                 sample_name = sample_index.__generate_output__(fuzzer[0], sample_file)
 
-                if not db or not db.dataset_exists({'sample': sample_name, 'classification': '%', 'description': '%',
-                                                    'hash': '%'}):
+                if not db or not db.dataset_exists('Data', {'Sample': sample_name, 'Classification': '%',
+                                                            'Classification_Description': '%',
+                                                            'Hash': '%', 'User_Comment': '%'}, 'Sample'):
                     sample_index.add(fuzzer[0], sample_file)
 
     return sample_index
@@ -299,8 +305,9 @@ def execute_gdb_script(out_dir, script_filename, num_samples, num_threads):
             ljust_width = 64
         print("%s[%05d]%s %s: %s%s%s %s[%s]%s" % (clr.GRA, i, clr.RST, grepped_output[g].ljust(ljust_width, '.'), cex,
                                                   grepped_output[g+3], clr.RST, ccl, grepped_output[g+1], clr.RST))
-        classification_data.append({'sample': grepped_output[g], 'classification': grepped_output[g+3],
-                                    'description': grepped_output[g+1], 'hash': grepped_output[g+2]})
+        classification_data.append({'Sample': grepped_output[g], 'Classification': grepped_output[g+3],
+                                    'Classification_Description': grepped_output[g+1], 'Hash': grepped_output[g+2],
+                                    'User_Comment': ''})
         i += 1
 
     if i > 1 and i < num_samples:
@@ -384,7 +391,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     # initialize database
     if db_file:
         lite_db = con_sqlite.sqliteConnector(db_file)
-        lite_db.init_database()
+        lite_db.init_database('Data', db_table_spec)
     else:
         lite_db = None
 
@@ -412,17 +419,19 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
             print_ok("Saving invalid sample info to database.")
             for sample in invalid_samples:
                 sample_name = sample_index.outputs(input_file=sample)
-                dataset = {'sample': sample_name[0], 'classification': 'INVALID',
-                           'description': 'Sample does not cause a crash in the target.', 'hash': ''}
-                if not lite_db.dataset_exists(dataset):
-                    lite_db.insert_dataset(dataset)
+                dataset = {'Sample': sample_name[0], 'Classification': 'INVALID',
+                           'Classification_Description': 'Sample does not cause a crash in the target.', 'Hash': '',
+                           'User_Comment': ''}
+                if not lite_db.dataset_exists('Data', dataset, 'Sample'):
+                    lite_db.insert_dataset('Data', dataset)
 
             for sample in timeout_samples:
                 sample_name = sample_index.outputs(input_file=sample)
-                dataset = {'sample': sample_name[0], 'classification': 'TIMEOUT',
-                           'description': 'Sample caused a target execution timeout.', 'hash': ''}
-                if not lite_db.dataset_exists(dataset):
-                    lite_db.insert_dataset(dataset)
+                dataset = {'Sample': sample_name[0], 'Classification': 'TIMEOUT',
+                           'Classification_Description': 'Sample caused a target execution timeout.', 'Hash': '',
+                           'User_Comment': ''}
+                if not lite_db.dataset_exists('Data', dataset, 'Sample'):
+                    lite_db.insert_dataset('Data', dataset)
 
         # remove invalid samples from sample index
         sample_index.remove_inputs(invalid_samples+timeout_samples)
@@ -445,17 +454,17 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         if db_file:
             print_ok("Saving sample classification info to database.")
             for dataset in classification_data:
-                if not lite_db.dataset_exists(dataset):
-                    lite_db.insert_dataset(dataset)
+                if not lite_db.dataset_exists('Data', dataset, 'Sample'):
+                    lite_db.insert_dataset('Data', dataset)
 
         # de-dupe by exploitable hash
         seen = set()
         seen_add = seen.add
         classification_data_dedupe = [x for x in classification_data
-                                      if x['hash'] not in seen and not seen_add(x['hash'])]
+                                      if x['Hash'] not in seen and not seen_add(x['Hash'])]
 
         # remove dupe samples identified by exploitable hash
-        uninteresting_samples = [x['sample'] for x in classification_data
+        uninteresting_samples = [x['Sample'] for x in classification_data
                                  if x not in classification_data_dedupe]
 
         sample_index.remove_outputs(uninteresting_samples)
@@ -473,8 +482,8 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
             uninteresting_samples = []
 
             for c in classification_data_dedupe:
-                if c['classification'] in classification_unexploitable:
-                    uninteresting_samples.append(c['sample'])
+                if c['Classification'] in classification_unexploitable:
+                    uninteresting_samples.append(c['Sample'])
 
             sample_index.remove_outputs(uninteresting_samples)
             print_warn("Removed %d uninteresting crash samples from index." % len(uninteresting_samples))
