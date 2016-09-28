@@ -25,12 +25,17 @@ class sqliteConnector:
     def __init__(self, database_path):
         self.database_path = database_path
 
-    def init_database(self):
+    def init_database(self, table, table_spec):
         """
         Prepares a sqlite3 database for data set storage. If the file specified in database_path doesn't exist a new
         sqlite3 database with table 'Data' will be created. Otherwise the existing database is used to store additional
         data sets.
 
+        DO NOT USE WITH USER SUPPLIED `table` AND `table_spec` PARAMS!
+        !!! THIS METHOD IS *NOT* SQLi SAFE !!!
+
+        :param table:       Name of the table to create.
+        :param table_spec:  String containing the SQL table specification
         :return: None
         """
         table_data_exists = False
@@ -38,21 +43,20 @@ class sqliteConnector:
             try:
                 dbcon = lite.connect(self.database_path)
                 dbcur = dbcon.cursor()
-                dbcur.execute("SELECT Count(*) FROM Data")
+                dbcur.execute("SELECT Count(*) FROM {}".format(table))
                 print_warn("Using existing database to store results, %s entries in this database so far." %
                       str(dbcur.fetchone()[0]))
                 table_data_exists = True
             except lite.OperationalError:
-                print_warn("Table \'Data\' not found in existing database!")
+                print_warn("Table \'{}\' not found in existing database!".format(table))
 
         if not table_data_exists:   # If the database doesn't exist, we'll create it.
-            print_ok("Creating new table \'Data\' in database \'%s\' to store data!" % self.database_path)
+            print_ok("Creating new table \'{}\' in database \'{}\' to store data!".format(table, self.database_path))
             dbcon = lite.connect(self.database_path)
             dbcur = dbcon.cursor()
-            dbcur.execute('CREATE TABLE Data (ID INTEGER PRIMARY KEY ASC, Sample text, Classification text, \
-Classification_Description text, Hash text, User_Comment text)')
+            dbcur.execute("CREATE TABLE `{}` ({})".format(table, table_spec))
 
-    def dataset_exists(self, dataset):
+    def dataset_exists(self, table, dataset, compare_field):
         """
         Check if dataset was already submitted into database.
 
@@ -69,25 +73,33 @@ Classification_Description text, Hash text, User_Comment text)')
 
         if not output:
             # check sample by its name (we could check by hash to avoid dupes in the db)
-            qstring = "SELECT * FROM Data WHERE Sample IS ?"
-            cur.execute(qstring, (dataset['sample'],))
+            qstring = "SELECT * FROM {} WHERE {} IS ?".format(table, compare_field)
+            cur.execute(qstring, (dataset[compare_field],))
             if cur.fetchone() is not None:  # We should only have to pull one.
                 output = True
 
         return output
 
-    def insert_dataset(self, dataset):
+    def insert_dataset(self, table, dataset):
         """
         Insert a dataset into the database.
 
+        DO NOT USE WITH USER SUPPLIED `table` AND `table_spec` PARAMS!
+        !!! THIS METHOD IS *NOT* SQLi SAFE !!!
+
+        :param table:   Name of the table to insert data into.
         :param dataset: A dataset dict consisting of sample filename, sample classification and classification
                         description.
         :return:        None
         """
         # Just a simple function to write the results to the database.
+        if len(dataset) <= 0:
+            return
+
         con = lite.connect(self.database_path)
-        qstring = "INSERT INTO Data VALUES(NULL, ?, ?, ?, ?, ?)"
+        field_names_string = ", ".join(["`{}`".format(k) for k in dataset.keys()])
+        field_values_string = ", ".join(["'{}'".format(v) for v in dataset.values()])
+        qstring = "INSERT INTO {} ({}) VALUES({})".format(table, field_names_string, field_values_string)
         with con:
             cur = con.cursor()
-            cur.execute(qstring, (dataset['sample'], dataset['classification'], dataset['description'],
-                                  dataset['hash'], ''))
+            cur.execute(qstring)
