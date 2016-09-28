@@ -394,7 +394,7 @@ Screenshots of sample tweets can be found in the final section of this document.
 
 Usage example:
 
-    $ afl-stats -c target-stats.conf
+    $ afl-stats -c target-stats.conf -d stats.db -t
 
 
 ## afl-sync

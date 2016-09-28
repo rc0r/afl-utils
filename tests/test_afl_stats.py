@@ -222,7 +222,11 @@ class AflStatsTestCase(unittest.TestCase):
         self.assertIsNone(afl_stats.fetch_stats(config_settings, twitter_inst))
 
     def test_main(self):
-        with self.assertRaises(SystemExit):
-            afl_stats.main(['afl-stats', '--config', './testdata/afl-stats.conf.test'])
-        with self.assertRaises(SystemExit):
-            afl_stats.main(['afl-stats', '--config', './testdata/afl-stats.conf.test2', '--database', 'testdata/afl-stats2.db'])
+        with self.assertRaises(SystemExit) as se:
+            afl_stats.main(['afl-stats', '--twitter', '--config', './testdata/afl-stats.conf.test'])
+        self.assertEqual(se.exception.code, 1)
+
+
+    def test_main_no_twitter(self):
+        afl_stats.main(['afl-stats', '--config', './testdata/afl-stats.conf.test2', '--database', 'testdata/afl-stats2.db'])
+        self.assertTrue(os.path.exists('testdata/afl-stats2.db'))
