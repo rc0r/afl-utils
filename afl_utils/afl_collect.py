@@ -502,6 +502,10 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         generate_sample_list(os.path.abspath(os.path.expanduser(args.list_filename)), files_collected)
         print_ok("Generated crash sample list '%s'." % os.path.abspath(os.path.expanduser(args.list_filename)))
 
+    # write db contents to file and close db connection
+    if db_file:
+        lite_db.commit_close()
+
 
 if __name__ == "__main__":
     main(sys.argv)

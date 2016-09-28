@@ -24,6 +24,10 @@ class sqliteConnector:
 
     def __init__(self, database_path):
         self.database_path = database_path
+        self.dbcon = lite.connect(database_path, isolation_level='Exclusive')
+        self.dbcur = self.dbcon.cursor()
+        self.dbcur.execute('PRAGMA synchronous = 0')
+        # self.dbcur.execute('PRAGMA journal_mode = OFF')
 
     def init_database(self, table, table_spec):
         """
@@ -41,20 +45,16 @@ class sqliteConnector:
         table_data_exists = False
         if os.path.isfile(self.database_path):
             try:
-                dbcon = lite.connect(self.database_path)
-                dbcur = dbcon.cursor()
-                dbcur.execute("SELECT Count(*) FROM {}".format(table))
+                self.dbcur.execute("SELECT Count(*) FROM {}".format(table))
                 print_warn("Using existing database to store results, %s entries in this database so far." %
-                      str(dbcur.fetchone()[0]))
+                      str(self.dbcur.fetchone()[0]))
                 table_data_exists = True
             except lite.OperationalError:
                 print_warn("Table \'{}\' not found in existing database!".format(table))
 
         if not table_data_exists:   # If the database doesn't exist, we'll create it.
             print_ok("Creating new table \'{}\' in database \'{}\' to store data!".format(table, self.database_path))
-            dbcon = lite.connect(self.database_path)
-            dbcur = dbcon.cursor()
-            dbcur.execute("CREATE TABLE `{}` ({})".format(table, table_spec))
+            self.dbcur.execute("CREATE TABLE `{}` ({})".format(table, table_spec))
 
     def dataset_exists(self, table, dataset, compare_field):
         """
@@ -68,15 +68,12 @@ class sqliteConnector:
         # a query to make a duplicate check. This can likely be done better but
         # it's "good enough" for now.
         output = False
-        con = lite.connect(self.database_path)
-        cur = con.cursor()
 
-        if not output:
-            # check sample by its name (we could check by hash to avoid dupes in the db)
-            qstring = "SELECT * FROM {} WHERE {} IS ?".format(table, compare_field)
-            cur.execute(qstring, (dataset[compare_field],))
-            if cur.fetchone() is not None:  # We should only have to pull one.
-                output = True
+        # check sample by its name (we could check by hash to avoid dupes in the db)
+        qstring = "SELECT * FROM {} WHERE {} IS ?".format(table, compare_field)
+        self.dbcur.execute(qstring, (dataset[compare_field],))
+        if self.dbcur.fetchone() is not None:  # We should only have to pull one.
+            output = True
 
         return output
 
@@ -96,10 +93,17 @@ class sqliteConnector:
         if len(dataset) <= 0:
             return
 
-        con = lite.connect(self.database_path)
         field_names_string = ", ".join(["`{}`".format(k) for k in dataset.keys()])
         field_values_string = ", ".join(["'{}'".format(v) for v in dataset.values()])
         qstring = "INSERT INTO {} ({}) VALUES({})".format(table, field_names_string, field_values_string)
-        with con:
-            cur = con.cursor()
-            cur.execute(qstring)
+        self.dbcur.execute(qstring)
+
+    def commit_close(self):
+        """
+        Write database changes to disk and close cursor and connection.
+
+        :return:    None
+        """
+        self.dbcon.commit()
+        self.dbcur.close()
+        self.dbcon.close()

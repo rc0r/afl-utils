@@ -2,6 +2,8 @@
 
 Version 1.32a
 
+  - SQLite db connector improved. Gives a huge afl-collect speed-up
+    when using a database.
   - Changed afl-collect to print database related outputs only if
     a database is used.
 
