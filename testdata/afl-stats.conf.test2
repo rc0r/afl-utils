@@ -1,0 +1,8 @@
+{
+    "twitter_creds_file": ".afl-stats.creds",
+    "twitter_consumer_key": "your_consumer_key_here",
+    "twitter_consumer_secret": "your_consumer_secret_here",
+    "fuzz_dirs": [
+        "testdata/sync"
+    ]
+}

@@ -6,6 +6,9 @@ Version 1.32a
     when using a database.
   - Changed afl-collect to print database related outputs only if
     a database is used.
+  - Updated afl-stats to be compatible with afl-fuzz >= 2.32b (older
+    afl versions will not work anymore).
+  - afl-stats now optionally dumps fuzzer stats into a database.
 
 Version 1.31a
 
