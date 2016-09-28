@@ -374,26 +374,29 @@ def fetch_stats(config_settings, twitter_inst):
 
         l = len(tweet)
         c = clr.LRD if l > 140 else clr.LGN
-        print_ok("Tweeting status (%s%d" % (c, l) + clr.RST + " chars)...")
 
-        try:
-            twitter_inst.statuses.update(status=shorten_tweet(tweet))
-        except (twitter.TwitterHTTPError, URLError):
-            print_warn("Problem connecting to Twitter! Tweet not sent!")
-        except Exception as e:
-            print_err("Sending tweet failed (Reason: " + clr.GRA + "%s" % e.__cause__ + clr.RST + ")")
+        if twitter_inst:
+            print_ok("Tweeting status (%s%d" % (c, l) + clr.RST + " chars)...")
+            try:
+                twitter_inst.statuses.update(status=shorten_tweet(tweet))
+            except (twitter.TwitterHTTPError, URLError):
+                print_warn("Problem connecting to Twitter! Tweet not sent!")
+            except Exception as e:
+                print_err("Sending tweet failed (Reason: " + clr.GRA + "%s" % e.__cause__ + clr.RST + ")")
 
 
 def main(argv):
     parser = argparse.ArgumentParser(description="Post selected contents of fuzzer_stats to Twitter.",
-                                     usage="afl-stats [-h] [-c config]\n")
+                                     usage="afl-stats [-h] [-c config] [-d database] [-t]\n")
 
     parser.add_argument("-c", "--config", dest="config_file",
                         help="afl-stats config file (Default: afl-stats.conf)!", default="afl-stats.conf")
     parser.add_argument("-d", "--database", dest="database_file",
                         help="Dump stats history into database.")
+    parser.add_argument('-t', '--twitter', dest='twitter', action='store_const', const=True,
+                        help='Post stats to twitter (Default: off).', default=False)
     parser.add_argument('-q', '--quiet', dest='quiet', action='store_const', const=True,
-                        help='Suppress any output', default=False)
+                        help='Suppress any output (Default: off).', default=False)
 
     args = parser.parse_args(argv[1:])
 
@@ -416,7 +419,10 @@ def main(argv):
         dump_stats(config_settings, lite_db)
         lite_db.commit_close()
 
-    twitter_inst = twitter_init(config_settings)
+    if args.twitter:
+        twitter_inst = twitter_init(config_settings)
+    else:
+        twitter_inst = None
 
     fetch_stats(config_settings, twitter_inst)
 

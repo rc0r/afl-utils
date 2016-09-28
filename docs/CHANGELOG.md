@@ -9,6 +9,7 @@ Version 1.32a
   - Updated afl-stats to be compatible with afl-fuzz >= 2.32b (older
     afl versions will not work anymore).
   - afl-stats now optionally dumps fuzzer stats into a database.
+  - Tweeting stats to twitter is now optional in afl-stats.
 
 Version 1.31a
 
