@@ -59,7 +59,8 @@ test_complete_stats = {
 	'last_hang': '0',
 	'execs_since_crash': '63393',
 	'exec_timeout': '800',
-	'afl_version': '2.35b'
+	'afl_version': '2.35b',
+    'command_line': 'afl-fuzz -T target_000 -i ./in -o ./out -- ./target'
 }
 
 test_sum_stats = {
