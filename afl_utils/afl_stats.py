@@ -138,7 +138,8 @@ def parse_stat_file(stat_file, summary=True):
             'execs_since_crash': '',
             'exec_timeout': '',
             'afl_banner': '',
-            'afl_version': ''
+            'afl_version': '',
+            'command_line': ''
         }
         
         for l in lines:
