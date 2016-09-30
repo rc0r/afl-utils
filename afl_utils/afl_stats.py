@@ -32,14 +32,14 @@ from db_connectors import con_sqlite
 
 db_table_spec = """`last_update` INTEGER PRIMARY KEY NOT NULL UNIQUE, `start_time`INTEGER NOT NULL,
 `fuzzer_pid` INTEGER NOT NULL, `cycles_done` INTEGER NOT NULL, `execs_done` INTEGER NOT NULL,
-`execs_per_sec` NUMERIC NOT NULL, `paths_total` INTEGER NOT NULL, `paths_favored` INTEGER NOT NULL,
+`execs_per_sec` REAL NOT NULL, `paths_total` INTEGER NOT NULL, `paths_favored` INTEGER NOT NULL,
 `paths_found` INTEGER NOT NULL, `paths_imported` INTEGER NOT NULL, `max_depth` INTEGER NOT NULL,
 `cur_path` INTEGER NOT NULL, `pending_favs` INTEGER NOT NULL, `pending_total` INTEGER NOT NULL,
-`variable_paths` INTEGER NOT NULL, `stability` NUMERIC, `bitmap_cvg` NUMERIC NOT NULL,
+`variable_paths` INTEGER NOT NULL, `stability` REAL, `bitmap_cvg` REAL NOT NULL,
 `unique_crashes` INTEGER NOT NULL, `unique_hangs` INTEGER NOT NULL, `last_path` INTEGER NOT NULL,
 `last_crash` INTEGER NOT NULL, `last_hang` INTEGER NOT NULL, `execs_since_crash` INTEGER NOT NULL,
-`exec_timeout` INTEGER NOT NULL, `afl_banner` TEXT NOT NULL, `afl_version` TEXT NOT NULL,
-`command_line` TEXT"""
+`exec_timeout` INTEGER NOT NULL, `afl_banner` VARCHAR(200) NOT NULL, `afl_version` VARCHAR(10) NOT NULL,
+`command_line` VARCHAR(1000)"""
 
 
 def show_info():
@@ -339,7 +339,15 @@ def dump_stats(config_settings, database):
     for sync_dir in config_settings['fuzz_dirs']:
         fuzzer_stats = load_stats(sync_dir, summary=False)
         for fuzzer in fuzzer_stats:
-            table = 'fuzzer_stats_{}'.format(fuzzer['afl_banner'])
+            # create different table for every afl instance
+            # table = 'fuzzer_stats_{}'.format(fuzzer['afl_banner'])
+            #
+            # django compatible: put everything into one table (according
+            # to django plots app model)
+            # Differentiate data based on afl_banner, so don't override
+            # it manually! afl-multicore will create a unique banner for
+            # every fuzzer!
+            table = 'plots_fuzzerstats'
             database.init_database(table, db_table_spec)
             if not database.dataset_exists(table, fuzzer, 'last_update'):
                 database.insert_dataset(table, fuzzer)
@@ -410,7 +418,7 @@ def main(argv):
         db_file = None
 
     if db_file:
-        lite_db = con_sqlite.sqliteConnector(db_file, verbose=False)
+        lite_db = con_sqlite.sqliteConnector(db_file, verbose=True)
     else:
         lite_db = None
 
