@@ -30,7 +30,7 @@ from afl_utils.AflPrettyPrint import clr, print_ok, print_warn, print_err
 from db_connectors import con_sqlite
 
 
-db_table_spec = """`last_update` INTEGER PRIMARY KEY NOT NULL UNIQUE, `start_time`INTEGER NOT NULL,
+db_table_spec = """`id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, `last_update` INTEGER NOT NULL, `start_time`INTEGER NOT NULL,
 `fuzzer_pid` INTEGER NOT NULL, `cycles_done` INTEGER NOT NULL, `execs_done` INTEGER NOT NULL,
 `execs_per_sec` REAL NOT NULL, `paths_total` INTEGER NOT NULL, `paths_favored` INTEGER NOT NULL,
 `paths_found` INTEGER NOT NULL, `paths_imported` INTEGER NOT NULL, `max_depth` INTEGER NOT NULL,
@@ -349,7 +349,7 @@ def dump_stats(config_settings, database):
             # every fuzzer!
             table = 'plots_fuzzerstats'
             database.init_database(table, db_table_spec)
-            if not database.dataset_exists(table, fuzzer, 'last_update'):
+            if not database.dataset_exists(table, fuzzer, ['last_update', 'afl_banner']):
                 database.insert_dataset(table, fuzzer)
 
 

@@ -147,7 +147,7 @@ def build_sample_index(sync_dir, out_dir, fuzzer_instances, db=None, min_filenam
 
                 if not db or not db.dataset_exists('Data', {'Sample': sample_name, 'Classification': '%',
                                                             'Classification_Description': '%',
-                                                            'Hash': '%', 'User_Comment': '%'}, 'Sample'):
+                                                            'Hash': '%', 'User_Comment': '%'}, ['Sample']):
                     sample_index.add(fuzzer[0], sample_file)
 
     return sample_index
@@ -422,7 +422,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
                 dataset = {'Sample': sample_name[0], 'Classification': 'INVALID',
                            'Classification_Description': 'Sample does not cause a crash in the target.', 'Hash': '',
                            'User_Comment': ''}
-                if not lite_db.dataset_exists('Data', dataset, 'Sample'):
+                if not lite_db.dataset_exists('Data', dataset, ['Sample']):
                     lite_db.insert_dataset('Data', dataset)
 
             for sample in timeout_samples:
@@ -430,7 +430,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
                 dataset = {'Sample': sample_name[0], 'Classification': 'TIMEOUT',
                            'Classification_Description': 'Sample caused a target execution timeout.', 'Hash': '',
                            'User_Comment': ''}
-                if not lite_db.dataset_exists('Data', dataset, 'Sample'):
+                if not lite_db.dataset_exists('Data', dataset, ['Sample']):
                     lite_db.insert_dataset('Data', dataset)
 
         # remove invalid samples from sample index
@@ -454,7 +454,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
         if db_file:
             print_ok("Saving sample classification info to database.")
             for dataset in classification_data:
-                if not lite_db.dataset_exists('Data', dataset, 'Sample'):
+                if not lite_db.dataset_exists('Data', dataset, ['Sample']):
                     lite_db.insert_dataset('Data', dataset)
 
         # de-dupe by exploitable hash

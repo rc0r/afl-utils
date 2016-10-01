@@ -60,13 +60,18 @@ class sqliteConnector:
                 print_ok("Creating new table \'{}\' in database \'{}\' to store data!".format(table, self.database_path))
             self.dbcur.execute("CREATE TABLE `{}` ({})".format(table, table_spec))
 
-    def dataset_exists(self, table, dataset, compare_field):
+    def dataset_exists(self, table, dataset, compare_fields):
         """
         Check if dataset was already submitted into database.
 
-        :param dataset: A dataset dict consisting of sample filename, sample classification and classification
-                        description.
-        :return:        True if the data set is already present in database, False otherwise.
+        DO NOT USE WITH USER SUPPLIED `table`, `dataset` or `compare_fields` PARAMS!
+        !!! THIS METHOD IS *NOT* SQLi SAFE !!!
+
+        :param table:           Name of table to perform the check on.
+        :param dataset:         A dataset dict consisting of sample filename, sample classification
+                                and classification description.
+        :param compare_fields:  List containing field names that will be checked using logical AND operation.
+        :return:                True if the data set is already present in database, False otherwise.
         """
         # The nice thing about using the SQL DB is that I can just have it make
         # a query to make a duplicate check. This can likely be done better but
@@ -74,8 +79,12 @@ class sqliteConnector:
         output = False
 
         # check sample by its name (we could check by hash to avoid dupes in the db)
-        qstring = "SELECT * FROM {} WHERE {} IS ?".format(table, compare_field)
-        self.dbcur.execute(qstring, (dataset[compare_field],))
+        single_compares = []
+        for compare_field in compare_fields:
+            single_compares.append("({} IS '{}')".format(compare_field, dataset[compare_field]))
+
+        qstring = "SELECT * FROM {} WHERE {}".format(table, " AND ".join(single_compares))
+        self.dbcur.execute(qstring)
         if self.dbcur.fetchone() is not None:  # We should only have to pull one.
             output = True
 
