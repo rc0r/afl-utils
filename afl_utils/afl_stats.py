@@ -418,7 +418,7 @@ def main(argv):
         db_file = None
 
     if db_file:
-        lite_db = con_sqlite.sqliteConnector(db_file, verbose=True)
+        lite_db = con_sqlite.sqliteConnector(db_file, verbose=False)
     else:
         lite_db = None
 
