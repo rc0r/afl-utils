@@ -53,18 +53,9 @@ def details(request, fuzzer):
     template = loader.get_template('aflutils/details.html')
     context = {
         'fuzzer': {
-            'name': fuzzer,
-            'd3': {
-            }
+            'name': fuzzer
         }
     }
-
-    stats = FuzzerStats.objects.all()
-    stats_fields = model_field_names(FuzzerStats)
-
-    for field in stats_fields:
-        context['fuzzer']['d3'][field] = ', '.join(map(str, fuzzer_data(stats, fuzzer, field)))
-
     return HttpResponse(template.render(context, request))
 
 
