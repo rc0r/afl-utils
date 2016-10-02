@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'plots.apps.PlotsConfig'
+    'aflutils.apps.AflUtilsConfig'
 ]
 
 MIDDLEWARE_CLASSES = [
