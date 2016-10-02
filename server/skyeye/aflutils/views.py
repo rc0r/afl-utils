@@ -50,7 +50,7 @@ def details(request, fuzzer):
     :param fuzzer:  Selected fuzzer
     :return:        HttpResponse
     """
-    template = loader.get_template('plots/details.html')
+    template = loader.get_template('aflutils/details.html')
     context = {
         'fuzzer': {
             'name': fuzzer
@@ -66,7 +66,7 @@ def index(request):
     :param request: HttpRequest
     :return:        HttpResponse
     """
-    template = loader.get_template('plots/index.html')
+    template = loader.get_template('aflutils/index.html')
     context = {
         'fuzzer_summary_list': []
     }
