@@ -1,6 +1,9 @@
 from django.db import models
 from django.http import HttpResponse
+from django.template import loader
+
 from .models import FuzzerStats
+
 
 def distinct_fuzzers(stats):
     fuzzers = stats.order_by().values('afl_banner').annotate(n=models.Count('pk'))
@@ -12,6 +15,7 @@ def fuzzer_data(stats, fuzzer, field):
     data = stats.filter(afl_banner=fuzzer).values(field)
     data = [d[field] for d in data]
     return data
+
 
 def fuzzer_json_data(stats, fuzzer):
     try:
@@ -29,16 +33,64 @@ def fuzzer_json_data(stats, fuzzer):
     return json.dumps(json_data)
 
 
+def fuzzer_latest_data(stats, fuzzer):
+    data = stats.filter(afl_banner=fuzzer).order_by('-id')[0]
+    return data
+
+
 def model_field_names(model):
     return [field.name for field in model._meta.fields]
 
 
+def details(request, fuzzer):
+    """
+    Print detailed stats of the selected fuzzer.
+
+    :param request: HttpRequest
+    :param fuzzer:  Selected fuzzer
+    :return:        HttpResponse
+    """
+    template = loader.get_template('plots/details.html')
+    context = {
+        'fuzzer': {
+            'name': fuzzer
+        }
+    }
+    return HttpResponse(template.render(context, request))
+
+
 def index(request):
+    """
+    Print an overview of all fuzzers found in the database.
+
+    :param request: HttpRequest
+    :return:        HttpResponse
+    """
+    template = loader.get_template('plots/index.html')
+    context = {
+        'fuzzer_summary_list': []
+    }
+
     stats = FuzzerStats.objects.all()
     fuzzers = distinct_fuzzers(stats)
 
-    output = ''
     for fuzzer in fuzzers:
-        output += '<br /><br>' + fuzzer_json_data(stats, fuzzer)
+        data = fuzzer_latest_data(stats, fuzzer)
+        summary = {
+            'fuzzer': fuzzer,
+            'paths_total': data.paths_total,
+            'pending_total': data.pending_total,
+            'pending_favs': data.pending_favs,
+            'unique_crashes': data.unique_crashes,
+            'unique_hangs': data.unique_hangs
+        }
+        context['fuzzer_summary_list'].append(summary)
 
-    return HttpResponse(output)
+    return HttpResponse(template.render(context, request))
+
+    # print json dumps
+    # output = ''
+    # for fuzzer in fuzzers:
+    #     output += '<br /><br>' + fuzzer_json_data(stats, fuzzer)
+    #
+    # return HttpResponse(output)
