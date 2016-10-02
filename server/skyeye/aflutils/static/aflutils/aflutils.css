@@ -34,7 +34,6 @@ table a:hover {
 table caption {
     caption-side: bottom;
     text-align: center;
-    // text-transform: uppercase;
     padding-bottom: 10px;
     font: 80% "Lucida Grande", "Lucida Sans Unicode", "Trebuchet MS", sans-serif;
 }
