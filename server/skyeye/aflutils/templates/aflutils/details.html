@@ -13,9 +13,7 @@
         <h1>Plots for fuzzer "{{fuzzer.name}}"</h1>
         <div id="container"><div id="graph" class="aGraph"></div></div>
         <script>
-            var start_time = [{{fuzzer.d3.start_time}}];
             var last_update = [{{fuzzer.d3.last_update}}];
-            var fuzzer_pid = [{{fuzzer.d3.fuzzer_pid}}];
             var cycles_done = [{{fuzzer.d3.cycles_done}}];
             var execs_done = [{{fuzzer.d3.execs_done}}];
             var execs_per_sec = [{{fuzzer.d3.execs_per_sec}}];
@@ -36,11 +34,15 @@
             var last_crash = [{{fuzzer.d3.last_crash}}];
             var last_hang = [{{fuzzer.d3.last_hang}}];
             var execs_since_crash = [{{fuzzer.d3.execs_since_crash}}];
+            {% comment %}
+            /* Skip 'static' fields to not overload the js */
+            var start_time = [{{fuzzer.d3.start_time}}];
+            var fuzzer_pid = [{{fuzzer.d3.fuzzer_pid}}];
             var exec_timeout = [{{fuzzer.d3.exec_timeout}}];
-            //var afl_banner = [{{fuzzer.d3.afl_banner}}];
-            //var afl_version = [{{fuzzer.d3.afl_version}}];
-            //var command_line = [{{fuzzer.d3.command_line}}];
-
+            var afl_banner = [{{fuzzer.d3.afl_banner}}];
+            var afl_version = [{{fuzzer.d3.afl_version}}];
+            var command_line = [{{fuzzer.d3.command_line}}];
+            {% endcomment %}
             /* implementation heavily influenced by http://bl.ocks.org/1166403 */
 
             // define dimensions of graph
