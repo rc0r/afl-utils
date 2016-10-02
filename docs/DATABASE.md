@@ -55,4 +55,3 @@ comment: varchar(1000); field for user comments
     id | fuzzer_id | sample | classification | classification_description | hash | comment
     ---+-----------+--------+----------------+----------------------------+------+--------------------
     0  | 0         | cra... | EXPLOITABLE    | StackCorruption (X/Y)      | a... | reported as #12345
-    
