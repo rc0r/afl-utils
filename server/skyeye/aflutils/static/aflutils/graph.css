@@ -9,9 +9,16 @@
 }
 
 path {
-    stroke: darkred;
     stroke-width: 1;
     fill: none;
+}
+
+path.data1 {
+    stroke: darkorange;
+}
+
+path.data2 {
+    stroke: green;
 }
 
 .axis {
@@ -33,4 +40,12 @@ path {
 .y.axis line, .y.axis path {
   fill: none;
   stroke: #000;
+}
+
+.y.axisRight text {
+    fill: green;
+}
+
+.y.axisLeft text {
+    fill: darkorange;
 }

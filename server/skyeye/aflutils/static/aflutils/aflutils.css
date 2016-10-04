@@ -57,7 +57,6 @@ table tbody {
                       
 table tbody td, table tbody th {
     padding: 10px;
-    background: url("td_back.gif") repeat-x;
     text-align: center;
 }
 
