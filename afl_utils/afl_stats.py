@@ -347,7 +347,7 @@ def dump_stats(config_settings, database):
             # Differentiate data based on afl_banner, so don't override
             # it manually! afl-multicore will create a unique banner for
             # every fuzzer!
-            table = 'plots_fuzzerstats'
+            table = 'aflutils_fuzzerstats'
             database.init_database(table, db_table_spec)
             if not database.dataset_exists(table, fuzzer, ['last_update', 'afl_banner']):
                 database.insert_dataset(table, fuzzer)
