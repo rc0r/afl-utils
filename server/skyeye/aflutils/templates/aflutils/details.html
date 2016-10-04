@@ -72,7 +72,8 @@
                     console.log('Plotting Y value for data point: ' + d + ' to be at: ' + y(d) + " using our yScale.");
                     // return the Y coordinate where we want to plot this datapoint
                     return y(d);
-                })
+
+                });
 
                 // Add an SVG element with the desired dimensions and margin.
                 var graph = d3.select("#graph").append("svg:svg")
@@ -100,7 +101,10 @@
 
                 // Add the line by appending an svg:path element with the data line we created above
                 // do this AFTER the axes above so that the line is above the tick-lines
-                graph.append("svg:path").attr("d", line(data));
+                graph.append("svg:path").attr("d", line(paths_total));
+                graph.append("svg:path").attr("d", line(paths_favored));
+                graph.append("svg:path").attr("d", line(pending_total));
+                graph.append("svg:path").attr("d", line(paths_favs));
         </script>
     {% else %}
         <p>No fuzzer stats available!</p>
