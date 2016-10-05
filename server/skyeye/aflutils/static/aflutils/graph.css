@@ -1,9 +1,13 @@
-/* tell the SVG path to be a thin blue line without any area fill */
 #container {
     width: 100%;
 }
 
-#graph {
+#graph_paths {
+    width: 50%;
+    margin: 0 auto;
+}
+
+#graph_crashes {
     width: 50%;
     margin: 0 auto;
 }
