@@ -2,7 +2,7 @@ from django.db import models
 from django.http import HttpResponse
 from django.template import loader
 
-from .models import Index, Fuzzers, Stats, Results
+from .models import Fuzzers, Stats
 
 
 def distinct_fuzzers(stats):
