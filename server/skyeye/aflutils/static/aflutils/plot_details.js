@@ -1,92 +1,149 @@
-var m = [80, 80, 100, 80]; // margins
-var w = 800 - m[1] - m[3];	// width
-var h = 500 - m[0] - m[2]; // height
+function getDate(timestamp)
+{
+    var date = new Date(timestamp * 1000);
 
-// create a simple data array that we'll plot with a line (this array represents only the Y values, X will just be the index location)
-var data1 = pending_total;
-var data2 = pending_favs;
+    var year = date.getUTCFullYear();
+    var month = date.getUTCMonth() + 1; // getMonth() is zero-indexed, so we'll increment to get the correct month number
+    var day = date.getUTCDate();
+    var hours = date.getUTCHours();
+    var minutes = date.getUTCMinutes();
+    var seconds = date.getUTCSeconds();
 
+    month = (month < 10) ? '0' + month : month;
+    day = (day < 10) ? '0' + day : day;
+    hours = (hours < 10) ? '0' + hours : hours;
+    minutes = (minutes < 10) ? '0' + minutes : minutes;
+    seconds = (seconds < 10) ? '0' + seconds: seconds;
 
+    return month + '-' + day + ' ' + hours + ':' + minutes;
+}
 
-// X scale will fit all values from data[] within pixels 0-w
-//var x = d3.scale.linear().domain([d3.min(last_update), d3.max(last_update)]).range([0, w]);
-var x = d3.time.scale().domain([d3.min(last_update)*1000, d3.max(last_update)*1000]).range([0, w]);
-// Y scale will fit values from 0-10 within pixels h-0 (Note the inverted domain for the y-scale: bigger is up!)
-var y1 = d3.scale.linear().domain([d3.min(data1)*(0.95), d3.max(data1)*1.05]).range([h, 0]); // in real world the domain would be dynamically calculated from the data
-var y2 = d3.scale.linear().domain([d3.min(data2)*(0.95), d3.max(data2)*1.05]).range([h, 0]);  // in real world the domain would be dynamically calculated from the data
-// automatically determining max range can work something like this
-// var y = d3.scale.linear().domain([0, d3.max(data)]).range([h, 0]);
+var times = last_update;
 
-// create a line function that can convert data[] into x and y points
-var line1 = d3.svg.line()
-// assign the X function to plot our line as we wish
-    .x(function(d,i) {
-        // verbose logging to show what's actually being done
-        console.log('Plotting X1 value for data point: ' + d + ' using index: ' + i + ' to be at: ' + x(i) + ' using our xScale.');
-        // return the X coordinate where we want to plot this datapoint
-        return x(last_update[i]*1000);
-    })
-    .y(function(d) {
-        // verbose logging to show what's actually being done
-        console.log('Plotting Y1 value for data point: ' + d + ' to be at: ' + y1(d) + " using our y1Scale.");
-        // return the Y coordinate where we want to plot this datapoint
-        return y1(d);
-    });
+for(i=0; i<last_update.length; i++) {
+    times[i] = getDate(last_update[i])
+}
 
-// create a line function that can convert data[] into x and y points
-var line2 = d3.svg.line()
-// assign the X function to plot our line as we wish
-    .x(function(d,i) {
-        // verbose logging to show what's actually being done
-        console.log('Plotting X2 value for data point: ' + d + ' using index: ' + i + ' to be at: ' + x(i) + ' using our xScale.');
-        // return the X coordinate where we want to plot this datapoint
-        return x(last_update[i]*1000);
-    })
-    .y(function(d) {
-        // verbose logging to show what's actually being done
-        console.log('Plotting Y2 value for data point: ' + d + ' to be at: ' + y2(d) + " using our y2Scale.");
-        // return the Y coordinate where we want to plot this datapoint
-        return y2(d);
-    });
+var data_paths = {
+    labels: times,
+    datasets: [
+        {
+            label: "Pending total",
+            fill: true,
+            lineTension: 0.1,
+            backgroundColor: "rgba(183,191,74,0.4)", //  "rgba(75,192,192,0.4)",
+            borderColor: "rgba(183,191,74,1)", // "rgba(75,192,192,1)",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "rgba(183,191,74,1)", // "rgba(75,192,192,1)",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(183,191,74,1)", // rgba(75,192,192,1)",
+            pointHoverBorderColor: "rgba(220,220,220,1)",
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data: pending_total,
+            spanGaps: false
+        },
+        {
+            label: "Pending favs",
+            fill: true,
+            lineTension: 0.1,
+            backgroundColor: "rgba(191,171,74,0.4)",
+            borderColor: "rgba(191,171,74,1)",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "rgba(191,171,74,1)",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(191,171,74,1)",
+            pointHoverBorderColor: "rgba(220,220,220,1)",
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data: pending_favs,
+            spanGaps: false
+        }
+    ]
+};
 
+var data_crashes = {
+    labels: times,
+    datasets: [
+        {
+            label: "Unique Crashes",
+            fill: true,
+            lineTension: 0.1,
+            backgroundColor: "rgba(191,95,74,0.4)", //  "rgba(75,192,192,0.4)",
+            borderColor: "rgba(191,95,74,1)", // "rgba(75,192,192,1)",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "rgba(191,95,74,1)", // "rgba(75,192,192,1)",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(191,95,74,1)", // rgba(75,192,192,1)",
+            pointHoverBorderColor: "rgba(220,220,220,1)",
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data: unique_crashes,
+            spanGaps: false
+        },
+        {
+            label: "Unique Hangs",
+            fill: true,
+            lineTension: 0.1,
+            backgroundColor: "rgba(191,74,111,0.4)",
+            borderColor: "rgba(191,74,111,1)",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "rgba(191,74,111,1)",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(191,74,111,1)",
+            pointHoverBorderColor: "rgba(220,220,220,1)",
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data: unique_hangs,
+            spanGaps: false
+        }
+    ]
+};
 
-// Add an SVG element with the desired dimensions and margin.
-var graph = d3.select("#graph").append("svg:svg")
-    .attr("width", w + m[1] + m[3])
-    .attr("height", h + m[0] + m[2])
-    .append("svg:g")
-    .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
+var options = {
+    responsive: false
+};
 
-// create xAxis
-var xAxis = d3.svg.axis().scale(x).tickSize(-h).tickSubdivide(true);
-// Add the x-axis.
-graph.append("svg:g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + h + ")")
-    .call(xAxis).selectAll("text")
-    .style("text-anchor", "end")
-    .attr("dx", "-.8em")
-    .attr("dy", ".15em")
-    .attr("transform", "rotate(-55)" );
+var ctx_paths = document.getElementById("graph_paths").getContext("2d");
+ctx_paths.canvas.width = 600;
+ctx_paths.canvas.height = 300;
 
+var myLineChart_paths = new Chart(ctx_paths, {
+    type: 'line',
+    data: data_paths,
+    options: options
+});
 
-// create left yAxis
-var yAxisLeft = d3.svg.axis().scale(y1).ticks(4).orient("left");
-// Add the y-axis to the left
-graph.append("svg:g")
-    .attr("class", "y axis axisLeft")
-    .attr("transform", "translate(-15,0)")
-    .call(yAxisLeft);
+var ctx_crashes = document.getElementById("graph_crashes").getContext("2d");
+ctx_crashes.canvas.width = 600;
+ctx_crashes.canvas.height = 300;
 
-// create right yAxis
-var yAxisRight = d3.svg.axis().scale(y2).ticks(6).orient("right");
-// Add the y-axis to the right
-graph.append("svg:g")
-    .attr("class", "y axis axisRight")
-    .attr("transform", "translate(" + (w+15) + ",0)")
-    .call(yAxisRight);
-
-// add lines
-// do this AFTER the axes above so that the line is above the tick-lines
-graph.append("svg:path").attr("d", line1(data1)).attr("class", "data1");
-graph.append("svg:path").attr("d", line2(data2)).attr("class", "data2");
+var myLineChart_crashes = new Chart(ctx_crashes, {
+    type: 'line',
+    data: data_crashes,
+    options: options
+});
