@@ -27,19 +27,7 @@ from urllib.error import URLError
 
 import afl_utils
 from afl_utils.AflPrettyPrint import clr, print_ok, print_warn, print_err
-from db_connectors import con_sqlite
-
-
-db_table_spec = """`id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, `last_update` INTEGER NOT NULL, `start_time`INTEGER NOT NULL,
-`fuzzer_pid` INTEGER NOT NULL, `cycles_done` INTEGER NOT NULL, `execs_done` INTEGER NOT NULL,
-`execs_per_sec` REAL NOT NULL, `paths_total` INTEGER NOT NULL, `paths_favored` INTEGER NOT NULL,
-`paths_found` INTEGER NOT NULL, `paths_imported` INTEGER NOT NULL, `max_depth` INTEGER NOT NULL,
-`cur_path` INTEGER NOT NULL, `pending_favs` INTEGER NOT NULL, `pending_total` INTEGER NOT NULL,
-`variable_paths` INTEGER NOT NULL, `stability` REAL, `bitmap_cvg` REAL NOT NULL,
-`unique_crashes` INTEGER NOT NULL, `unique_hangs` INTEGER NOT NULL, `last_path` INTEGER NOT NULL,
-`last_crash` INTEGER NOT NULL, `last_hang` INTEGER NOT NULL, `execs_since_crash` INTEGER NOT NULL,
-`exec_timeout` INTEGER NOT NULL, `afl_banner` VARCHAR(200) NOT NULL, `afl_version` VARCHAR(10) NOT NULL,
-`command_line` VARCHAR(1000)"""
+from db_connectors import con_skyeye
 
 
 def show_info():
@@ -141,7 +129,6 @@ def parse_stat_file(stat_file, summary=True):
             'afl_version': '',
             'command_line': ''
         }
-        
         for l in lines:
             if summary:
                 stats = summary_stats
@@ -157,6 +144,7 @@ def parse_stat_file(stat_file, summary=True):
                 for k in stats.keys():
                     if k in l:
                         stats[k] = l[19:].strip(": %\r\n")
+                stats['fuzzer'] = os.path.basename(os.path.dirname(stat_file))
 
         return stats
     except FileNotFoundError as e:
@@ -336,22 +324,48 @@ def prettify_stat(stat, dstat, console=True):
 
 
 def dump_stats(config_settings, database):
+    database.init_database()
     for sync_dir in config_settings['fuzz_dirs']:
+        job_id = database.job_id(os.path.abspath(os.path.expanduser(sync_dir)))
         fuzzer_stats = load_stats(sync_dir, summary=False)
         for fuzzer in fuzzer_stats:
-            # create different table for every afl instance
-            # table = 'fuzzer_stats_{}'.format(fuzzer['afl_banner'])
-            #
-            # django compatible: put everything into one table (according
-            # to django plots app model)
-            # Differentiate data based on afl_banner, so don't override
-            # it manually! afl-multicore will create a unique banner for
-            # every fuzzer!
-            table = 'aflutils_fuzzerstats'
-            database.init_database(table, db_table_spec)
-            if not database.dataset_exists(table, fuzzer, ['last_update', 'afl_banner']):
-                database.insert_dataset(table, fuzzer)
-
+            fuzzer_dataset = {
+                'job_id': job_id,
+                'fuzzer': fuzzer['fuzzer'],
+                'afl_banner': fuzzer['afl_banner'],
+                'afl_version': fuzzer['afl_version'],
+                'command_line': fuzzer['command_line'],
+                'fuzzer_pid': fuzzer['fuzzer_pid']
+            }
+            fuzzer_id = database.fuzzer_id(fuzzer_dataset)
+            stats_dataset = {
+                'fuzzer_id': fuzzer_id,
+                'last_update': fuzzer['last_update'],
+                'start_time': fuzzer['start_time'],
+                'cycles_done': fuzzer['cycles_done'],
+                'execs_done': fuzzer['execs_done'],
+                'execs_per_sec': fuzzer['execs_per_sec'],
+                'paths_total': fuzzer['paths_total'],
+                'paths_favored': fuzzer['paths_favored'],
+                'paths_found': fuzzer['paths_found'],
+                'paths_imported': fuzzer['paths_imported'],
+                'max_depth': fuzzer['max_depth'],
+                'cur_path': fuzzer['cur_path'],
+                'pending_favs': fuzzer['pending_favs'],
+                'pending_total': fuzzer['pending_total'],
+                'variable_paths': fuzzer['variable_paths'],
+                'stability': fuzzer['stability'],
+                'bitmap_cvg': fuzzer['bitmap_cvg'],
+                'unique_crashes': fuzzer['unique_crashes'],
+                'unique_hangs': fuzzer['unique_hangs'],
+                'last_path': fuzzer['last_path'],
+                'last_crash': fuzzer['last_crash'],
+                'last_hang': fuzzer['last_hang'],
+                'execs_since_crash': fuzzer['execs_since_crash'],
+                'exec_timeout': fuzzer['exec_timeout']
+            }
+            if not database.dataset_exists(database.table_stats, stats_dataset, ['last_update', 'fuzzer_id']):
+                database.insert_dataset(database.table_stats, stats_dataset)
 
 def fetch_stats(config_settings, twitter_inst):
     stat_dict = dict()
@@ -418,7 +432,7 @@ def main(argv):
         db_file = None
 
     if db_file:
-        lite_db = con_sqlite.sqliteConnector(db_file, verbose=False)
+        lite_db = con_skyeye.SkyEyeConnector(db_file, verbose=False)
     else:
         lite_db = None
 

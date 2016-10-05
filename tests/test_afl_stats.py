@@ -7,7 +7,7 @@ except ImportError:
 import os
 import socket
 import unittest
-from db_connectors import con_sqlite
+from db_connectors import con_skyeye
 
 test_conf_settings = {
     'twitter_creds_file': '.afl-stats.creds',
@@ -60,7 +60,8 @@ test_complete_stats = {
 	'execs_since_crash': '63393',
 	'exec_timeout': '800',
 	'afl_version': '2.35b',
-    'command_line': 'afl-fuzz -T target_000 -i ./in -o ./out -- ./target'
+    'command_line': 'afl-fuzz -T target_000 -i ./in -o ./out -- ./target',
+    'fuzzer': 'fuzz000'
 }
 
 test_sum_stats = {
@@ -210,7 +211,7 @@ class AflStatsTestCase(unittest.TestCase):
 
     def test_dump_stats(self):
         config_settings = {'fuzz_dirs': ['./testdata/sync/']}
-        lite_db = con_sqlite.sqliteConnector('./testdata/afl-stats.db', verbose=True)
+        lite_db = con_skyeye.SkyEyeConnector('./testdata/afl-stats.db', verbose=True)
         self.assertIsNone(afl_stats.dump_stats(config_settings, lite_db))
         self.assertTrue(os.path.exists('./testdata/afl-stats.db'))
 

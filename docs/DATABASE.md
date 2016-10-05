@@ -4,12 +4,12 @@
 
 Contains a unique id for each fuzzing job (generated whenever `afl-multicore start` is called).
 
-id: pk, int, autoincrement
-uuid: uuid, unique; job id
+job_id: pk, uuid, unique; job id
+sync_dir: unique; afl synchronisation dir
 
-    id | uuid
-    ---+--------
-    0  | <uuid>
+    id | job_id | sync_dir
+    ---+--------+-----------
+    0  | <uuid> | ~afl/out
 
 ## Table 'aflutils_fuzzers'
 
@@ -17,15 +17,16 @@ Contains general (quite static) information of the fuzzers known to afl-utils. I
 `afl-multicore start` is called or `afl-stats` detects new fuzzers in a sync dir.
 
 id: pk, int, autoincrement
-uuid: fk, uuid; `aflutil_index.uuid` job id of the fuzzing job the fuzzer belongs to
-fuzzer: varchar(200); session name of the fuzzer as set in `afl-multicore.conf` (aka fuzzer name) 
+job_id: fk, uuid; `aflutil_index.job_id` job id of the fuzzing job the fuzzer belongs to
+fuzzer: varchar(200); session name of the fuzzer as set in `afl-multicore.conf` (aka fuzzer name)
+fuzzer_pid: int; process id of fuzzer
 command_line: varchar(1000); afl-fuzz command line
 afl_version: varchar(10); afl-fuzz version used
 afl_banner: varchar(200); afl-fuzz banner set in `afl-multicore.conf`
 
-    id | uuid | fuzzer | command_line | afl_version | afl_banner
-    ---+------+--------+--------------+-------------+------------
-    0  | 12.. | tar000 | afl-fuzz ... | 2.35b       | target
+    id | job_id | fuzzer | fuzzer_pid | command_line | afl_version | afl_banner
+    ---+--------+--------+------------+--------------+-------------+------------
+    0  | 1245.. | tar000 | 9999       | afl-fuzz ... | 2.35b       | target
 
 ## Table 'aflutils_stats'
 

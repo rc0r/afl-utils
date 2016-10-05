@@ -2,17 +2,17 @@ from django.db import models
 from django.http import HttpResponse
 from django.template import loader
 
-from .models import FuzzerStats
+from .models import Index, Fuzzers, Stats, Results
 
 
 def distinct_fuzzers(stats):
-    fuzzers = stats.order_by().values('afl_banner').annotate(n=models.Count('pk'))
-    fuzzers = [fuzzer['afl_banner'] for fuzzer in fuzzers]
+    fuzzers = stats.order_by().values('fuzzer').annotate(n=models.Count('pk'))
+    fuzzers = [fuzzer['fuzzer'] for fuzzer in fuzzers]
     return fuzzers
 
 
-def fuzzer_data(stats, fuzzer, field):
-    data = stats.filter(afl_banner=fuzzer).values(field)
+def fuzzer_data(stats, fuzzer_id, field):
+    data = stats.filter(fuzzer_id=fuzzer_id).values(field)
     data = [d[field] for d in data]
     return data
 
@@ -33,8 +33,8 @@ def fuzzer_json_data(stats, fuzzer):
     return json.dumps(json_data)
 
 
-def fuzzer_latest_data(stats, fuzzer):
-    data = stats.filter(afl_banner=fuzzer).order_by('-id')[0]
+def fuzzer_latest_data(stats, fuzzer_id):
+    data = stats.filter(fuzzer_id=fuzzer_id).order_by('-id')[0]
     return data
 
 
@@ -42,7 +42,7 @@ def model_field_names(model):
     return [field.name for field in model._meta.fields]
 
 
-def details(request, fuzzer):
+def details(request, fuzzer_id):
     """
     Print detailed stats of the selected fuzzer.
 
@@ -53,17 +53,17 @@ def details(request, fuzzer):
     template = loader.get_template('aflutils/details.html')
     context = {
         'fuzzer': {
-            'name': fuzzer,
+            'name': Fuzzers.objects.all().filter(id=fuzzer_id).values('fuzzer')[0]['fuzzer'],
             'd3': {
             }
         }
     }
 
-    stats = FuzzerStats.objects.all()
-    stats_fields = model_field_names(FuzzerStats)
+    stats = Stats.objects.all()
+    stats_fields = model_field_names(Stats)
 
     for field in stats_fields:
-        context['fuzzer']['d3'][field] = ', '.join(map(str, fuzzer_data(stats, fuzzer, field)))
+        context['fuzzer']['d3'][field] = ', '.join(map(str, fuzzer_data(stats, fuzzer_id, field)))
 
     return HttpResponse(template.render(context, request))
 
@@ -80,13 +80,14 @@ def index(request):
         'fuzzer_summary_list': []
     }
 
-    stats = FuzzerStats.objects.all()
-    fuzzers = distinct_fuzzers(stats)
+    stats = Stats.objects.all()
+    fuzzers = Fuzzers.objects.all()
 
     for fuzzer in fuzzers:
-        data = fuzzer_latest_data(stats, fuzzer)
+        data = fuzzer_latest_data(stats, fuzzer.id)
         summary = {
-            'fuzzer': fuzzer,
+            'fuzzer': fuzzer.fuzzer,
+            'fuzzer_id': fuzzer.id,
             'paths_total': data.paths_total,
             'pending_total': data.pending_total,
             'pending_favs': data.pending_favs,
