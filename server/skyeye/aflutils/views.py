@@ -65,6 +65,8 @@ def details(request, fuzzer_id):
     for field in stats_fields:
         context['fuzzer']['d3'][field] = ', '.join(map(str, fuzzer_data(stats, fuzzer_id, field)))
 
+    context['fuzzer']['d3']['metrics'] = fuzzer_latest_data(stats, fuzzer_id)
+
     return HttpResponse(template.render(context, request))
 
 

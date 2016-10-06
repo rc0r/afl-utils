@@ -124,6 +124,34 @@ var data_crashes = {
     ]
 };
 
+var data_metrics = {
+    labels: ["Stability", "Bitmap Coverage", "Max. Depth", "Variable Paths", "Cycles Done"],
+    datasets: [
+        {
+            label: "Latest Fuzzer Metrics",
+            fill: true,
+            lineTension: 0.1,
+            backgroundColor: "rgba(66,146,183,0.4)", //  "rgba(75,192,192,0.4)",
+            borderColor: "rgba(66,146,183,1)", // "rgba(75,192,192,1)",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "rgba(66,146,183,1)", // "rgba(75,192,192,1)",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(66,146,183,1)", // rgba(75,192,192,1)",
+            pointHoverBorderColor: "rgba(220,220,220,1)",
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data: metrics_array,
+            spanGaps: false
+        }
+    ]
+};
+
 var options = {
     responsive: false
 };
@@ -145,5 +173,14 @@ ctx_crashes.canvas.height = 300;
 var myLineChart_crashes = new Chart(ctx_crashes, {
     type: 'line',
     data: data_crashes,
+    options: options
+});
+
+var ctx_metrics = document.getElementById("graph_metrics").getContext("2d");
+ctx_metrics.canvas.width = 600;
+ctx_metrics.canvas.height = 300;
+var myRadarChart = new Chart(ctx_metrics, {
+    type: 'radar',
+    data: data_metrics,
     options: options
 });
