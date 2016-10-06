@@ -12,6 +12,11 @@
     margin: 0 auto;
 }
 
+#graph_metrics {
+    width: 50%;
+    margin: 0 auto;
+}
+
 path {
     stroke-width: 1;
     fill: none;
