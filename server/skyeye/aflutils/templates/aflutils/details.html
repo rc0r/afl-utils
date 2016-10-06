@@ -14,6 +14,7 @@
         <h1>Plots for fuzzer "{{fuzzer.name}}"</h1>
         <div id="container"><canvas id="graph_paths"></canvas></div>
         <div id="container"><canvas id="graph_crashes"></canvas></div>
+        <div id="container"><canvas id="graph_metrics"></canvas></div>
         <script>
             var last_update = [{{fuzzer.d3.last_update}}];
             var cycles_done = [{{fuzzer.d3.cycles_done}}];
@@ -36,6 +37,13 @@
             var last_crash = [{{fuzzer.d3.last_crash}}];
             var last_hang = [{{fuzzer.d3.last_hang}}];
             var execs_since_crash = [{{fuzzer.d3.execs_since_crash}}];
+            var metrics_array = [
+                {{fuzzer.d3.metrics.stability}},
+                {{fuzzer.d3.metrics.bitmap_cvg}},
+                {{fuzzer.d3.metrics.max_depth}},
+                {{fuzzer.d3.metrics.variable_paths}},
+                {{fuzzer.d3.metrics.cycles_done}}
+            ];
             {% comment %}
             /* Skip 'static' fields to not overload the js */
             var start_time = [{{fuzzer.d3.start_time}}];
