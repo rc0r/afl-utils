@@ -115,13 +115,6 @@ class AflMulticoreTestCase(unittest.TestCase):
         if os.path.exists(dir):
             shutil.rmtree(dir)
 
-    @staticmethod
-    def afl_check():
-        afl_path = shutil.which('alf-fuzz')
-        if afl_path != os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')):
-            return True
-        return False
-
     def test_find_fuzzer_binary(self):
         self.assertEqual(afl_multicore.find_fuzzer_binary('date'), '/usr/bin/date')
         with self.assertRaises(SystemExit) as se:
