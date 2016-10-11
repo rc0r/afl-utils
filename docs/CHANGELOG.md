@@ -10,6 +10,7 @@ Version 1.32a
     afl versions will not work anymore).
   - afl-stats now optionally dumps fuzzer stats into a database.
   - Tweeting stats to twitter is now optional in afl-stats.
+  - Fixed minor bug #34 in afl-multicore (reported by Bhargava Shastry).
 
 Version 1.31a
 

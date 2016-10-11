@@ -196,7 +196,7 @@ def build_slave_cmd(conf_settings, slave_num, target_cmd):
 
 def write_pgid_file(conf_settings):
     print("")
-    if not conf_settings["interactive"]:
+    if "interactive" in conf_settings and not conf_settings["interactive"]:
         # write/append PGID to file /tmp/afl-multicore.PGID.<SESSION>
         f = open("/tmp/afl_multicore.PGID.%s" % conf_settings["session"], "a")
         if f.writable():
