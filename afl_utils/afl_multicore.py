@@ -29,10 +29,13 @@ import time
 import afl_utils
 from afl_utils.AflPrettyPrint import print_err, print_ok, clr
 
-afl_path = shutil.which("afl-fuzz")
-if afl_path is None:
-    print_err("afl-fuzz binary not found!")
-    sys.exit(1)
+
+def find_fuzzer_binary(fuzzer_bin):
+    afl_path = shutil.which(fuzzer_bin)
+    if afl_path is None:
+        print_err("Fuzzer binary not found!")
+        sys.exit(1)
+    return afl_path
 
 
 def show_info():
@@ -55,11 +58,14 @@ def read_config(config_file):
         if "session" not in config:
             config["session"] = "SESSION"
 
+        if "fuzzer" not in config:
+            config["fuzzer"] = "afl-fuzz"
+
         return config
 
 
 def afl_cmdline_from_config(config_settings, instance_number):
-    afl_cmdline = []
+    afl_cmdline = [find_fuzzer_binary(config_settings["fuzzer"])]
 
     if "file" in config_settings:
         afl_cmdline.append("-f")
@@ -174,7 +180,7 @@ def build_master_cmd(conf_settings, target_cmd):
     # compile command-line for master
     # $ afl-fuzz -i <input_dir> -o <output_dir> -M <session_name>.000 <afl_args> \
     #   </path/to/target.bin> <target_args>
-    master_cmd = [afl_path] + afl_cmdline_from_config(conf_settings, 0)
+    master_cmd = afl_cmdline_from_config(conf_settings, 0)
     master_cmd += ["-M", "%s000" % conf_settings["session"], "--", target_cmd]
     master_cmd = " ".join(master_cmd)
     return master_cmd
@@ -188,7 +194,7 @@ def build_slave_cmd(conf_settings, slave_num, target_cmd):
     # compile command-line for slaves
     # $ afl-fuzz -i <input_dir> -o <output_dir> -S <session_name>.NNN <afl_args> \
     #   </path/to/target.bin> <target_args>
-    slave_cmd = [afl_path] + afl_cmdline_from_config(conf_settings, slave_num)
+    slave_cmd = afl_cmdline_from_config(conf_settings, slave_num)
     slave_cmd += ["-S", "%s%03d" % (conf_settings["session"], slave_num), "--", target_cmd]
     slave_cmd = " ".join(slave_cmd)
     return slave_cmd

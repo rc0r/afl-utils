@@ -276,6 +276,15 @@ As already noted there are only four settings that are required in every config
 file. These are `afl-fuzz` directory specifications `input` and `output`, the
 path to the target binary `target` and target command line arguments `cmdline`:
 
+If you want to run `afl-multicore` on different `afl-fuzz` binaries you may
+specify the fuzzer explicitly:
+
+```json
+"fuzzer": "afl-fuzz-fast"
+```
+
+Make sure the provided fuzzer binary is in your path! The default is to use `afl-fuzz`.   
+
 afl-fuzz directory specifications:
 
 ```json
