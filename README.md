@@ -385,10 +385,12 @@ Usage example:
 
 ## afl-stats
 
-Prints fuzzing statistics similar to `afl-whatsup -s` and posts (tweets) them to Twitter.
-This is especially useful when fuzzing on multiple machines. Regularly ssh-ing into all
-of your boxes to check `fuzzer_stats` quickly becomes a PITA...  
-For setup instructions, please see
+Prints fuzzing statistics similar to `afl-whatsup -s` and optionally posts (tweets) them
+to Twitter. This is especially useful when fuzzing on multiple machines. Regularly ssh-ing
+into all of your boxes to check `fuzzer_stats` quickly becomes a PITA...  
+Additionally `afl-stats` may dump the current contents of `fuzzer_stats` into a database.
+So upon later inspection you have historical stats information in one place for analysis.
+For twitter setup instructions, please see
 [docs/INSTALL.md](https://github.com/rc0r/afl-utils/blob/master/docs/INSTALL.md)!
 Screenshots of sample tweets can be found in the final section of this document.
 
