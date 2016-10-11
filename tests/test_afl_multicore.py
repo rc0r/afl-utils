@@ -115,8 +115,11 @@ class AflMulticoreTestCase(unittest.TestCase):
         if os.path.exists(dir):
             shutil.rmtree(dir)
 
+    @unittest.skipUnless(shutil.which('afl-fuzz') == os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')),
+                         'afl-fuzz binary not found in expected location.')
     def test_find_fuzzer_binary(self):
-        self.assertEqual(afl_multicore.find_fuzzer_binary('date'), '/usr/bin/date')
+        self.assertEqual(afl_multicore.find_fuzzer_binary('afl-fuzz'),
+                         os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')))
         with self.assertRaises(SystemExit) as se:
             afl_path = afl_multicore.find_fuzzer_binary('does-not-exist')
             self.assertIsNone(afl_path)
@@ -221,26 +224,30 @@ class AflMulticoreTestCase(unittest.TestCase):
         }
         self.assertEqual('/bin/sh --some-opt', afl_multicore.build_target_cmd(conf_settings))
 
+    @unittest.skipUnless(shutil.which('afl-fuzz') == os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')),
+                         'afl-fuzz binary not found in expected location.')
     def test_build_master_cmd(self):
         conf_settings = {
-            'fuzzer': 'date',
+            'fuzzer': 'afl-fuzz',
             'session': 'SESSION',
             'file': 'cur_input'
         }
         target_cmd = 'testdata/dummy_process/invalid_proc --some-opt %%'
-        master_cmd = '/usr/bin/date -f cur_input_000 -M SESSION000 -- ' + target_cmd.replace('%%', conf_settings['file']+'_000')
+        master_cmd = os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')) + ' -f cur_input_000 -M SESSION000 -- ' + target_cmd.replace('%%', conf_settings['file']+'_000')
 
         self.assertEqual(master_cmd, afl_multicore.build_master_cmd(conf_settings, target_cmd))
 
+    @unittest.skipUnless(shutil.which('afl-fuzz') == os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')),
+                         'afl-fuzz binary not found in expected location.')
     def test_build_slave_cmd(self):
         conf_settings = {
-            'fuzzer': 'date',
+            'fuzzer': 'afl-fuzz',
             'session': 'SESSION',
             'file': 'cur_input'
         }
         target_cmd = 'testdata/dummy_process/invalid_proc --some-opt %%'
         slave_num = 3
-        slave_cmd = '/usr/bin/date -f cur_input_003 -S SESSION003 -- ' + target_cmd.replace("%%", conf_settings['file']+'_003')
+        slave_cmd = os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')) + ' -f cur_input_003 -S SESSION003 -- ' + target_cmd.replace("%%", conf_settings['file']+'_003')
 
         self.assertEqual(slave_cmd, afl_multicore.build_slave_cmd(conf_settings, slave_num, target_cmd))
 
