@@ -384,12 +384,15 @@ job offset that allows to resume specific (ranges of) afl-instances.")
             else:
                 fuzzer_inst = subprocess.Popen(" ".join(['nohup', cmd]).split())
             if is_master:
-                print(" Master %03d/%03d started (PID: %d)" % (i, master_count-1, fuzzer_inst.pid))
+                if master_count == 1:
+                    print(" Master %03d started inside new screen window" % i)
+                else:
+                    print(" Master %03d/%03d started (PID: %d)" % (i, master_count-1, fuzzer_inst.pid))
             else:
                 print(" Slave %03d started (PID: %d)" % (i, fuzzer_inst.pid))
 
-            if i < (jobs_count-1):
-                startup_delay(conf_settings, i, args.cmd, args.startup_delay)
+        if i < (jobs_count-1):
+            startup_delay(conf_settings, i, args.cmd, args.startup_delay)
 
     write_pgid_file(conf_settings)
 
