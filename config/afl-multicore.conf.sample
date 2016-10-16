@@ -12,7 +12,7 @@
     "dirty": false,
     "dumb": false,
     "dict": "dict/target.dict",
-    "slave_only": false,
+    "master_instances": 1,
     "interactive": true,
     "environment": [
         "AFL_PERSISTENT=1",

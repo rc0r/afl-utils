@@ -13,6 +13,7 @@ Version 1.32a
   - Fixed minor bug #34 in afl-multicore (reported by Bhargava Shastry).
   - Implemented option in afl-multicore to run arbitrary fuzzer instead
     of default afl-fuzz (#35, suggested by Bhargava Shastry).
+  - Implemented multi-master mode support in afl-multicore (#36).
 
 Version 1.31a
 

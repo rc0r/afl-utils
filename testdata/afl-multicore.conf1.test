@@ -5,7 +5,7 @@
     "session": "SESSION",
     "output": "./out",
     "interactive": false,
-    "slave_only": true,
+    "master_instances": 0,
     "environment": [
         "AFL_PERSISTENT=1"
     ]

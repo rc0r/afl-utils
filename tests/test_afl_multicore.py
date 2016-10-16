@@ -24,7 +24,7 @@ test_conf_settings = {
     'output': './out',
     'dirty': True,
     'mem_limit': '150',
-    'slave_only': False,
+    'master_instances': 2,
     'environment': [
         'AFL_PERSISTENT=1'
     ]
@@ -38,7 +38,7 @@ test_conf_settings1 = {
     'cmdline': '-a -b -c -d',
     'session': 'SESSION',
     'output': './out',
-    'slave_only': True,
+    'master_instances': 0,
     'environment': [
         'AFL_PERSISTENT=1'
     ]
@@ -233,9 +233,24 @@ class AflMulticoreTestCase(unittest.TestCase):
             'file': 'cur_input'
         }
         target_cmd = 'testdata/dummy_process/invalid_proc --some-opt %%'
-        master_cmd = os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')) + ' -f cur_input_000 -M SESSION000 -- ' + target_cmd.replace('%%', conf_settings['file']+'_000')
+        expected_master_cmd = os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')) + ' -f cur_input_000 -M SESSION000 -- ' + target_cmd.replace('%%', conf_settings['file']+'_000')
+        master_cmd = afl_multicore.build_master_cmd(conf_settings, 0, target_cmd)
 
-        self.assertEqual(master_cmd, afl_multicore.build_master_cmd(conf_settings, target_cmd))
+        self.assertEqual(expected_master_cmd, master_cmd)
+
+        conf_settings = {
+            'fuzzer': 'afl-fuzz',
+            'session': 'SESSION',
+            'file': 'cur_input',
+            'master_instances': 3
+        }
+        target_cmd = 'testdata/dummy_process/invalid_proc --some-opt %%'
+        expected_master_cmd = os.path.abspath(
+            os.path.expanduser('~/.local/bin/afl-fuzz')) + ' -f cur_input_001 -M SESSION001:2/3 -- ' + target_cmd.replace(
+            '%%', conf_settings['file'] + '_001')
+        master_cmd = afl_multicore.build_master_cmd(conf_settings, 1, target_cmd)
+
+        self.assertEqual(expected_master_cmd, master_cmd)
 
     @unittest.skipUnless(shutil.which('afl-fuzz') == os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')),
                          'afl-fuzz binary not found in expected location.')
@@ -278,21 +293,21 @@ class AflMulticoreTestCase(unittest.TestCase):
         self.assertIsNone(afl_multicore.write_pgid_file(conf_settings))
         self.assertIs(True, os.path.exists('/tmp/afl_multicore.PGID.unittest_sess_01'))
 
-    def test_get_slave_count(self):
+    def test_get_started_instances(self):
         # negative test
         conf_settings = {
         }
         command = 'start'
-        self.assertEqual((1, 1), afl_multicore.get_slave_count(command, conf_settings))
+        self.assertEqual(0, afl_multicore.get_started_instance_count(command, conf_settings))
 
         # positive test
         conf_settings = {
             'session': 'fuzz',
             'output': 'testdata/sync',
-            'slave_only': False,
+            'master_instances': 1,
         }
         command = 'add'
-        self.assertEqual((0, 2), afl_multicore.get_slave_count(command, conf_settings))
+        self.assertEqual(2, afl_multicore.get_started_instance_count(command, conf_settings))
 
     def test_get_job_counts(self):
         jobs_arg = "23"
@@ -316,20 +331,34 @@ class AflMulticoreTestCase(unittest.TestCase):
         conf_settings = {
             'session': 'fuzz',
             'output': 'testdata/sync',
-            'slave_only': False,
+            'master_instances': 1,
         }
         self.assertTrue(afl_multicore.has_master(conf_settings, 0))
-
-        # negative test
-        self.assertFalse(afl_multicore.has_master(conf_settings, 1))
 
         conf_settings = {
             'session': 'fuzz',
             'output': 'testdata/sync',
-            'slave_only': True,
+            'master_instances': 12,
+        }
+        self.assertTrue(afl_multicore.has_master(conf_settings, 11))
+
+        # negative test
+        self.assertFalse(afl_multicore.has_master(conf_settings, 12))
+
+        conf_settings = {
+            'session': 'fuzz',
+            'output': 'testdata/sync',
+            'master_instances': 0,
         }
         self.assertFalse(afl_multicore.has_master(conf_settings, 0))
         self.assertFalse(afl_multicore.has_master(conf_settings, 2))
+
+        conf_settings = {
+            'session': 'fuzz',
+            'output': 'testdata/sync',
+            'master_instances': -23,
+        }
+        self.assertFalse(afl_multicore.has_master(conf_settings, 0))
 
     def test_main(self):
         # we're only going to test some error cases
