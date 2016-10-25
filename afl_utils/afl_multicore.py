@@ -29,10 +29,13 @@ import time
 import afl_utils
 from afl_utils.AflPrettyPrint import print_err, print_ok, clr
 
-afl_path = shutil.which("afl-fuzz")
-if afl_path is None:
-    print_err("afl-fuzz binary not found!")
-    sys.exit(1)
+
+def find_fuzzer_binary(fuzzer_bin):
+    afl_path = shutil.which(fuzzer_bin)
+    if afl_path is None:
+        print_err("Fuzzer binary not found!")
+        sys.exit(1)
+    return afl_path
 
 
 def show_info():
@@ -55,11 +58,14 @@ def read_config(config_file):
         if "session" not in config:
             config["session"] = "SESSION"
 
+        if "fuzzer" not in config:
+            config["fuzzer"] = "afl-fuzz"
+
         return config
 
 
 def afl_cmdline_from_config(config_settings, instance_number):
-    afl_cmdline = []
+    afl_cmdline = [find_fuzzer_binary(config_settings["fuzzer"])]
 
     if "file" in config_settings:
         afl_cmdline.append("-f")
@@ -166,37 +172,41 @@ def build_target_cmd(conf_settings):
     return target_cmd
 
 
-def build_master_cmd(conf_settings, target_cmd):
+def build_master_cmd(conf_settings, master_index, target_cmd):
     # If afl -f file switch was used, automatically use correct input
     # file for master instance.
     if "%%" in target_cmd:
-        target_cmd = target_cmd.replace("%%", conf_settings["file"] + "_000")
+        target_cmd = target_cmd.replace("%%", conf_settings["file"] + "_%03d" % master_index)
     # compile command-line for master
     # $ afl-fuzz -i <input_dir> -o <output_dir> -M <session_name>.000 <afl_args> \
     #   </path/to/target.bin> <target_args>
-    master_cmd = [afl_path] + afl_cmdline_from_config(conf_settings, 0)
-    master_cmd += ["-M", "%s000" % conf_settings["session"], "--", target_cmd]
-    master_cmd = " ".join(master_cmd)
-    return master_cmd
+    master_cmd = afl_cmdline_from_config(conf_settings, master_index)
+    if "master_instances" in conf_settings and conf_settings["master_instances"] > 1:
+        # multi-master mode
+        master_cmd += ["-M", "%s%03d:%d/%d" % (conf_settings["session"], master_index,
+                                              master_index+1, conf_settings["master_instances"]), "--", target_cmd]
+    else:
+        # single-master mode
+        master_cmd += ["-M", "%s000" % conf_settings["session"], "--", target_cmd]
+    return " ".join(master_cmd)
 
 
-def build_slave_cmd(conf_settings, slave_num, target_cmd):
+def build_slave_cmd(conf_settings, slave_index, target_cmd):
     # If afl -f file switch was used, automatically use correct input
     # file for slave instance.
     if "%%" in target_cmd:
-        target_cmd = target_cmd.replace("%%", conf_settings["file"] + "_%03d" % slave_num)
+        target_cmd = target_cmd.replace("%%", conf_settings["file"] + "_%03d" % slave_index)
     # compile command-line for slaves
     # $ afl-fuzz -i <input_dir> -o <output_dir> -S <session_name>.NNN <afl_args> \
     #   </path/to/target.bin> <target_args>
-    slave_cmd = [afl_path] + afl_cmdline_from_config(conf_settings, slave_num)
-    slave_cmd += ["-S", "%s%03d" % (conf_settings["session"], slave_num), "--", target_cmd]
+    slave_cmd = afl_cmdline_from_config(conf_settings, slave_index)
+    slave_cmd += ["-S", "%s%03d" % (conf_settings["session"], slave_index), "--", target_cmd]
     slave_cmd = " ".join(slave_cmd)
     return slave_cmd
 
 
 def write_pgid_file(conf_settings):
-    print("")
-    if not conf_settings["interactive"]:
+    if "interactive" in conf_settings and not conf_settings["interactive"]:
         # write/append PGID to file /tmp/afl-multicore.PGID.<SESSION>
         f = open("/tmp/afl_multicore.PGID.%s" % conf_settings["session"], "a")
         if f.writable():
@@ -208,20 +218,26 @@ def write_pgid_file(conf_settings):
         print_ok("Check the newly created screen windows!")
 
 
-def get_slave_count(command, conf_settings):
+def get_master_count(conf_settings):
+    if "master_instances" in conf_settings:
+        if conf_settings["master_instances"] >= 0:
+            return conf_settings["master_instances"]
+        else:
+            return 0
+    else:
+        return 1
+
+
+def get_started_instance_count(command, conf_settings):
+    instances_started = 0
     if command == "add":
-        slave_start = 0
-        slave_off = 0
+        instances_started = 0
         dirs = os.listdir(conf_settings["output"])
         for d in dirs:
             if os.path.isdir(os.path.abspath(os.path.join(conf_settings["output"], d))) \
                     and conf_settings["session"] in d:
-                slave_start += 1
-        conf_settings["slave_only"] = True
-    else:
-        slave_start = 1
-        slave_off = 1
-    return slave_off, slave_start
+                instances_started += 1
+    return instances_started
 
 
 def get_job_counts(jobs_arg):
@@ -236,10 +252,7 @@ def get_job_counts(jobs_arg):
 
 
 def has_master(conf_settings, jobs_offset):
-    if jobs_offset <= 0:
-        return "slave_only" not in conf_settings or ("slave_only" in conf_settings and not conf_settings["slave_only"])
-    else:
-        return False
+    return jobs_offset < get_master_count(conf_settings)
 
 
 def startup_delay(conf_settings, instance_num, command, startup_delay):
@@ -310,18 +323,20 @@ job offset that allows to resume specific (ranges of) afl-instances.")
         args.cmd = "start"
 
     jobs_count, jobs_offset = get_job_counts(args.jobs)
+
     if args.cmd != "resume":
         conf_settings["input"] = os.path.abspath(os.path.expanduser(conf_settings["input"]))
+        jobs_offset = 0
         if not os.path.exists(conf_settings["input"]):
             print_err("No valid directory provided for <INPUT_DIR>!")
             sys.exit(1)
-        jobs_offset = 0
     else:
         conf_settings["input"] = "-"
 
     conf_settings["output"] = os.path.abspath(os.path.expanduser(conf_settings["output"]))
 
-    slave_off, slave_start = get_slave_count(args.cmd, conf_settings)
+    instances_started = get_started_instance_count(args.cmd, conf_settings)
+    master_count = get_master_count(conf_settings)
 
     if "interactive" in conf_settings and conf_settings["interactive"]:
         if not check_screen():
@@ -334,53 +349,49 @@ job offset that allows to resume specific (ranges of) afl-instances.")
             setup_screen(jobs_count, [])
 
     target_cmd = build_target_cmd(conf_settings)
-    master_cmd = build_master_cmd(conf_settings, target_cmd)
 
     if args.test_run:
-        with subprocess.Popen(master_cmd.split()) as test_proc:
+        cmd = build_master_cmd(conf_settings, 0, target_cmd)
+        with subprocess.Popen(cmd.split()) as test_proc:
             print_ok("Test instance started (PID: %d)" % test_proc.pid)
 
-    if has_master(conf_settings, jobs_offset):
-        print_ok("Starting master instance...")
+    print_ok("Starting fuzzer instance(s)...")
+    jobs_offset += instances_started
+    jobs_count += instances_started + jobs_offset
+    for i in range(jobs_offset, jobs_count, 1):
+        is_master = has_master(conf_settings, i)
 
-        if "interactive" in conf_settings and conf_settings["interactive"]:
-            subprocess.Popen("screen -X select 1".split())
-            screen_cmd = ["screen", "-X", "eval", "exec %s" % master_cmd, "next"]
-            subprocess.Popen(screen_cmd)
-            print(" Master 000 started inside new screen window")
+        if is_master:
+            cmd = build_master_cmd(conf_settings, i, target_cmd)
         else:
-            if not args.verbose:
-                master = subprocess.Popen(" ".join(['nohup', master_cmd]).split(), stdout=subprocess.DEVNULL,
-                                          stderr=subprocess.DEVNULL)
-            else:
-                master = subprocess.Popen(" ".join(['nohup', master_cmd]).split())
-            print(" Master 000 started (PID: %d)" % master.pid)
-
-        startup_delay(conf_settings, 0, args.cmd, args.startup_delay)
-        jobs_count -= 1
-        jobs_offset += 1
-
-    print_ok("Starting slave instances...")
-    num_slaves = jobs_count+slave_start-slave_off
-    slave_start += (jobs_offset-1)
-    num_slaves += jobs_offset
-    for i in range(slave_start, num_slaves, 1):
-        slave_cmd = build_slave_cmd(conf_settings, i, target_cmd)
+            cmd = build_slave_cmd(conf_settings, i, target_cmd)
 
         if "interactive" in conf_settings and conf_settings["interactive"]:
             subprocess.Popen(["screen", "-X", "select", "%d" % (i + 1)])
-            screen_cmd = ["screen", "-X", "eval", "exec %s" % slave_cmd, "next"]
+            screen_cmd = ["screen", "-X", "eval", "exec %s" % cmd, "next"]
             subprocess.Popen(screen_cmd)
-            print(" Slave %03d started inside new screen window" % i)
+            if is_master:
+                if master_count == 1:
+                    print(" Master %03d started inside new screen window" % i)
+                else:
+                    print(" Master %03d/%03d started inside new screen window" % (i, master_count-1))
+            else:
+                print(" Slave %03d started inside new screen window" % i)
         else:
             if not args.verbose:
-                slave = subprocess.Popen(" ".join(['nohup', slave_cmd]).split(), stdout=subprocess.DEVNULL,
-                                         stderr=subprocess.DEVNULL)
+                fuzzer_inst = subprocess.Popen(" ".join(['nohup', cmd]).split(), stdout=subprocess.DEVNULL,
+                                          stderr=subprocess.DEVNULL)
             else:
-                slave = subprocess.Popen(" ".join(['nohup', slave_cmd]).split())
-            print(" Slave %03d started (PID: %d)" % (i, slave.pid))
+                fuzzer_inst = subprocess.Popen(" ".join(['nohup', cmd]).split())
+            if is_master:
+                if master_count == 1:
+                    print(" Master %03d started inside new screen window" % i)
+                else:
+                    print(" Master %03d/%03d started (PID: %d)" % (i, master_count-1, fuzzer_inst.pid))
+            else:
+                print(" Slave %03d started (PID: %d)" % (i, fuzzer_inst.pid))
 
-        if i < (num_slaves-1):
+        if i < (jobs_count-1):
             startup_delay(conf_settings, i, args.cmd, args.startup_delay)
 
     write_pgid_file(conf_settings)

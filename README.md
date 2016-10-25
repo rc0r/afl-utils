@@ -161,9 +161,9 @@ setting in your config file will be ignored.
 **Note:** For interactive *test runs* `screen` is not required!
 
 If you want to check the fuzzers' progress see `fuzzer_stats` in the respective fuzzer
-directory in the synchronisation dir (`sync_dir/SESSION###/fuzzer_stats`)! The master instance
-files are always located at `sync_dir/SESSION000/`.  
-An `afl-multicore` session can (and should!) easily be aborted with the help of
+directory in the synchronisation dir (`sync_dir/SESSION###/fuzzer_stats`)! Another way to monitor
+fuzzing progress is to use `afl-stats`. You may also want to check out `afl-stats` database dumping
+feature. An `afl-multicore` session can (and should!) easily be aborted with the help of
 `afl-multikill` (see below).
 
 If you prefer to work with afl's UI instead of background processes and stat files, screen
@@ -189,9 +189,9 @@ you want to resume all slave instances without interrupting master:
     $ afl-multicore -c target-multicore.conf resume number_of_jobs_to_resume,job_offset
     $ afl-multicore -c target-multicore.conf resume 19,1
 
-This `afl-multicore` invocation will resume 19 instances starting at offset 1 (the first slave;
-the master instance is always at offset 0). Of course other ranges are possible too. However, when
-using an offset greater than zero only slave instances will be resumed!
+This `afl-multicore` invocation will resume 19 instances starting at offset 1. Of course other
+ranges are possible too. However, when using an offset greater than `master_instances` (description
+below) only slave instances will be resumed!
 
 Target settings and afl options are configured in a JSON configuration file.
 The most simple configuration may look something like:
@@ -276,6 +276,15 @@ As already noted there are only four settings that are required in every config
 file. These are `afl-fuzz` directory specifications `input` and `output`, the
 path to the target binary `target` and target command line arguments `cmdline`:
 
+If you want to run `afl-multicore` on different `afl-fuzz` binaries you may
+specify the fuzzer explicitly:
+
+```json
+"fuzzer": "afl-fuzz-fast"
+```
+
+Make sure the provided fuzzer binary is in your path! The default is to use `afl-fuzz`.   
+
 afl-fuzz directory specifications:
 
 ```json
@@ -351,10 +360,14 @@ will be written to `output/SESSION000`!
 "session": "SESSION"
 ```
 
-Slave-only mode, do not start an afl master instance.
+The optional `master_instances` configuration option controls how many master instances should be started:
+
+* `master_instances = 1` or omitted: run in default single-master mode
+* `master_instances <= 0`: run in slave-only mode
+* `master_instances > 1`: run in experimental multi-master mode
 
 ```json
-"slave_only": true
+"master_instances": 1
 ```
 
 Interactive screen mode. Starts every afl instance in a separate

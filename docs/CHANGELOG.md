@@ -10,6 +10,10 @@ Version 1.32a
     afl versions will not work anymore).
   - afl-stats now optionally dumps fuzzer stats into a database.
   - Tweeting stats to twitter is now optional in afl-stats.
+  - Fixed minor bug #34 in afl-multicore (reported by Bhargava Shastry).
+  - Implemented option in afl-multicore to run arbitrary fuzzer instead
+    of default afl-fuzz (#35, suggested by Bhargava Shastry).
+  - Implemented multi-master mode support in afl-multicore (#36).
 
 Version 1.31a
 

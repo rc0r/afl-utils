@@ -10,6 +10,7 @@ import unittest
 
 test_conf_settings = {
     'afl_margs': '-T banner',
+    'fuzzer': 'afl-fuzz',
     'dumb': True,
     'timeout': '200+',
     'dict': 'dict/target.dict',
@@ -23,7 +24,7 @@ test_conf_settings = {
     'output': './out',
     'dirty': True,
     'mem_limit': '150',
-    'slave_only': False,
+    'master_instances': 2,
     'environment': [
         'AFL_PERSISTENT=1'
     ]
@@ -31,18 +32,20 @@ test_conf_settings = {
 
 test_conf_settings1 = {
     'interactive': False,
+    'fuzzer': 'afl-fuzz',
     'target': '/usr/bin/target',
     'input': './in',
     'cmdline': '-a -b -c -d',
     'session': 'SESSION',
     'output': './out',
-    'slave_only': True,
+    'master_instances': 0,
     'environment': [
         'AFL_PERSISTENT=1'
     ]
 }
 
 test_conf_settings2 = {
+    'fuzzer': 'afl-fuzz',
     'target': '/usr/bin/target',
     'input': './in',
     'cmdline': '-a -b -c -d',
@@ -51,6 +54,7 @@ test_conf_settings2 = {
 }
 
 test_conf_settings3 = {
+    'fuzzer': 'afl-fuzz',
     'afl_margs': '-T banner',
     'dumb': True,
     'timeout': '200+',
@@ -68,21 +72,21 @@ test_conf_settings3 = {
 }
 
 test_afl_cmdline = [
-    '-f', '@@', '-t', '200+', '-m', '150', '-Q', '-d', '-n', '-x', 'dict/target.dict', '-T banner', '-i',
+    os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')), '-f', '@@', '-t', '200+', '-m', '150', '-Q', '-d', '-n', '-x', 'dict/target.dict', '-T banner', '-i',
     './in', '-o', './out'
 ]
 
 test_afl_cmdline2 = [
-    '-i', './in', '-o', './out'
+    os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')), '-i', './in', '-o', './out'
 ]
 
 test_afl_cmdline21 = [
-   '-i', './in', '-o', './out'
+   os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')), '-i', './in', '-o', './out'
 ]
 
 test_afl_cmdline3 = [
-    '-f', 'sample_file_027', '-t', '200+', '-m', '150', '-Q', '-d', '-n', '-x', 'dict/target.dict', '-T banner', '-i',
-    './in', '-o', './out'
+    os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')), '-f', 'sample_file_027', '-t', '200+', '-m', '150', '-Q', '-d', '-n', '-x', 'dict/target.dict',
+    '-T banner', '-i', './in', '-o', './out'
 ]
 
 
@@ -111,6 +115,16 @@ class AflMulticoreTestCase(unittest.TestCase):
         if os.path.exists(dir):
             shutil.rmtree(dir)
 
+    @unittest.skipUnless(shutil.which('afl-fuzz') == os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')),
+                         'afl-fuzz binary not found in expected location.')
+    def test_find_fuzzer_binary(self):
+        self.assertEqual(afl_multicore.find_fuzzer_binary('afl-fuzz'),
+                         os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')))
+        with self.assertRaises(SystemExit) as se:
+            afl_path = afl_multicore.find_fuzzer_binary('does-not-exist')
+            self.assertIsNone(afl_path)
+        self.assertEqual(se.exception.code, 1)
+
     def test_show_info(self):
         self.assertIsNone(afl_multicore.show_info())
 
@@ -133,6 +147,8 @@ class AflMulticoreTestCase(unittest.TestCase):
         with self.assertRaises(json.decoder.JSONDecodeError):
             afl_multicore.read_config('testdata/afl-multicore.conf.invalid00.test')
 
+    @unittest.skipUnless(shutil.which('afl-fuzz') == os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')),
+                         'afl-fuzz binary not found in expected location.')
     def test_afl_cmdline_from_config(self):
         afl_cmdline = afl_multicore.afl_cmdline_from_config(test_conf_settings, 12)
         self.assertEqual(afl_cmdline, test_afl_cmdline)
@@ -208,24 +224,45 @@ class AflMulticoreTestCase(unittest.TestCase):
         }
         self.assertEqual('/bin/sh --some-opt', afl_multicore.build_target_cmd(conf_settings))
 
+    @unittest.skipUnless(shutil.which('afl-fuzz') == os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')),
+                         'afl-fuzz binary not found in expected location.')
     def test_build_master_cmd(self):
         conf_settings = {
+            'fuzzer': 'afl-fuzz',
             'session': 'SESSION',
             'file': 'cur_input'
         }
         target_cmd = 'testdata/dummy_process/invalid_proc --some-opt %%'
-        master_cmd = afl_multicore.afl_path + ' -f cur_input_000 -M SESSION000 -- ' + target_cmd.replace('%%', conf_settings['file']+'_000')
+        expected_master_cmd = os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')) + ' -f cur_input_000 -M SESSION000 -- ' + target_cmd.replace('%%', conf_settings['file']+'_000')
+        master_cmd = afl_multicore.build_master_cmd(conf_settings, 0, target_cmd)
 
-        self.assertEqual(master_cmd, afl_multicore.build_master_cmd(conf_settings, target_cmd))
+        self.assertEqual(expected_master_cmd, master_cmd)
 
+        conf_settings = {
+            'fuzzer': 'afl-fuzz',
+            'session': 'SESSION',
+            'file': 'cur_input',
+            'master_instances': 3
+        }
+        target_cmd = 'testdata/dummy_process/invalid_proc --some-opt %%'
+        expected_master_cmd = os.path.abspath(
+            os.path.expanduser('~/.local/bin/afl-fuzz')) + ' -f cur_input_001 -M SESSION001:2/3 -- ' + target_cmd.replace(
+            '%%', conf_settings['file'] + '_001')
+        master_cmd = afl_multicore.build_master_cmd(conf_settings, 1, target_cmd)
+
+        self.assertEqual(expected_master_cmd, master_cmd)
+
+    @unittest.skipUnless(shutil.which('afl-fuzz') == os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')),
+                         'afl-fuzz binary not found in expected location.')
     def test_build_slave_cmd(self):
         conf_settings = {
+            'fuzzer': 'afl-fuzz',
             'session': 'SESSION',
             'file': 'cur_input'
         }
         target_cmd = 'testdata/dummy_process/invalid_proc --some-opt %%'
         slave_num = 3
-        slave_cmd = afl_multicore.afl_path + ' -f cur_input_003 -S SESSION003 -- ' + target_cmd.replace("%%", conf_settings['file']+'_003')
+        slave_cmd = os.path.abspath(os.path.expanduser('~/.local/bin/afl-fuzz')) + ' -f cur_input_003 -S SESSION003 -- ' + target_cmd.replace("%%", conf_settings['file']+'_003')
 
         self.assertEqual(slave_cmd, afl_multicore.build_slave_cmd(conf_settings, slave_num, target_cmd))
 
@@ -234,7 +271,7 @@ class AflMulticoreTestCase(unittest.TestCase):
         conf_settings = {
             'session': 'unittest_sess_01',
             'output': 'testdata/output',
-            'interactive': True,
+            'interactive': True
         }
         self.assertIsNone(afl_multicore.write_pgid_file(conf_settings))
         self.assertIsNot(True, os.path.exists('/tmp/afl_multicore.PGID.unittest_sess_01'))
@@ -243,26 +280,34 @@ class AflMulticoreTestCase(unittest.TestCase):
         conf_settings = {
             'session': 'unittest_sess_01',
             'output': 'testdata/output',
-            'interactive': False,
+            'interactive': False
         }
         self.assertIsNone(afl_multicore.write_pgid_file(conf_settings))
         self.assertIs(True, os.path.exists('/tmp/afl_multicore.PGID.unittest_sess_01'))
 
-    def test_get_slave_count(self):
+        # positive test, again with implicit non-interactive mode (test for #34)
+        conf_settings = {
+            'session': 'unittest_sess_01',
+            'output': 'testdata/output'
+        }
+        self.assertIsNone(afl_multicore.write_pgid_file(conf_settings))
+        self.assertIs(True, os.path.exists('/tmp/afl_multicore.PGID.unittest_sess_01'))
+
+    def test_get_started_instances(self):
         # negative test
         conf_settings = {
         }
         command = 'start'
-        self.assertEqual((1, 1), afl_multicore.get_slave_count(command, conf_settings))
+        self.assertEqual(0, afl_multicore.get_started_instance_count(command, conf_settings))
 
         # positive test
         conf_settings = {
             'session': 'fuzz',
             'output': 'testdata/sync',
-            'slave_only': False,
+            'master_instances': 1,
         }
         command = 'add'
-        self.assertEqual((0, 2), afl_multicore.get_slave_count(command, conf_settings))
+        self.assertEqual(2, afl_multicore.get_started_instance_count(command, conf_settings))
 
     def test_get_job_counts(self):
         jobs_arg = "23"
@@ -286,20 +331,34 @@ class AflMulticoreTestCase(unittest.TestCase):
         conf_settings = {
             'session': 'fuzz',
             'output': 'testdata/sync',
-            'slave_only': False,
+            'master_instances': 1,
         }
         self.assertTrue(afl_multicore.has_master(conf_settings, 0))
-
-        # negative test
-        self.assertFalse(afl_multicore.has_master(conf_settings, 1))
 
         conf_settings = {
             'session': 'fuzz',
             'output': 'testdata/sync',
-            'slave_only': True,
+            'master_instances': 12,
+        }
+        self.assertTrue(afl_multicore.has_master(conf_settings, 11))
+
+        # negative test
+        self.assertFalse(afl_multicore.has_master(conf_settings, 12))
+
+        conf_settings = {
+            'session': 'fuzz',
+            'output': 'testdata/sync',
+            'master_instances': 0,
         }
         self.assertFalse(afl_multicore.has_master(conf_settings, 0))
         self.assertFalse(afl_multicore.has_master(conf_settings, 2))
+
+        conf_settings = {
+            'session': 'fuzz',
+            'output': 'testdata/sync',
+            'master_instances': -23,
+        }
+        self.assertFalse(afl_multicore.has_master(conf_settings, 0))
 
     def test_main(self):
         # we're only going to test some error cases

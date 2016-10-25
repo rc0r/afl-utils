@@ -13,7 +13,7 @@
     "output": "./out",
     "dirty": true,
     "mem_limit": "150",
-    "slave_only": false,
+    "master_instances": 2,
     "environment": [
         "AFL_PERSISTENT=1"
     ]
