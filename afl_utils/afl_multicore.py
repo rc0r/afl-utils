@@ -231,7 +231,6 @@ def get_master_count(conf_settings):
 def get_started_instance_count(command, conf_settings):
     instances_started = 0
     if command == "add":
-        instances_started = 0
         dirs = os.listdir(conf_settings["output"])
         for d in dirs:
             if os.path.isdir(os.path.abspath(os.path.join(conf_settings["output"], d))) \
@@ -357,7 +356,7 @@ job offset that allows to resume specific (ranges of) afl-instances.")
 
     print_ok("Starting fuzzer instance(s)...")
     jobs_offset += instances_started
-    jobs_count += instances_started + jobs_offset
+    jobs_count += jobs_offset
     for i in range(jobs_offset, jobs_count, 1):
         is_master = has_master(conf_settings, i)
 
