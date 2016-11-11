@@ -16,15 +16,13 @@ limitations under the License.
 
 import argparse
 import os
+import queue
 import sys
+import threading
 
 import afl_utils
 from afl_utils import AflThread, afl_collect
 from afl_utils.AflPrettyPrint import *
-
-import threading
-import queue
-
 
 def show_info():
     print(clr.CYA + "afl-vcrash " + clr.BRI + "%s" % afl_utils.__version__ + clr.RST + " by %s" % afl_utils.__author__)

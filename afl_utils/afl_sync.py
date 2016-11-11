@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import afl_utils
-from afl_utils.AflPrettyPrint import clr, print_ok, print_warn, print_err
-
 import argparse
 import os
 import sys
 import subprocess
+
+import afl_utils
+from afl_utils.AflPrettyPrint import clr, print_ok, print_warn, print_err
 
 _rsync_default_options = ['-racz']
 
@@ -138,7 +138,7 @@ def main(argv):
     show_info()
 
     parser = argparse.ArgumentParser(description='afl-sync synchronizes fuzzer state directories between different \
-locations. Supported are remote transfers through rsync that may use transport compression.', 
+locations. Supported are remote transfers through rsync that may use transport compression.',
                                      usage='afl-sync [-S SESSION] <cmd> <src_sync_dir> <dst_storage_dir>')
 
     parser.add_argument('cmd',

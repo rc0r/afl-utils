@@ -184,7 +184,7 @@ def build_master_cmd(conf_settings, master_index, target_cmd):
     if "master_instances" in conf_settings and conf_settings["master_instances"] > 1:
         # multi-master mode
         master_cmd += ["-M", "%s%03d:%d/%d" % (conf_settings["session"], master_index,
-                                              master_index+1, conf_settings["master_instances"]), "--", target_cmd]
+                                               master_index+1, conf_settings["master_instances"]), "--", target_cmd]
     else:
         # single-master mode
         master_cmd += ["-M", "%s000" % conf_settings["session"], "--", target_cmd]
@@ -379,7 +379,7 @@ job offset that allows to resume specific (ranges of) afl-instances.")
         else:
             if not args.verbose:
                 fuzzer_inst = subprocess.Popen(" ".join(['nohup', cmd]).split(), stdout=subprocess.DEVNULL,
-                                          stderr=subprocess.DEVNULL)
+                                               stderr=subprocess.DEVNULL)
             else:
                 fuzzer_inst = subprocess.Popen(" ".join(['nohup', cmd]).split())
             if is_master:
