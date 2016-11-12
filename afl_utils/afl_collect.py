@@ -358,6 +358,10 @@ file execution or file list generation.")
                         default=False, help="Remove crash samples that have an exploitable classification of \
 'NOT_EXPLOITABLE' or 'PROBABLY_NOT_EXPLOITABLE'. Sample file removal will take place after gdb+exploitable \
 script execution. Has no effect without '-e'.")
+    parser.add_argument("-rt", "--remove-timeout", dest="remove_timeout", default=10,
+                        help="Specifies the maximum processing time in seconds for each sample during verification \
+phase. Samples that cause the target to run longer are marked as timeouts and are removed from the index. Has no \
+effect without '-r'.")
     parser.add_argument("target_cmd", nargs="+", help="Path to the target binary and its command line arguments. \
 Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
@@ -410,7 +414,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     if args.remove_invalid:
         from afl_utils import afl_vcrash
         invalid_samples, timeout_samples = afl_vcrash.verify_samples(int(args.num_threads), sample_index.inputs(),
-                                                                     args.target_cmd, timeout_secs=10)
+                                                                     args.target_cmd, timeout_secs=args.remove_timeout)
 
         # store invalid samples in db
         if args.gdb_expl_script_file and db_file:

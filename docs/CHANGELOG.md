@@ -1,5 +1,9 @@
 # afl-utils Changelog
 
+Version 1.33a
+
+  - Made processing timeout for sample verification phase configurable in afl-collect.
+
 Version 1.32a
 
   - SQLite db connector improved. Gives a huge afl-collect speed-up
