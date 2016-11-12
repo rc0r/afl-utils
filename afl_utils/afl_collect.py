@@ -328,8 +328,7 @@ def main(argv):
     parser = argparse.ArgumentParser(description="afl-collect copies all crash sample files from an afl sync dir used \
 by multiple fuzzers when fuzzing in parallel into a single location providing easy access for further crash analysis.",
                                      usage="afl-collect [-d DATABASE] [-e|-g GDB_EXPL_SCRIPT_FILE] [-f LIST_FILENAME]\n \
-[-h] [-j THREADS] [-m] [-r] [-rr] sync_dir collection_dir -- target_cmd")
-
+[-h] [-j THREADS] [-m] [-r [-rt TIMEOUT]] [-rr] sync_dir collection_dir -- target_cmd")
     parser.add_argument("sync_dir", help="afl synchronisation directory crash samples will be collected from.")
     parser.add_argument("collection_dir",
                         help="Output directory that will hold a copy of all crash samples and other generated files. \
@@ -414,7 +413,7 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     if args.remove_invalid:
         from afl_utils import afl_vcrash
         invalid_samples, timeout_samples = afl_vcrash.verify_samples(int(args.num_threads), sample_index.inputs(),
-                                                                     args.target_cmd, timeout_secs=args.remove_timeout)
+                                                                     args.target_cmd, timeout_secs=float(args.remove_timeout))
 
         # store invalid samples in db
         if args.gdb_expl_script_file and db_file:

@@ -53,6 +53,11 @@ here:
     $ afl-collect -d crashes.db -e gdb_script -r -rr ./afl_sync_dir ./collection_dir \
             -j 8 -- /path/to/target --target-opts
 
+During sample verification (enabled using `-r`) `afl-collect` uses a default time of
+10 seconds to allow the target process to finish processing a single sample. This ensures
+that `afl-collect` continues to run even if you happen to encounter some DoS condition
+in the target. If you want to tweak this value use `-r` in conjunction with
+`-rt <timeout>` to specify the timeout in seconds.
 
 ## afl-cron
 
