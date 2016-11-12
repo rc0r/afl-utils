@@ -16,17 +16,15 @@ limitations under the License.
 
 import argparse
 import os
+import queue
 import shutil
 import sys
+import threading
 
 import afl_utils
 from afl_utils import SampleIndex, AflThread
 from afl_utils.AflPrettyPrint import clr, print_ok, print_err, print_warn
 from db_connectors import con_sqlite
-
-import threading
-import queue
-
 
 # afl-collect global settings
 global_crash_subdirs = "crashes"

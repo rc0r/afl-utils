@@ -141,7 +141,7 @@ def parse_stat_file(stat_file, summary=True):
             'afl_version': '',
             'command_line': ''
         }
-        
+
         for l in lines:
             if summary:
                 stats = summary_stats
