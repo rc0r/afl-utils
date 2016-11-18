@@ -58,7 +58,7 @@ environment. For a system wide install simply issue:
 These utilities are in alpha development state so I **highly recommend** to use
 a virtual environment instead:
 
-    $ virtualenv venv
+    $ virtualenv -p python3 venv
     $ source venv/bin/activate
     $ python setup.py install
 
