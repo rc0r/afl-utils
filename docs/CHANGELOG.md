@@ -3,6 +3,7 @@
 Version 1.33a
 
   - Made processing timeout for sample verification phase configurable in afl-collect.
+  - Usage of python 3 virtualenv explicitly documented in README (Henri Salo).
 
 Version 1.32a
 
