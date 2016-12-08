@@ -81,12 +81,12 @@ class AflMinimizeTestCase(unittest.TestCase):
     def test_invoke_cmin(self):
         self.init_collection_dir()
         self.assertEqual(False, afl_minimize.invoke_cmin(collection_dir, '%s.cmin' % collection_dir,
-                                                         '/bin/echo', mem_limit=100, timeout=100))
+                                                         '/bin/echo', mem_limit=100, timeout=100, qemu=True))
 
     def test_invoke_tmin(self):
         self.init_collection_dir()
         self.assertNotEqual(0, afl_minimize.invoke_tmin(collection_dir, '%s.tmin' % collection_dir,
-                                                        '/bin/echo', mem_limit=100, timeout=100))
+                                                        '/bin/echo', mem_limit=100, timeout=100, qemu=True))
 
     def test_invoke_dryrun(self):
         self.init_collection_dir()

@@ -35,7 +35,7 @@ def show_info():
     print("")
 
 
-def invoke_cmin(input_dir, output_dir, target_cmd, mem_limit=None, timeout=None):
+def invoke_cmin(input_dir, output_dir, target_cmd, mem_limit=None, timeout=None, qemu=False):
     success = True
     cmin_cmd = "afl-cmin "
 
@@ -44,6 +44,9 @@ def invoke_cmin(input_dir, output_dir, target_cmd, mem_limit=None, timeout=None)
 
     if timeout is not None:
         cmin_cmd += "-t %d " % int(timeout)
+
+    if qemu:
+        cmin_cmd += "-Q"
 
     cmd = "%s-i %s -o %s -- %s" % (cmin_cmd, input_dir, output_dir, target_cmd)
     try:
@@ -54,7 +57,7 @@ def invoke_cmin(input_dir, output_dir, target_cmd, mem_limit=None, timeout=None)
     return success
 
 
-def invoke_tmin(input_files, output_dir, target_cmd, num_threads=1, mem_limit=None, timeout=None):
+def invoke_tmin(input_files, output_dir, target_cmd, num_threads=1, mem_limit=None, timeout=None, qemu=False):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
@@ -78,6 +81,9 @@ def invoke_tmin(input_files, output_dir, target_cmd, num_threads=1, mem_limit=No
 
     if timeout is not None:
         tmin_cmd += "-t %d " % int(timeout)
+
+    if qemu:
+        tmin_cmd += "-Q"
 
     for i in range(0, num_threads, 1):
         t = AflThread.AflTminThread(i, tmin_cmd, target_cmd, output_dir, in_queue, out_queue, in_queue_lock, out_queue_lock)
@@ -176,6 +182,8 @@ of an afl-fuzz corpus.",
                         default=False, help="Run afl-cmin on collection dir. Has no effect without '-c'.")
     parser.add_argument("--cmin-mem-limit", dest="cmin_mem_limit", default=None, help="Set memory limit for afl-cmin.")
     parser.add_argument("--cmin-timeout", dest="cmin_timeout", default=None, help="Set timeout for afl-cmin.")
+    parser.add_argument("--cmin-qemu", dest="cmin_qemu", default=False, action="store_const", const=True,
+                        help="Enable qemu mode afl-cmin.")
     parser.add_argument("--reseed", dest="reseed", default=False, action="store_const", const=True, help="Reseed afl-fuzz with the \
 collected (and optimized) corpus. This replaces all sync_dir queues with the newly generated corpus.")
     parser.add_argument("--tmin", dest="invoke_tmin", action="store_const", const=True,
@@ -183,6 +191,8 @@ collected (and optimized) corpus. This replaces all sync_dir queues with the new
 or on unoptimized collection dir otherwise. Has no effect without '-c'.")
     parser.add_argument("--tmin-mem-limit", dest="tmin_mem_limit", default=None, help="Set memory limit for afl-tmin.")
     parser.add_argument("--tmin-timeout", dest="tmin_timeout", default=None, help="Set timeout for afl-tmin.")
+    parser.add_argument("--tmin-qemu", dest="tmin_qemu", default=False, action="store_const", const=True,
+                        help="Enable qemu mode afl-tmin.")
     parser.add_argument("-d", "--dry-run", dest="dry_run", action="store_const", const=True,
                         default=False, help="Perform dry-run on collection dir, if '-c' is provided or on \
 synchronisation dir otherwise. Dry-run will move intermittent crashes out of the corpus.")
@@ -238,20 +248,20 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
             # invoke cmin on collection
             print_ok("Executing: afl-cmin -i %s -o %s.cmin -- %s" % (out_dir, out_dir, args.target_cmd))
             invoke_cmin(out_dir, "%s.cmin" % out_dir, args.target_cmd, mem_limit=args.cmin_mem_limit,
-                        timeout=args.cmin_timeout)
+                        timeout=args.cmin_timeout, qemu=args.cmin_qemu)
             if args.invoke_tmin:
                 # invoke tmin on minimized collection
                 print_ok("Executing: afl-tmin -i %s.cmin/* -o %s.cmin.tmin/* -- %s" % (out_dir, out_dir,
                                                                                        args.target_cmd))
                 tmin_num_samples, tmin_samples = afl_collect.get_samples_from_dir("%s.cmin" % out_dir, abs_path=True)
                 invoke_tmin(tmin_samples, "%s.cmin.tmin" % out_dir, args.target_cmd, num_threads=threads,
-                            mem_limit=args.tmin_mem_limit, timeout=args.tmin_timeout)
+                            mem_limit=args.tmin_mem_limit, timeout=args.tmin_timeout, qemu=args.tmin_qemu)
         elif args.invoke_tmin:
             # invoke tmin on collection
             print_ok("Executing: afl-tmin -i %s/* -o %s.tmin/* -- %s" % (out_dir, out_dir, args.target_cmd))
             tmin_num_samples, tmin_samples = afl_collect.get_samples_from_dir(out_dir, abs_path=True)
             invoke_tmin(tmin_samples, "%s.tmin" % out_dir, args.target_cmd, num_threads=threads,
-                        mem_limit=args.tmin_mem_limit, timeout=args.tmin_timeout)
+                        mem_limit=args.tmin_mem_limit, timeout=args.tmin_timeout, qemu=args.tmin_qemu)
         if args.dry_run:
             # invoke dry-run on collected/minimized corpus
             if args.invoke_cmin and args.invoke_tmin:
