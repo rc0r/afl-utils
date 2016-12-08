@@ -46,9 +46,10 @@ def invoke_cmin(input_dir, output_dir, target_cmd, mem_limit=None, timeout=None,
         cmin_cmd += "-t %d " % int(timeout)
 
     if qemu:
-        cmin_cmd += "-Q"
+        cmin_cmd += "-Q "
 
     cmd = "%s-i %s -o %s -- %s" % (cmin_cmd, input_dir, output_dir, target_cmd)
+    print_ok("Executing: %s" % cmd)
     try:
         subprocess.check_call(cmd, shell=True)
     except subprocess.CalledProcessError as e:
@@ -83,7 +84,11 @@ def invoke_tmin(input_files, output_dir, target_cmd, num_threads=1, mem_limit=No
         tmin_cmd += "-t %d " % int(timeout)
 
     if qemu:
-        tmin_cmd += "-Q"
+        tmin_cmd += "-Q "
+
+    if len(input_files) > 0:
+        print_ok("Executing: %s -i %s/* -o %s/* -- %s" % (tmin_cmd, os.path.dirname(input_files[0]),
+                                                          output_dir, target_cmd))
 
     for i in range(0, num_threads, 1):
         t = AflThread.AflTminThread(i, tmin_cmd, target_cmd, output_dir, in_queue, out_queue, in_queue_lock, out_queue_lock)
@@ -246,19 +251,15 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
         if args.invoke_cmin:
             # invoke cmin on collection
-            print_ok("Executing: afl-cmin -i %s -o %s.cmin -- %s" % (out_dir, out_dir, args.target_cmd))
             invoke_cmin(out_dir, "%s.cmin" % out_dir, args.target_cmd, mem_limit=args.cmin_mem_limit,
                         timeout=args.cmin_timeout, qemu=args.cmin_qemu)
             if args.invoke_tmin:
                 # invoke tmin on minimized collection
-                print_ok("Executing: afl-tmin -i %s.cmin/* -o %s.cmin.tmin/* -- %s" % (out_dir, out_dir,
-                                                                                       args.target_cmd))
                 tmin_num_samples, tmin_samples = afl_collect.get_samples_from_dir("%s.cmin" % out_dir, abs_path=True)
                 invoke_tmin(tmin_samples, "%s.cmin.tmin" % out_dir, args.target_cmd, num_threads=threads,
                             mem_limit=args.tmin_mem_limit, timeout=args.tmin_timeout, qemu=args.tmin_qemu)
         elif args.invoke_tmin:
             # invoke tmin on collection
-            print_ok("Executing: afl-tmin -i %s/* -o %s.tmin/* -- %s" % (out_dir, out_dir, args.target_cmd))
             tmin_num_samples, tmin_samples = afl_collect.get_samples_from_dir(out_dir, abs_path=True)
             invoke_tmin(tmin_samples, "%s.tmin" % out_dir, args.target_cmd, num_threads=threads,
                         mem_limit=args.tmin_mem_limit, timeout=args.tmin_timeout, qemu=args.tmin_qemu)
