@@ -214,9 +214,9 @@ def generate_gdb_exploitable_script(script_filename, sample_index, target_cmd, s
                 run_cmd = "run " + gdb_run_cmd + "< @@" + "\n"
 
             if intermediate:
-                run_cmd = run_cmd.replace("@@", f['input'])
+                run_cmd = run_cmd.replace("@@", "'{}'".format(f['input']))
             else:
-                run_cmd = run_cmd.replace("@@", os.path.join(sample_index.output_dir, f['output']))
+                run_cmd = run_cmd.replace("@@", os.path.join(sample_index.output_dir, "'{}'".format(f['output'])))
 
             fd.writelines(run_cmd)
             fd.writelines("exploitable\n")

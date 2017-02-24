@@ -1,5 +1,16 @@
 # afl-utils Changelog
 
+Version 1.33a
+
+  - Added `--cmin-qemu`, `--tmin-qemu` options for QEMU mode support
+    to afl-minimize (suggested by Isaac).
+  - Made processing timeout for sample verification phase configurable
+    in afl-collect.
+  - Usage of python 3 virtualenv explicitly documented in README
+    (Henri Salo).
+  - Added quotes around sample filenames used in generated gdb script
+    to keep gdb happy with fancy sample filenames.
+
 Version 1.32a
 
   - SQLite db connector improved. Gives a huge afl-collect speed-up
