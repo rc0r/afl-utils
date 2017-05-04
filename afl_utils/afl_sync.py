@@ -183,7 +183,7 @@ locations. Supported are remote transfers through rsync that may use transport c
             rsync_put_options.append("--chmod={}".format(args.chmod))
 
         if args.chown:
-            rsync_put_options.append("--chown={}".format(args.chown))
+            rsync_put_options.append(["--protect-args", "--chown={}".format(args.chown)])
 
     if not os.path.exists(args.src_sync_dir):
         if args.cmd in ['pull', 'sync']:
