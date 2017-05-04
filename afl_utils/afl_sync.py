@@ -154,7 +154,7 @@ locations. Supported are remote transfers through rsync that may use transport c
                         help='Affect destination\'s file and directory permissions, e.g. --chmod=g+rw to add '
                              'read/write group permissions.', metavar="PERMS")
     parser.add_argument('--chown',
-                        help='Affect destination\'s file and directory user and group, e.g. --chmod=foo:bar to '
+                        help='Affect destination\'s file and directory user and group, e.g. --chown=foo:bar to '
                         'let the files be owned by user foo and group bar.', metavar="USER:GROUP")
     parser.add_argument('-S', '--session', dest='session', default=None,
                         help='Name of an afl-multicore session. If provided, only fuzzers belonging to '
