@@ -176,8 +176,7 @@ locations. Supported are remote transfers through rsync that may use transport c
         # these arguments are meaningless with pull since they should only
         # affect the remote side
         if args.cmd == 'pull':
-            print_err('Sorry, --chmod and --chown are meaningless with pull.')
-            sys.exit(1)
+            print_warn('--chmod and --chown have no effect with pull and will be ignored.')
 
         if args.chmod:
             rsync_put_options.append("--chmod={}".format(args.chmod))
