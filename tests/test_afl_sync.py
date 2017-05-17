@@ -196,7 +196,6 @@ class AflSyncTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists('testdata/rsync_output_push/fuzz000.sync'))
         self.assertFalse(os.path.exists('testdata/rsync_output_push/fuzz000.sync/.cur_input'))
         self.assertTrue(os.path.exists('testdata/rsync_output_push/fuzz001.sync'))
-        self.assertFalse(os.path.exists('testdata/rsync_output_push/fuzz000.sync/.cur_input'))
         self.assertFalse(os.path.exists('testdata/rsync_output_push/fuzz002.sync'))
         self.assertFalse(os.path.exists('testdata/rsync_output_push/fuzz002.sync.sync'))
         self.assertFalse(os.path.exists('testdata/rsync_output_push/invalid_fuzz000.sync'))
