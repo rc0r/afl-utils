@@ -15,6 +15,7 @@ limitations under the License.
 """
 
 import argparse
+import exploitable
 import os
 import queue
 import shutil
@@ -409,6 +410,11 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     else:
         print_warn("No samples found. Check directory settings!")
         return
+
+    gdbinit = os.path.expanduser("~/.gdbinit")
+    if not os.path.exists(gdbinit) or "exploitable.py" not in open(gdbinit, "rb").read():
+        global gdb_exploitable_path
+        gdb_exploitable_path = os.path.join(exploitable.__path__[0], "exploitable.py")
 
     if args.remove_invalid:
         from afl_utils import afl_vcrash

@@ -10,6 +10,8 @@ Version 1.33a
     (Henri Salo).
   - Added quotes around sample filenames used in generated gdb script
     to keep gdb happy with fancy sample filenames.
+  - Updated afl-collect to automatically detect exploitable.py location
+    (contributed by Jurriaan Bremer).
 
 Version 1.32a
 
