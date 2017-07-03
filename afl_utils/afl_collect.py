@@ -44,10 +44,6 @@ if gdb_binary is None:
     print_err("gdb binary not found!")
     sys.exit(1)
 
-# Path to 'exploitable.py' (https://github.com/rc0r/exploitable)
-# Set to None if you already source exploitable.py in your .gdbinit file!
-gdb_exploitable_path = None
-
 
 # afl-collect database table spec
 db_table_spec = """`Sample` TEXT PRIMARY KEY NOT NULL, `Classification` TEXT NOT NULL,
@@ -190,6 +186,11 @@ def generate_gdb_exploitable_script(script_filename, sample_index, target_cmd, s
         script_filename = os.path.abspath(os.path.expanduser("%s.%d" % (script_filename, script_id)))
         print_ok("Generating intermediate gdb+exploitable script '%s' for %d samples..." %
                  (script_filename, len(sample_index.outputs())))
+
+    gdb_exploitable_path = None
+    gdbinit = os.path.expanduser("~/.gdbinit")
+    if not os.path.exists(gdbinit) or b"exploitable.py" not in open(gdbinit, "rb").read():
+        gdb_exploitable_path = os.path.join(exploitable.__path__[0], "exploitable.py")
 
     try:
         fd = open(script_filename, "w")
@@ -410,11 +411,6 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
     else:
         print_warn("No samples found. Check directory settings!")
         return
-
-    gdbinit = os.path.expanduser("~/.gdbinit")
-    if not os.path.exists(gdbinit) or "exploitable.py" not in open(gdbinit, "rb").read():
-        global gdb_exploitable_path
-        gdb_exploitable_path = os.path.join(exploitable.__path__[0], "exploitable.py")
 
     if args.remove_invalid:
         from afl_utils import afl_vcrash
