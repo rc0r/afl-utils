@@ -25,19 +25,19 @@ from afl_utils.AflPrettyPrint import clr, print_ok, print_warn, print_err
 _rsync_default_options = ['-racz']
 
 class AflBaseSync(object):
-    def __init__(self, server_config, fuzzer_config, rsync_config):
+    def __init__(self, server_config, fuzzer_config):
         self.server_config = server_config
         self.fuzzer_config = fuzzer_config
-        self.rsync_config  = rsync_config
 
 
 class AflRsync(AflBaseSync):
     def __init__(self, server_config, fuzzer_config, rsync_config):
+        self.rsync_config = rsync_config
         # default excludes
         self.__excludes = ['*.cur_input']
-        super(AflRsync, self).__init__(server_config, fuzzer_config, rsync_config)
+        super(AflRsync, self).__init__(server_config, fuzzer_config)
 
-    def __prepare_rsync_commandline(self, local_path, remote_path, rsync_options,
+    def __prepare_rsync_commandline(self, local_path, remote_path, rsync_options=list(_rsync_default_options),
                                     rsync_excludes=list([]), rsync_get=False):
         cmd = ['rsync']
 
@@ -66,11 +66,11 @@ class AflRsync(AflBaseSync):
         fuzzers = (fuzzer for fuzzer in fuzzers if not fuzzer.endswith('.sync'))
         return fuzzers
 
-    def rsync_put(self, local_path, remote_path, rsync_options, rsync_excludes=list([])):
+    def rsync_put(self, local_path, remote_path, rsync_options=list(_rsync_default_options), rsync_excludes=list([])):
         cmd = self.__prepare_rsync_commandline(local_path, remote_path, rsync_options, rsync_excludes)
         return self.__invoke_rsync(cmd)
 
-    def rsync_get(self, remote_path, local_path, rsync_options, rsync_excludes=list([])):
+    def rsync_get(self, remote_path, local_path, rsync_options=list(_rsync_default_options), rsync_excludes=list([])):
         cmd = self.__prepare_rsync_commandline(local_path, remote_path, rsync_options, rsync_excludes, True)
         return self.__invoke_rsync(cmd)
 
@@ -152,10 +152,10 @@ locations. Supported are remote transfers through rsync that may use transport c
                         help='Destination directory used as fuzzer state storage. This shouldn\'t be an afl sync dir!')
     parser.add_argument('--chmod',
                         help='Affect destination\'s file and directory permissions, e.g. --chmod=g+rw to add '
-                             'read/write group permissions.', metavar="PERMS")
+                             'read/write group permissions.', metavar='PERMS')
     parser.add_argument('--chown',
                         help='Affect destination\'s file and directory user and group, e.g. --chown=foo:bar to '
-                        'let the files be owned by user foo and group bar.', metavar="USER:GROUP")
+                        'let the files be owned by user foo and group bar.', metavar='USER:GROUP')
     parser.add_argument('-S', '--session', dest='session', default=None,
                         help='Name of an afl-multicore session. If provided, only fuzzers belonging to '
                              'the specified session will be synced with the destination. Otherwise state '
@@ -179,10 +179,11 @@ locations. Supported are remote transfers through rsync that may use transport c
             print_warn('--chmod and --chown have no effect with pull and will be ignored.')
 
         if args.chmod:
-            rsync_put_options.append("--chmod={}".format(args.chmod))
+            rsync_put_options.append('--chmod={}'.format(args.chmod))
 
         if args.chown:
-            rsync_put_options.append(["--protect-args", "--chown={}".format(args.chown)])
+            rsync_put_options.append('--protect-args')
+            rsync_put_options.append('--chown={}'.format(args.chown))
 
     if not os.path.exists(args.src_sync_dir):
         if args.cmd in ['pull', 'sync']:
@@ -218,5 +219,5 @@ locations. Supported are remote transfers through rsync that may use transport c
         rsyncEngine.sync()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main(sys.argv)

@@ -1,5 +1,10 @@
 # afl-utils Changelog
 
+Version 1.34a
+
+  - Added `--chmod`, `--chown` rsync flags to afl-sync (contributed by
+    Denis Kasak).
+
 Version 1.33a
 
   - Added `--cmin-qemu`, `--tmin-qemu` options for QEMU mode support

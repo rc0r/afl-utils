@@ -4,6 +4,7 @@ from afl_utils.afl_sync import AflRsync
 import os
 import shutil
 import unittest
+from unittest.mock import patch
 
 
 class AflSyncTestCase(unittest.TestCase):
@@ -196,6 +197,7 @@ class AflSyncTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists('testdata/rsync_output_push/fuzz000.sync'))
         self.assertFalse(os.path.exists('testdata/rsync_output_push/fuzz000.sync/.cur_input'))
         self.assertTrue(os.path.exists('testdata/rsync_output_push/fuzz001.sync'))
+        self.assertFalse(os.path.exists('testdata/rsync_output_push/fuzz001.sync/.cur_input'))
         self.assertFalse(os.path.exists('testdata/rsync_output_push/fuzz002.sync'))
         self.assertFalse(os.path.exists('testdata/rsync_output_push/fuzz002.sync.sync'))
         self.assertFalse(os.path.exists('testdata/rsync_output_push/invalid_fuzz000.sync'))
@@ -290,6 +292,36 @@ class AflSyncTestCase(unittest.TestCase):
         self.assertFalse(os.path.exists('testdata/rsync_output_sync/fuzz002.sync.sync'))
         self.assertTrue(os.path.exists('testdata/rsync_output_sync/invalid_fuzz000.sync'))
         self.assertTrue(os.path.exists('testdata/rsync_output_sync/invalid_fuzz001.sync'))
+
+    @patch('afl_utils.afl_sync.AflRsync')
+    def test_main_chmod_chown(self, mock_afl_rsync):
+        argv = [
+            'afl-sync',
+            '--chmod=ABCD',
+            '--chown=EFGH',
+            'pull',
+            'testdata/sync',
+            'remote'
+        ]
+
+        expected_server_config = {
+            'remote_path': 'remote'
+        }
+
+        expected_fuzzer_config = {
+            'sync_dir': 'testdata/sync',
+            'session': None,
+            'exclude_crashes': False,
+            'exclude_hangs': False
+        }
+
+        expected_rsync_config = {
+            'get': ['-racz'],
+            'put': ['-racz', '--chmod=ABCD', '--protect-args', '--chown=EFGH']
+        }
+
+        self.assertIsNone(afl_sync.main(argv))
+        mock_afl_rsync.assert_called_with(expected_server_config, expected_fuzzer_config, expected_rsync_config)
 
     def test_main(self):
         argv = [

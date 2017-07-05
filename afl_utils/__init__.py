@@ -17,4 +17,4 @@ limitations under the License.
 __author__ = 'rc0r <hlt99@blinkenshell.org> # @_rc0r'
 __author_name__ = 'rc0r'
 __author_email__ = 'hlt99@blinkenshell.org'
-__version__ = "1.33a"
+__version__ = "1.34a"
