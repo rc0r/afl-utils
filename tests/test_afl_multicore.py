@@ -284,6 +284,7 @@ class AflMulticoreTestCase(unittest.TestCase):
         }
         self.assertIsNone(afl_multicore.write_pgid_file(conf_settings))
         self.assertIs(True, os.path.exists('/tmp/afl_multicore.PGID.unittest_sess_01'))
+        os.remove('/tmp/afl_multicore.PGID.unittest_sess_01')
 
         # positive test, again with implicit non-interactive mode (test for #34)
         conf_settings = {
@@ -292,6 +293,7 @@ class AflMulticoreTestCase(unittest.TestCase):
         }
         self.assertIsNone(afl_multicore.write_pgid_file(conf_settings))
         self.assertIs(True, os.path.exists('/tmp/afl_multicore.PGID.unittest_sess_01'))
+        os.remove('/tmp/afl_multicore.PGID.unittest_sess_01')
 
     def test_get_started_instances(self):
         # negative test

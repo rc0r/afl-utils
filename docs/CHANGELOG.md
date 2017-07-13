@@ -4,6 +4,8 @@ Version 1.34a
 
   - Added `--chmod`, `--chown` rsync flags to afl-sync (contributed by
     Denis Kasak).
+  - Improved bug fix for #34 in afl-multicore (suggested by Bhargava
+    Shastry).
 
 Version 1.33a
 
