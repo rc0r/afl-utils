@@ -329,6 +329,7 @@ def execute_gdb_script(out_dir, script_filename, num_samples, num_threads):
 
 def main(argv):
     show_info()
+    check_gdb()
 
     parser = argparse.ArgumentParser(description="afl-collect copies all crash sample files from an afl sync dir used \
 by multiple fuzzers when fuzzing in parallel into a single location providing easy access for further crash analysis.",
@@ -514,5 +515,4 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
 
 if __name__ == "__main__":
-    check_gdb()
     main(sys.argv)
