@@ -6,6 +6,8 @@ Version 1.34a
     Denis Kasak).
   - Improved bug fix for #34 in afl-multicore (suggested by Bhargava
     Shastry).
+  - Bug in afl_collect.py fixed that prevented other tools from starting
+    if gdb executable is not present (reported by Henri Salo).
 
 Version 1.33a
 

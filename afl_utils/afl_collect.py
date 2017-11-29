@@ -40,14 +40,17 @@ fuzzer_stats_filename = "fuzzer_stats"
 
 # Path to gdb binary
 gdb_binary = shutil.which("gdb")
-if gdb_binary is None:
-    print_err("gdb binary not found!")
-    sys.exit(1)
 
 
 # afl-collect database table spec
 db_table_spec = """`Sample` TEXT PRIMARY KEY NOT NULL, `Classification` TEXT NOT NULL,
 `Classification_Description` TEXT NOT NULL, `Hash` TEXT, `User_Comment` TEXT"""
+
+
+def check_gdb():
+    if gdb_binary is None:
+        print_err("gdb binary not found!")
+        sys.exit(1)
 
 
 def show_info():
@@ -511,4 +514,5 @@ Use '@@' to specify crash sample input file position (see afl-fuzz usage).")
 
 
 if __name__ == "__main__":
+    check_gdb()
     main(sys.argv)
