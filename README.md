@@ -1,3 +1,17 @@
+# **NOTE: FUTURE DEVELOPMENT WILL HAPPEN THROUGH [GITLAB](https://gitlab.com/rc0r/afl-utils)!**
+
+As of June, 6th 2018 this project moved to [Gitlab](https://gitlab.com/rc0r/afl-utils) that's why this repository is
+archived and thus read-only until it is entirely removed from Github. Repository removal is scheduled for September,
+15th 2018.
+
+Please report issues and request your merges through the new [project home](https://gitlab.com/rc0r/afl-utils). All
+further discussion - even for existing issues - will take place there.
+
+Thank you,
+
+rc0r
+
+
 # afl-utils [![Build Status](https://travis-ci.org/rc0r/afl-utils.svg?branch=master)](https://travis-ci.org/rc0r/afl-utils)[![Coverage Status](https://coveralls.io/repos/rc0r/afl-utils/badge.svg?branch=master&service=github)](https://coveralls.io/github/rc0r/afl-utils?branch=master)
 
 afl-utils is a collection of utilities to assist fuzzing with
